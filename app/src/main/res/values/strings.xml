@@ -1,0 +1,61 @@
+<resources>
+    <string name="app_name">RIZE</string>
+
+    <!-- Bottom Nav -->
+    <string name="nav_home">Home</string>
+    <string name="nav_stats">Stats</string>
+
+    <!-- Homepage -->
+    <string name="home_hero_chip">KINEMATICS</string>
+    <string name="home_hero_title">Master your kinematics</string>
+    <string name="home_hero_subtitle">Precision-engineered movement for the modern athlete.</string>
+    <string name="home_experience_title">The RIZE Experience</string>
+    <string name="home_view_all">View All</string>
+    <string name="home_form_analysis">Form Analysis</string>
+    <string name="home_form_analysis_desc">AI-powered tracking to ensure every rep is biomechanically perfect.</string>
+    <string name="home_load_tracking">Load Tracking</string>
+    <string name="home_load_tracking_desc">Detailed volume and intensity metrics for optimal programming.</string>
+    <string name="home_elevate_title">Elevate Your Movement</string>
+    <string name="home_elevate_desc">Join 50k+ athletes using RIZE to reach peak performance through data-driven training methodologies.</string>
+    <string name="home_get_started">Get Started</string>
+
+    <!-- Select Exercise -->
+    <string name="select_toolbar_title">RIZE Training</string>
+    <string name="select_title_prefix">Choose Your </string>
+    <string name="select_title_highlight">Exercise</string>
+    <string name="select_subtitle">Select a movement to begin your session and track your progress.</string>
+    <string name="select_search_hint">Search exercises…</string>
+    <string name="select_start_sets">Start Sets</string>
+    <string name="select_cat_strength">STRENGTH</string>
+    <string name="select_cat_compound">COMPOUND</string>
+    <string name="select_cat_isolation">ISOLATION</string>
+
+    <!-- Camera -->
+    <string name="camera_rec">REC</string>
+    <string name="camera_settings">Settings</string>
+    <string name="camera_peak_angle">PEAK ANGLE</string>
+    <string name="camera_stability">STABILITY</string>
+    <string name="camera_session_consistency">Session Consistency</string>
+    <string name="camera_target_depth">65% Target Depth</string>
+    <string name="camera_min">MIN</string>
+    <string name="camera_avg">AVG</string>
+    <string name="camera_optimal">OPTIMAL</string>
+
+    <!-- Summary -->
+    <string name="summary_toolbar_title">Workout Summary</string>
+    <string name="summary_session_chip">POWER SESSION</string>
+    <string name="summary_performance_title">Elite Performance!</string>
+    <string name="summary_performance_subtitle">You outperformed 85% of your past sessions.</string>
+    <string name="summary_form_accuracy">Form Accuracy</string>
+    <string name="summary_rep_count">Rep Count</string>
+    <string name="summary_ai_insights">AI Insights</string>
+    <string name="summary_movement_efficiency">Movement Efficiency</string>
+    <string name="summary_movement_efficiency_desc">Keep your back straighter during the final 3 reps of your deadlift sets to maximize torque.</string>
+    <string name="summary_tempo_balance">Tempo Balance</string>
+    <string name="summary_tempo_balance_desc">Your concentric phase is perfect, but try slowing down the eccentric movement for better hypertrophy.</string>
+    <string name="summary_risk_warning">Risk Warning</string>
+    <string name="summary_joint_stress_title">High Joint Stress Detected</string>
+    <string name="summary_joint_stress_desc">RIZE AI noticed significant knee valgus during your squats. To prevent ACL strain, focus on pushing your knees outward. Consider reducing weight by 10% until form stabilizes.</string>
+    <string name="summary_go_home">Go Home</string>
+    <string name="summary_save_workout">Save Workout</string>
+</resources>
