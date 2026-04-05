@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -32,6 +33,11 @@ public class CameraActivity extends AppCompatActivity {
     private TextView metricPeakAngle;
     private TextView metricStability;
     private ProgressBar progressConsistency;
+    private TextView metricAngleLabel;
+    private TextView metricStabilityLabel;
+    private TextView metricConsistencyLabel;
+    private TextView metricConsistencyHint;
+    private TextView squatAlertText;
 
     // ── Estado de métricas ────────────────────────────────────────────────────
 
@@ -94,18 +100,49 @@ public class CameraActivity extends AppCompatActivity {
     // ── Algoritmos ────────────────────────────────────────────────────────────
 
     private boolean isCurlExercise = false;
+    private boolean isSquatExercise = false;
+    private boolean isAnalyzedExercise = false;
 
     private void setupAlgorithms(String exerciseName) {
-        // El análisis biomecánico solo aplica para Dumbbell Curl
-        isCurlExercise = exerciseName != null
-                && exerciseName.toLowerCase().contains("curl");
+        metricAngleLabel = findViewById(R.id.metric_angle_label);
+        metricStabilityLabel = findViewById(R.id.metric_stability_label);
+        metricConsistencyLabel = findViewById(R.id.metric_consistency_label);
+        metricConsistencyHint = findViewById(R.id.metric_consistency_hint);
+        squatAlertText = findViewById(R.id.squat_alert_text);
 
-        if (!isCurlExercise) {
+        String normalizedName = exerciseName == null ? "" : exerciseName.toLowerCase(Locale.US);
+        isCurlExercise = normalizedName.contains("curl");
+        isSquatExercise = normalizedName.contains("squat");
+        isAnalyzedExercise = isCurlExercise || isSquatExercise;
+
+        if (!isAnalyzedExercise) {
             // Ocultar las métricas para ejercicios sin análisis
-            findViewById(R.id.metric_peak_angle).setVisibility(android.view.View.GONE);
-            findViewById(R.id.metric_stability).setVisibility(android.view.View.GONE);
-            findViewById(R.id.progress_consistency).setVisibility(android.view.View.GONE);
+            findViewById(R.id.metric_peak_angle).setVisibility(View.GONE);
+            findViewById(R.id.metric_stability).setVisibility(View.GONE);
+            findViewById(R.id.progress_consistency).setVisibility(View.GONE);
+            if (squatAlertText != null) {
+                squatAlertText.setVisibility(View.GONE);
+            }
             return;
+        }
+
+        if (isSquatExercise) {
+            metricAngleLabel.setText(R.string.camera_knee_angle);
+            metricStabilityLabel.setText(R.string.camera_cvt);
+            metricConsistencyLabel.setText(R.string.camera_velocity_retention);
+            metricConsistencyHint.setText(R.string.camera_vl20_hint);
+            metricPeakAngle.setText("--");
+            metricStability.setText("--");
+            progressConsistency.setProgress(0);
+            squatAlertText.setVisibility(View.VISIBLE);
+            squatAlertText.setText(R.string.camera_squat_status_ready);
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+        } else {
+            metricAngleLabel.setText(R.string.camera_peak_angle);
+            metricStabilityLabel.setText(R.string.camera_stability);
+            metricConsistencyLabel.setText(R.string.camera_session_consistency);
+            metricConsistencyHint.setText(R.string.camera_target_depth);
+            squatAlertText.setVisibility(View.GONE);
         }
 
         algorithms = new Algorithms();
@@ -122,6 +159,10 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onAlgorithmResult(AlgorithmResult result) {
+        if (isSquatExercise) {
+            onSquatResult(result);
+            return;
+        }
 
         // ── Ángulo articular → metric_peak_angle ──────────────────────────────
         // FIX: mostramos el ángulo ACTUAL en tiempo real, no solo el pico.
@@ -185,6 +226,70 @@ public class CameraActivity extends AppCompatActivity {
             progressConsistency.setProgress((int) Math.round(emaConsistency));
         }
         // Si errorMagnitude == null → calibrando, barra en 0 sin tocar
+    }
+
+    private void onSquatResult(AlgorithmResult result) {
+        Double kneeAngle = result.getKneeAngleDeg();
+        if (kneeAngle != null) {
+            metricPeakAngle.setText(String.format(Locale.US, "%.0f°", kneeAngle));
+        }
+
+        Double cvt = result.getCvtPercent();
+        if (cvt != null) {
+            metricStability.setText(String.format(Locale.US, "%.1f%%", cvt));
+        } else {
+            metricStability.setText("--");
+        }
+
+        int stabilityColor;
+        if (cvt == null || cvt < 5.0) {
+            stabilityColor = ContextCompat.getColor(this, R.color.improvement_green);
+        } else if (cvt <= 10.0) {
+            stabilityColor = ContextCompat.getColor(this, R.color.toasted_almond);
+        } else {
+            stabilityColor = ContextCompat.getColor(this, R.color.risk_red);
+        }
+        metricStability.setTextColor(stabilityColor);
+
+        Double velocityLoss = result.getVelocityLossPercent();
+        if (velocityLoss != null) {
+            double retention = Math.max(0.0, 100.0 - velocityLoss);
+            progressConsistency.setProgress((int) Math.round(retention));
+        }
+
+        updateSquatAlert(result, cvt, velocityLoss);
+    }
+
+    private void updateSquatAlert(AlgorithmResult result, Double cvt, Double velocityLoss) {
+        if (squatAlertText == null) {
+            return;
+        }
+
+        int color = ContextCompat.getColor(this, R.color.improvement_green);
+        int messageRes = R.string.camera_squat_status_ok;
+
+        if (result.getDepthInsufficient() && result.getTrunkLeanRisk()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_depth_and_trunk;
+        } else if (result.getDepthInsufficient()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_depth;
+        } else if (result.getTrunkLeanRisk()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_trunk;
+        } else if (cvt != null && cvt > 10.0) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_instability;
+        } else if (velocityLoss != null && velocityLoss >= 20.0) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_fatigue;
+        } else if (cvt != null && cvt >= 5.0) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_squat_alert_variability;
+        }
+
+        squatAlertText.setText(messageRes);
+        squatAlertText.setTextColor(color);
     }
 
     // ── Resto sin cambios ─────────────────────────────────────────────────────
@@ -258,7 +363,7 @@ public class CameraActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         stopTimer();
-        if (isCurlExercise) {
+        if (isAnalyzedExercise) {
             PoseDataManager.INSTANCE.setPoseDataListener(null);
         }
         if (algorithms != null) {

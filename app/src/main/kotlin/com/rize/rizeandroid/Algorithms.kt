@@ -3,7 +3,7 @@ package com.rize.rizeandroid
 class Algorithms {
 
     private val curlBiomechanics = CurlBiomechanicsAlgorithm()
-    // private val squatBiomechanics = SquatBiomechanicsAlgorithm()
+    private val squatBiomechanics = SquatBiomechanicsAlgorithm()
     // private val benchPressBiomechanics = BenchPressBiomechanicsAlgorithm()
 
     private var activeAlgorithm: BiomechanicsAlgorithm = curlBiomechanics
@@ -21,7 +21,7 @@ class Algorithms {
     fun selectAlgorithm(exerciseName: String) {
         activeAlgorithm = when {
             exerciseName.contains("curl", ignoreCase = true) -> curlBiomechanics
-            // exerciseName.contains("squat", ignoreCase = true) -> squatBiomechanics
+            exerciseName.contains("squat", ignoreCase = true) -> squatBiomechanics
             // exerciseName.contains("bench", ignoreCase = true) -> benchPressBiomechanics
             else -> curlBiomechanics
         }
@@ -55,7 +55,17 @@ data class AlgorithmResult(
     val errorMagnitude: Double?      = null,
     val alert: Boolean               = false,
     val algorithmName: String        = "",
-    val timestampMs: Long            = System.currentTimeMillis()
+    val timestampMs: Long            = System.currentTimeMillis(),
+    val kneeAngleDeg: Double?        = null,
+    val hipAngleDeg: Double?         = null,
+    val kneeAngularVelocityDegS: Double? = null,
+    val concentricPeakVelocityDegS: Double? = null,
+    val eccentricPeakVelocityDegS: Double? = null,
+    val velocityLossPercent: Double? = null,
+    val cvtPercent: Double?          = null,
+    val repCount: Int                = 0,
+    val depthInsufficient: Boolean   = false,
+    val trunkLeanRisk: Boolean       = false
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }
