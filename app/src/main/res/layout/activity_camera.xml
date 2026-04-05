@@ -151,10 +151,11 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/metric_hip_angle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="  ~+5°"
-                            android:textColor="@color/improvement_green"
+                            android:text="Hip --"
+                            android:textColor="@color/silver_2"
                             android:textSize="12sp"
                             android:layout_marginBottom="6dp" />
                     </LinearLayout>

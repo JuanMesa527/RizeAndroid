@@ -34,6 +34,7 @@ public class CameraActivity extends AppCompatActivity {
     private TextView metricStability;
     private ProgressBar progressConsistency;
     private TextView metricAngleLabel;
+    private TextView metricHipAngle;
     private TextView metricStabilityLabel;
     private TextView metricConsistencyLabel;
     private TextView metricConsistencyHint;
@@ -105,6 +106,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private void setupAlgorithms(String exerciseName) {
         metricAngleLabel = findViewById(R.id.metric_angle_label);
+        metricHipAngle = findViewById(R.id.metric_hip_angle);
         metricStabilityLabel = findViewById(R.id.metric_stability_label);
         metricConsistencyLabel = findViewById(R.id.metric_consistency_label);
         metricConsistencyHint = findViewById(R.id.metric_consistency_hint);
@@ -120,6 +122,9 @@ public class CameraActivity extends AppCompatActivity {
             findViewById(R.id.metric_peak_angle).setVisibility(View.GONE);
             findViewById(R.id.metric_stability).setVisibility(View.GONE);
             findViewById(R.id.progress_consistency).setVisibility(View.GONE);
+            if (metricHipAngle != null) {
+                metricHipAngle.setVisibility(View.GONE);
+            }
             if (squatAlertText != null) {
                 squatAlertText.setVisibility(View.GONE);
             }
@@ -132,6 +137,8 @@ public class CameraActivity extends AppCompatActivity {
             metricConsistencyLabel.setText(R.string.camera_velocity_retention);
             metricConsistencyHint.setText(R.string.camera_vl20_hint);
             metricPeakAngle.setText("--");
+            metricHipAngle.setText("Hip --");
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
             metricStability.setText("--");
             progressConsistency.setProgress(0);
             squatAlertText.setVisibility(View.VISIBLE);
@@ -139,6 +146,7 @@ public class CameraActivity extends AppCompatActivity {
             squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
         } else {
             metricAngleLabel.setText(R.string.camera_peak_angle);
+            metricHipAngle.setVisibility(View.GONE);
             metricStabilityLabel.setText(R.string.camera_stability);
             metricConsistencyLabel.setText(R.string.camera_session_consistency);
             metricConsistencyHint.setText(R.string.camera_target_depth);
@@ -232,6 +240,14 @@ public class CameraActivity extends AppCompatActivity {
         Double kneeAngle = result.getKneeAngleDeg();
         if (kneeAngle != null) {
             metricPeakAngle.setText(String.format(Locale.US, "%.0f°", kneeAngle));
+        }
+
+        metricHipAngle.setVisibility(View.VISIBLE);
+        Double hipAngle = result.getHipAngleDeg();
+        if (hipAngle != null) {
+            metricHipAngle.setText(String.format(Locale.US, "Hip %.0f°", hipAngle));
+        } else {
+            metricHipAngle.setText("Hip --");
         }
 
         Double cvt = result.getCvtPercent();

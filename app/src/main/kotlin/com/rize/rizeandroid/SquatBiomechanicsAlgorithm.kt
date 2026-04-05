@@ -27,7 +27,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val TOP_POSITION_ANGLE = 155.0
 
         private const val DEPTH_ERROR_THRESHOLD = 45.0
-        private const val TRUNK_RISK_THRESHOLD = 80.0
+        private const val TRUNK_RISK_THRESHOLD = 55.0
+        private const val TRUNK_SEVERE_THRESHOLD = 45.0
 
         private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0
         private const val MIN_VALID_ROM_DEG = 25.0
@@ -54,6 +55,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var currentPeakConcentricVelocityDegS = 0.0
     private var currentPeakEccentricVelocityDegS = 0.0
     private var currentRepStartKneeAngleDeg = Double.MAX_VALUE
+    private val currentRepHipAnglesDeg = mutableListOf<Double>()
 
     private var lastDepthInsufficient = false
     private var lastTrunkLeanRisk = false
@@ -124,6 +126,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeakConcentricVelocityDegS = 0.0
         currentPeakEccentricVelocityDegS = 0.0
         currentRepStartKneeAngleDeg = Double.MAX_VALUE
+        currentRepHipAnglesDeg.clear()
 
         lastDepthInsufficient = false
         lastTrunkLeanRisk = false
@@ -138,6 +141,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     }
 
     private fun updateRepState(kneeAngleDeg: Double, hipAngleDeg: Double, angularVelocityDegS: Double) {
+        currentRepHipAnglesDeg.add(hipAngleDeg)
         when (phase) {
             RepPhase.IDLE -> {
                 if (kneeAngleDeg < START_DESCENT_ANGLE && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
@@ -184,6 +188,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentMinHipAngleDeg = hipAngleDeg
         currentPeakConcentricVelocityDegS = 0.0
         currentPeakEccentricVelocityDegS = 0.0
+        currentRepHipAnglesDeg.clear()
+        currentRepHipAnglesDeg.add(hipAngleDeg)
     }
 
     private fun completeRep() {
@@ -212,22 +218,32 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         val cvtSample = validBottomKneeAnglesByRep.takeLast(CVT_WINDOW_REPS)
         lastCvtPercent = computeCvt(cvtSample)
+
+        // Usamos el promedio de los 3 valores mas bajos para estabilizar ruido frame-a-frame.
+        val bottomHipAngleDeg = computeBottomHipAngle(currentRepHipAnglesDeg) ?: currentMinHipAngleDeg
         lastDepthInsufficient = currentMinKneeAngleDeg > DEPTH_ERROR_THRESHOLD
-        lastTrunkLeanRisk = currentMinHipAngleDeg < TRUNK_RISK_THRESHOLD
+        lastTrunkLeanRisk = bottomHipAngleDeg < TRUNK_RISK_THRESHOLD
+        val severeTrunkLeanRisk = bottomHipAngleDeg < TRUNK_SEVERE_THRESHOLD
 
         val cvt = lastCvtPercent ?: 0.0
         val hasInstability = cvt > 10.0
 
         lastTechnicalError = when {
-            hasInstability || (lastDepthInsufficient && lastTrunkLeanRisk) -> ErrorLevel.SEVERE
+            hasInstability || (lastDepthInsufficient && severeTrunkLeanRisk) -> ErrorLevel.SEVERE
             lastDepthInsufficient || lastTrunkLeanRisk || cvt >= 5.0 -> ErrorLevel.MODERATE
             else -> ErrorLevel.NONE
         }
 
         val depthMagnitude = if (lastDepthInsufficient) currentMinKneeAngleDeg - DEPTH_ERROR_THRESHOLD else 0.0
-        val trunkMagnitude = if (lastTrunkLeanRisk) TRUNK_RISK_THRESHOLD - currentMinHipAngleDeg else 0.0
+        val trunkMagnitude = if (lastTrunkLeanRisk) TRUNK_RISK_THRESHOLD - bottomHipAngleDeg else 0.0
         val instabilityMagnitude = if (hasInstability) cvt - 10.0 else 0.0
         lastErrorMagnitude = listOf(depthMagnitude, trunkMagnitude, instabilityMagnitude).maxOrNull()?.takeIf { it > 0.0 }
+    }
+
+    private fun computeBottomHipAngle(values: List<Double>): Double? {
+        if (values.isEmpty()) return null
+        val sampleSize = minOf(3, values.size)
+        return values.sorted().take(sampleSize).average()
     }
 
     private fun buildFatigueReason(): String? {

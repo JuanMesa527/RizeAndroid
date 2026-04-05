@@ -34,7 +34,7 @@ class SquatBiomechanicsAlgorithmTest {
         val algorithm = SquatBiomechanicsAlgorithm()
         var lastResult = AlgorithmResult()
 
-        buildRepSequence(bottomKneeAngle = 60.0, bottomHipAngle = 70.0, downFrames = 20, upFrames = 20)
+        buildRepSequence(bottomKneeAngle = 60.0, bottomHipAngle = 50.0, downFrames = 20, upFrames = 20)
             .forEach { frame -> lastResult = algorithm.process(frame) }
 
         assertEquals(1, lastResult.repCount)
