@@ -49,6 +49,27 @@
     <string name="camera_squat_alert_instability">Inestabilidad tecnica: reduce variabilidad.</string>
     <string name="camera_squat_alert_variability">Variabilidad moderada: busca reps consistentes.</string>
     <string name="camera_squat_alert_fatigue">Fatiga tecnica (VL20): considera cerrar la serie.</string>
+    <!-- Bench Press Camera -->
+    <string name="camera_elbow_angle">ELBOW ANGLE</string>
+    <string name="camera_abduction">ABDUCTION</string>
+    <string name="camera_bench_velocity_retention">Velocity Retention</string>
+    <string name="camera_bench_vl_hint">VL15/VL25 Fatigue Threshold</string>
+    <string name="camera_bench_status_ready">Posicionate de frente para iniciar el analisis.</string>
+    <string name="camera_bench_status_ok">Tecnica estable.</string>
+    <string name="camera_bench_alert_grip">Agarre demasiado ancho: reduce la distancia entre manos.</string>
+    <string name="camera_bench_alert_abduction_warning">Abduccion elevada (>45): acerca los codos al torso.</string>
+    <string name="camera_bench_alert_abduction_critical">Abduccion critica (>90): riesgo de lesion en hombro.</string>
+    <string name="camera_bench_alert_asymmetry">Asimetria bilateral detectada: iguala ambos codos.</string>
+    <string name="camera_bench_alert_depth">Profundidad insuficiente: baja los codos por debajo del torso.</string>
+    <string name="camera_bench_alert_extension">Extension incompleta: extiende los codos completamente.</string>
+    <string name="camera_bench_alert_sticking">Periodo de estancamiento detectado: considera asistencia.</string>
+    <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>
+    <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL25): considera cerrar la serie.</string>
+    <string name="camera_bench_alert_depth_and_extension">Corrige profundidad y extension en esta repeticion.</string>
+
+    <!-- Camera Switch -->
+    <string name="camera_switch">Switch Camera</string>
+
     <string name="camera_min">MIN</string>
     <string name="camera_avg">AVG</string>
     <string name="camera_optimal">OPTIMAL</string>

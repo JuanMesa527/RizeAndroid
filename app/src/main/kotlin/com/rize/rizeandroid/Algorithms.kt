@@ -4,7 +4,7 @@ class Algorithms {
 
     private val curlBiomechanics = CurlBiomechanicsAlgorithm()
     private val squatBiomechanics = SquatBiomechanicsAlgorithm()
-    // private val benchPressBiomechanics = BenchPressBiomechanicsAlgorithm()
+    private val benchPressBiomechanics = BenchPressBiomechanicsAlgorithm()
 
     private var activeAlgorithm: BiomechanicsAlgorithm = curlBiomechanics
 
@@ -22,7 +22,7 @@ class Algorithms {
         activeAlgorithm = when {
             exerciseName.contains("curl", ignoreCase = true) -> curlBiomechanics
             exerciseName.contains("squat", ignoreCase = true) -> squatBiomechanics
-            // exerciseName.contains("bench", ignoreCase = true) -> benchPressBiomechanics
+            exerciseName.contains("bench", ignoreCase = true) -> benchPressBiomechanics
             else -> curlBiomechanics
         }
         activeAlgorithm.reset()
@@ -65,7 +65,21 @@ data class AlgorithmResult(
     val cvtPercent: Double?          = null,
     val repCount: Int                = 0,
     val depthInsufficient: Boolean   = false,
-    val trunkLeanRisk: Boolean       = false
+    val trunkLeanRisk: Boolean       = false,
+    // Bench press specific
+    val elbowAngleDeg: Double?            = null,
+    val leftElbowAngleDeg: Double?        = null,
+    val rightElbowAngleDeg: Double?       = null,
+    val shoulderAbductionDeg: Double?     = null,
+    val gripWidthRatio: Double?           = null,
+    val bilateralAsymmetryDeg: Double?    = null,
+    val extensionIncompleteDeg: Double?   = null,
+    val stickingPeriodDetected: Boolean   = false,
+    val gripTooWide: Boolean              = false,
+    val shoulderAbductionRisk: Boolean    = false,
+    val bilateralAsymmetry: Boolean       = false,
+    val depthInsufficientBench: Boolean   = false,
+    val extensionIncomplete: Boolean      = false
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }

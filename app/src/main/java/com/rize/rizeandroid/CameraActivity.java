@@ -102,6 +102,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private boolean isCurlExercise = false;
     private boolean isSquatExercise = false;
+    private boolean isBenchPressExercise = false;
     private boolean isAnalyzedExercise = false;
 
     private void setupAlgorithms(String exerciseName) {
@@ -115,7 +116,8 @@ public class CameraActivity extends AppCompatActivity {
         String normalizedName = exerciseName == null ? "" : exerciseName.toLowerCase(Locale.US);
         isCurlExercise = normalizedName.contains("curl");
         isSquatExercise = normalizedName.contains("squat");
-        isAnalyzedExercise = isCurlExercise || isSquatExercise;
+        isBenchPressExercise = normalizedName.contains("bench");
+        isAnalyzedExercise = isCurlExercise || isSquatExercise || isBenchPressExercise;
 
         if (!isAnalyzedExercise) {
             // Ocultar las métricas para ejercicios sin análisis
@@ -144,6 +146,19 @@ public class CameraActivity extends AppCompatActivity {
             squatAlertText.setVisibility(View.VISIBLE);
             squatAlertText.setText(R.string.camera_squat_status_ready);
             squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+        } else if (isBenchPressExercise) {
+            metricAngleLabel.setText(R.string.camera_elbow_angle);
+            metricStabilityLabel.setText(R.string.camera_abduction);
+            metricConsistencyLabel.setText(R.string.camera_bench_velocity_retention);
+            metricConsistencyHint.setText(R.string.camera_bench_vl_hint);
+            metricPeakAngle.setText("--");
+            metricHipAngle.setText("L -- | R --");
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            metricStability.setText("--");
+            progressConsistency.setProgress(0);
+            squatAlertText.setVisibility(View.VISIBLE);
+            squatAlertText.setText(R.string.camera_bench_status_ready);
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
         } else {
             metricAngleLabel.setText(R.string.camera_peak_angle);
             metricHipAngle.setVisibility(View.GONE);
@@ -169,6 +184,10 @@ public class CameraActivity extends AppCompatActivity {
     private void onAlgorithmResult(AlgorithmResult result) {
         if (isSquatExercise) {
             onSquatResult(result);
+            return;
+        }
+        if (isBenchPressExercise) {
+            onBenchPressResult(result);
             return;
         }
 
@@ -308,10 +327,133 @@ public class CameraActivity extends AppCompatActivity {
         squatAlertText.setTextColor(color);
     }
 
+    // ── Bench Press ────────────────────────────────────────────────────────────
+
+    private void onBenchPressResult(AlgorithmResult result) {
+        // Angulo de codo primario
+        Double elbowAngle = result.getElbowAngleDeg();
+        if (elbowAngle != null) {
+            metricPeakAngle.setText(String.format(Locale.US, "%.0f°", elbowAngle));
+        }
+
+        // Angulos bilaterales (reutiliza metricHipAngle)
+        metricHipAngle.setVisibility(View.VISIBLE);
+        Double leftAngle = result.getLeftElbowAngleDeg();
+        Double rightAngle = result.getRightElbowAngleDeg();
+        if (leftAngle != null && rightAngle != null) {
+            metricHipAngle.setText(String.format(Locale.US, "L %.0f° | R %.0f°", leftAngle, rightAngle));
+            if (result.getBilateralAsymmetry()) {
+                metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.risk_red));
+            } else {
+                metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            }
+        } else if (leftAngle != null) {
+            metricHipAngle.setText(String.format(Locale.US, "L %.0f° | R --", leftAngle));
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+        } else if (rightAngle != null) {
+            metricHipAngle.setText(String.format(Locale.US, "L -- | R %.0f°", rightAngle));
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+        }
+
+        // Abduccion de hombro (reutiliza metricStability)
+        Double abduction = result.getShoulderAbductionDeg();
+        if (abduction != null) {
+            metricStability.setText(String.format(Locale.US, "%.0f°", abduction));
+        } else {
+            metricStability.setText("--");
+        }
+        int abductionColor;
+        if (abduction == null || abduction <= 45.0) {
+            abductionColor = ContextCompat.getColor(this, R.color.improvement_green);
+        } else if (abduction <= 90.0) {
+            abductionColor = ContextCompat.getColor(this, R.color.toasted_almond);
+        } else {
+            abductionColor = ContextCompat.getColor(this, R.color.risk_red);
+        }
+        metricStability.setTextColor(abductionColor);
+
+        // Retencion de velocidad
+        Double velocityLoss = result.getVelocityLossPercent();
+        if (velocityLoss != null) {
+            double retention = Math.max(0.0, 100.0 - velocityLoss);
+            progressConsistency.setProgress((int) Math.round(retention));
+        }
+
+        updateBenchPressAlert(result, velocityLoss);
+    }
+
+    private void updateBenchPressAlert(AlgorithmResult result, Double velocityLoss) {
+        if (squatAlertText == null) return;
+
+        int color = ContextCompat.getColor(this, R.color.improvement_green);
+        int messageRes = R.string.camera_bench_status_ok;
+
+        Double abduction = result.getShoulderAbductionDeg();
+
+        // P1: Abduccion critica (>90) — riesgo inmediato de lesion
+        if (abduction != null && abduction > 90.0) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_abduction_critical;
+        }
+        // P2: Periodo de estancamiento — fallo inminente
+        else if (result.getStickingPeriodDetected()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_sticking;
+        }
+        // P3: Fatiga critica VL25
+        else if (velocityLoss != null && velocityLoss >= 25.0) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_fatigue_vl25;
+        }
+        // P4: Profundidad + extension combinados
+        else if (result.getDepthInsufficientBench() && result.getExtensionIncomplete()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_depth_and_extension;
+        }
+        // P5: Profundidad insuficiente
+        else if (result.getDepthInsufficientBench()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_depth;
+        }
+        // P6: Extension incompleta
+        else if (result.getExtensionIncomplete()) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_bench_alert_extension;
+        }
+        // P7: Agarre demasiado ancho
+        else if (result.getGripTooWide()) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_bench_alert_grip;
+        }
+        // P8: Abduccion elevada (>45)
+        else if (abduction != null && abduction > 45.0) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_bench_alert_abduction_warning;
+        }
+        // P9: Asimetria bilateral
+        else if (result.getBilateralAsymmetry()) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_bench_alert_asymmetry;
+        }
+        // P10: Fatiga moderada VL15
+        else if (velocityLoss != null && velocityLoss >= 15.0) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_bench_alert_fatigue_vl15;
+        }
+
+        squatAlertText.setText(messageRes);
+        squatAlertText.setTextColor(color);
+    }
+
     // ── Resto sin cambios ─────────────────────────────────────────────────────
 
     private void setupToolbar() {
         findViewById(R.id.btn_back).setOnClickListener(v -> finishSession());
+        findViewById(R.id.btn_settings).setOnClickListener(v -> {
+            if (cameraViewManager != null) {
+                cameraViewManager.switchCamera();
+            }
+        });
     }
 
     private void setupBottomNav() {

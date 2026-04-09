@@ -87,11 +87,12 @@
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:src="@drawable/ic_settings"
+                android:src="@drawable/ic_camera_switch"
                 android:padding="8dp"
+                android:background="@drawable/bg_card_dark"
                 android:clickable="true"
                 android:focusable="true"
-                android:contentDescription="@string/camera_settings" />
+                android:contentDescription="@string/camera_switch" />
         </RelativeLayout>
 
         <!-- Camera Preview Container -->
