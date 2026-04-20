@@ -123,6 +123,30 @@ class PoseLandmarkerHelper(
         poseLandmarker?.detectAsync(mpImage, frameTime)
     }
 
+    /**
+     * Detects pose in a single video frame (RunningMode.VIDEO — synchronous).
+     * Returns a ResultBundle or null if detection fails.
+     */
+    fun detectVideoFrame(bitmap: Bitmap, frameTimestampMs: Long): ResultBundle? {
+        if (runningMode != RunningMode.VIDEO) {
+            throw IllegalArgumentException(
+                "Attempting to call detectVideoFrame while not using RunningMode.VIDEO"
+            )
+        }
+        val startTime = SystemClock.uptimeMillis()
+        val mpImage = BitmapImageBuilder(bitmap).build()
+
+        val result = poseLandmarker?.detectForVideo(mpImage, frameTimestampMs) ?: return null
+        val inferenceTime = SystemClock.uptimeMillis() - startTime
+
+        return ResultBundle(
+            listOf(result),
+            inferenceTime,
+            bitmap.height,
+            bitmap.width
+        )
+    }
+
     private fun returnLivestreamResult(
         result: PoseLandmarkerResult,
         input: MPImage
@@ -155,7 +179,7 @@ class PoseLandmarkerHelper(
         const val DEFAULT_POSE_PRESENCE_CONFIDENCE = 0.5F
         const val OTHER_ERROR = 0
         const val GPU_ERROR = 1
-        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_lite.task"
+        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_full.task"
     }
 
     data class ResultBundle(

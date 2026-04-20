@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-feature android:name="android.hardware.camera" android:required="true" />
 
     <application
@@ -29,6 +30,8 @@
         <activity android:name=".CameraActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".SummaryActivity" />
+        <activity android:name=".VideoAnalysisActivity"
+            android:screenOrientation="portrait" />
 
     </application>
 </manifest>
