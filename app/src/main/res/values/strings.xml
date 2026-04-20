@@ -56,7 +56,9 @@
     <string name="camera_bench_vl_hint">VL15/VL25 Fatigue Threshold</string>
     <string name="camera_bench_status_ready">Posicionate de frente para iniciar el analisis.</string>
     <string name="camera_bench_status_ok">Tecnica estable.</string>
-    <string name="camera_bench_alert_grip">Agarre demasiado ancho: reduce la distancia entre manos.</string>
+    <string name="camera_bench_alert_grip">Agarre excesivo: riesgo de hombro, acerca las manos.</string>
+    <string name="camera_bench_alert_grip_narrow">Agarre demasiado estrecho: separa un poco las manos.</string>
+    <string name="camera_bench_alert_grip_wide">Agarre ancho: ideal ~1.5-2.0x el ancho de hombros.</string>
     <string name="camera_bench_alert_abduction_warning">Abduccion elevada (>45): acerca los codos al torso.</string>
     <string name="camera_bench_alert_abduction_critical">Abduccion critica (>90): riesgo de lesion en hombro.</string>
     <string name="camera_bench_alert_asymmetry">Asimetria bilateral detectada: iguala ambos codos.</string>
@@ -66,6 +68,20 @@
     <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>
     <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL25): considera cerrar la serie.</string>
     <string name="camera_bench_alert_depth_and_extension">Corrige profundidad y extension en esta repeticion.</string>
+
+    <!-- Bench Press — Panel de 5 reglas -->
+    <string name="bench_rules_header">Reglas en tiempo real</string>
+    <string name="bench_rule_grip">Ancho de agarre</string>
+    <string name="bench_rule_abduction">Abduccion hombro</string>
+    <string name="bench_rule_symmetry">Simetria bilateral</string>
+    <string name="bench_rule_depth">Profundidad</string>
+    <string name="bench_rule_extension">Extension</string>
+    <string name="bench_reps_label">REPS</string>
+    <string name="bench_elbow_label">CODO</string>
+    <string name="bench_readiness_not_ready">NO LISTO</string>
+    <string name="bench_readiness_stabilizing">ESTABILIZANDO</string>
+    <string name="bench_readiness_ready">LISTO</string>
+    <string name="bench_status_placeholder">--</string>
 
     <!-- Camera Switch -->
     <string name="camera_switch">Switch Camera</string>

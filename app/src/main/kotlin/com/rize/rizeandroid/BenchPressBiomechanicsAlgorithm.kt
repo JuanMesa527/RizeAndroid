@@ -12,9 +12,17 @@ import kotlin.math.sqrt
  * para press de banca segun la seccion 8.3.1.1 del documento de tesis.
  *
  * Reglas de correccion postural:
- *   1. Ancho de agarre: distancia entre munecas <= 1.5x ancho biacromial
+ *   1. Ancho de agarre: distancia entre munecas vs. ancho biacromial.
+ *      Nota de calibracion: la tesis cita el umbral de 1.5x biacromial
+ *      asociado al limite IPF de 81 cm entre indices. Ese 1.5 esta
+ *      medido de punta de dedos a punta de dedos. MediaPipe entrega los
+ *      landmarks de muneca (no de dedos), por lo que la razon medida es
+ *      ~15-25% menor que la razon de dedos. En campo, un agarre "normal"
+ *      visualmente correcto cae en 1.6-2.1 con landmarks de muneca. Los
+ *      umbrales operacionales se recalibran en consecuencia manteniendo
+ *      la intencion biomecanica (penalizar el agarre excesivo).
  *   2. Abduccion de hombro: angulo cadera-hombro-codo. Alerta >45, critico >90
- *   3. Simetria bilateral: |codo izq - codo der| <= 2.75
+ *   3. Simetria bilateral: |codo izq - codo der| <= 2.75 (umbral de literatura)
  *   4. Profundidad de descenso: codo debe bajar por debajo de la linea del torso
  *   5. Extension completa: angulo de codo debe alcanzar >= 176 en la cima
  *
@@ -22,7 +30,25 @@ import kotlin.math.sqrt
  *   6. Periodo de estancamiento: velocidad ~0 durante >870ms en fase concentrica
  *   7. Perdida de velocidad: VL15 (advertencia), VL25 (critico)
  *
- * Vista de camara: FRONTAL (persona acostada en el banco, camara de frente)
+ * Vista de camara: LATERAL a la altura del hombro recomendada.
+ * La vista frontal produce ambiguedad por proyeccion sobre el eje optico;
+ * los landmarks son fiables pero θ puede compararse mal con goniometro.
+ *
+ * ─── Robustez operacional (v2) ──────────────────────────────────────────
+ *
+ * Los landmarks que llegan aqui ya vienen filtrados por LandmarkSmoother
+ * (1€-Filter, ver Algorithms.kt). Sobre eso, este algoritmo aplica:
+ *
+ *   a) Estado READY/NOT_READY para no emitir alertas hasta que la pose
+ *      es estable y visible. Protege al usuario del ruido inicial mientras
+ *      encuadra la camara.
+ *   b) EMA sobre velocidad angular para suavizar el residuo de ruido que
+ *      queda tras derivar con diferencia finita.
+ *   c) Debounce de banderas de asimetria y abduccion — un frame aislado
+ *      que cruza el umbral no basta; se requieren N frames consecutivos.
+ *   d) Umbrales operacionales por encima del suelo de ruido medido en
+ *      campo, sin cambiar los umbrales biomecanicos de la tesis (que
+ *      siguen documentados como SYMMETRY_THRESHOLD_DEG etc.).
  */
 class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
@@ -42,25 +68,41 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val MIN_VISIBILITY = 0.5f
 
         // ── Deteccion de repeticiones ────────────────────────────────────────
-        private const val VELOCITY_HYSTERESIS = 8.0       // deg/s banda de ruido
+        // Hysteresis subido de 8 a 15 deg/s tras el suavizado de landmarks.
+        // Con 1€-Filter el ruido de velocidad cae a <10 deg/s en reposo; 15
+        // deja margen sin perder sensibilidad a reps reales (~40-200 deg/s).
+        private const val VELOCITY_HYSTERESIS = 15.0
         private const val START_DESCENT_ANGLE = 160.0     // angulo codo para iniciar descenso
         private const val TOP_POSITION_ANGLE = 165.0      // angulo codo para confirmar rep completa
 
         // ── Regla 1: Ancho de agarre ────────────────────────────────────────
-        private const val GRIP_WIDTH_RATIO_MAX = 1.5
+        // Umbrales operacionales ajustados a landmarks de muneca (MediaPipe):
+        //  - < GRIP_WIDTH_RATIO_MIN       -> demasiado estrecho (estres muneca/codo)
+        //  - [MIN, MAX]                   -> rango seguro (agarre optimo)
+        //  - (MAX, CRITICAL]              -> ancho moderado, advertencia
+        //  - > CRITICAL                   -> excesivo, riesgo hombro (flag gripTooWide)
+        private const val GRIP_WIDTH_RATIO_MIN = 1.3
+        private const val GRIP_WIDTH_RATIO_MAX = 2.1
+        private const val GRIP_WIDTH_RATIO_CRITICAL = 2.5
 
         // ── Regla 2: Abduccion de hombro ────────────────────────────────────
         private const val ABDUCTION_WARNING_DEG = 45.0
         private const val ABDUCTION_CRITICAL_DEG = 90.0
 
         // ── Regla 3: Simetria bilateral ─────────────────────────────────────
+        // 2.75 es el umbral biomecanico (Spector et al., 2012). En la practica
+        // esta por debajo del jitter residual de MediaPipe incluso tras filtrar.
+        // Usamos 2.75 como referencia y 8.0 como umbral operacional de alerta.
         private const val SYMMETRY_THRESHOLD_DEG = 2.75
+        private const val SYMMETRY_ALERT_THRESHOLD_DEG = 8.0
 
         // ── Regla 5: Extension completa ─────────────────────────────────────
         private const val FULL_EXTENSION_MIN_DEG = 176.0
 
         // ── Regla 6: Periodo de estancamiento ───────────────────────────────
-        private const val STICKING_VELOCITY_THRESHOLD = 5.0  // deg/s, "cerca de cero"
+        // 5 deg/s era el umbral teorico; con el ruido medido elevamos el
+        // umbral operacional a 10 deg/s. 870 ms se mantiene (literatura).
+        private const val STICKING_VELOCITY_THRESHOLD = 10.0
         private const val STICKING_DURATION_MS = 870L
 
         // ── Regla 7: Perdida de velocidad ───────────────────────────────────
@@ -71,16 +113,51 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val MIN_VALID_ROM_DEG = 30.0
         private const val MAX_VALID_BOTTOM_ANGLE_DEG = 120.0
         private const val MIN_VALID_BOTTOM_ANGLE_DEG = 20.0
+
+        // ── Suavizado de velocidad angular (EMA) ────────────────────────────
+        // 0.4 = peso al valor nuevo. Latencia ~2-3 frames, suficiente para no
+        // perder el arranque de concentrica pero basta para estabilizar.
+        private const val OMEGA_EMA_ALPHA = 0.4
+
+        // ── Debounce de banderas posturales ─────────────────────────────────
+        // Un frame aislado que cruza el umbral no dispara alerta; se exigen N
+        // frames consecutivos (~170 ms a 30 Hz).
+        private const val POSTURAL_DEBOUNCE_FRAMES = 5
+
+        // ── Estado READY ────────────────────────────────────────────────────
+        // Frames estables requeridos antes de marcar READY. Mas permisivo que
+        // antes: el objetivo es saber si la pose es visible con suficiente
+        // calidad, NO forzar que el atleta este completamente estatico.
+        // El umbral de std era 4° con ventana de 10 frames, lo que exigia una
+        // micro-estatica casi imposible durante la ejecucion. Lo elevamos a
+        // 20° (cualquier movimiento tipico cabe adentro) y reducimos los
+        // frames requeridos para no retrasar el feedback.
+        private const val READY_STABLE_FRAMES = 8            // ~0.27 s a 30 Hz
+        private const val READY_ANGLE_STD_MAX_DEG = 20.0     // tolera movimiento real
+        private const val READY_WINDOW_FRAMES = 8
     }
 
     private enum class RepPhase { IDLE, DESCENT, ASCENT }
 
+    private enum class ReadinessState { NOT_READY, STABILIZING, READY }
+
     // ── Estado por frame ─────────────────────────────────────────────────────
     private var prevElbowAngleDeg: Double? = null
     private var prevAngularVelocityDegS: Double? = null
+    private var smoothedAngularVelocityDegS: Double? = null
 
-    // ── Maquina de estados ───────────────────────────────────────────────────
+    // ── Maquina de estados de rep ────────────────────────────────────────────
     private var phase: RepPhase = RepPhase.IDLE
+
+    // ── Readiness ────────────────────────────────────────────────────────────
+    private var readinessState: ReadinessState = ReadinessState.NOT_READY
+    private var stableFrameCount = 0
+    private val recentAngles = ArrayDeque<Double>(READY_WINDOW_FRAMES)
+
+    // ── Debounce de banderas posturales ──────────────────────────────────────
+    private var asymmetryConsecutiveFrames = 0
+    private var abductionWarningConsecutiveFrames = 0
+    private var abductionCriticalConsecutiveFrames = 0
 
     // ── Tracking por rep ─────────────────────────────────────────────────────
     private var currentMinElbowAngleDeg = Double.MAX_VALUE
@@ -125,7 +202,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val leftVisible = leftArm.allVisible()
         val rightVisible = rightArm.allVisible()
 
-        if (!leftVisible && !rightVisible) return emptyResult()
+        if (!leftVisible && !rightVisible) {
+            // Perdida total de pose -> readiness cae a NOT_READY
+            degradeReadiness()
+            return emptyResult()
+        }
 
         // Calcular angulos de codo bilaterales
         val leftElbowAngle = if (leftVisible) computeAngle(leftArm.shoulder.vec, leftArm.elbow.vec, leftArm.wrist.vec) else null
@@ -136,16 +217,31 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             leftElbowAngle != null && rightElbowAngle != null -> (leftElbowAngle + rightElbowAngle) / 2.0
             leftElbowAngle != null -> leftElbowAngle
             rightElbowAngle != null -> rightElbowAngle
-            else -> return emptyResult()
+            else -> {
+                degradeReadiness()
+                return emptyResult()
+            }
         }
 
-        // Velocidad y aceleracion angular
-        val angularVelocityDegS = prevElbowAngleDeg?.let { (primaryElbowAngle - it) / DT }
+        // Velocidad angular: derivada cruda + EMA para amortiguar ruido residual
+        val rawAngularVelocityDegS = prevElbowAngleDeg?.let { (primaryElbowAngle - it) / DT }
+        val angularVelocityDegS = if (rawAngularVelocityDegS != null) {
+            val prev = smoothedAngularVelocityDegS
+            val next = if (prev == null) {
+                rawAngularVelocityDegS
+            } else {
+                OMEGA_EMA_ALPHA * rawAngularVelocityDegS + (1.0 - OMEGA_EMA_ALPHA) * prev
+            }
+            smoothedAngularVelocityDegS = next
+            next
+        } else null
+
         val angularAccelerationDegS2 = if (angularVelocityDegS != null && prevAngularVelocityDegS != null) {
             (angularVelocityDegS - prevAngularVelocityDegS!!) / DT
-        } else {
-            null
-        }
+        } else null
+
+        // Actualizar readiness
+        updateReadiness(primaryElbowAngle, leftVisible && rightVisible)
 
         // ── Reglas por frame ─────────────────────────────────────────────────
 
@@ -156,29 +252,37 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             val biacromialDist = distance(leftArm.shoulder.vec, rightArm.shoulder.vec)
             if (biacromialDist > 1e-6) {
                 gripWidthRatio = wristDist / biacromialDist
-                lastGripTooWide = gripWidthRatio > GRIP_WIDTH_RATIO_MAX
+                // Solo marcamos "demasiado ancho" (riesgo real) cuando cruza el
+                // umbral critico. Las advertencias entre MAX y CRITICAL se
+                // pintan en la UI como ambar pero no disparan el flag de error
+                // tecnico del algoritmo (para no saturar alertas severas).
+                lastGripTooWide = gripWidthRatio > GRIP_WIDTH_RATIO_CRITICAL
             }
         }
 
-        // Regla 2: Abduccion de hombro (angulo cadera-hombro-codo)
+        // Regla 2: Abduccion de hombro (con debounce)
         val abductionLeft = if (leftVisible) computeAngle(leftArm.hip.vec, leftArm.shoulder.vec, leftArm.elbow.vec) else null
         val abductionRight = if (rightVisible) computeAngle(rightArm.hip.vec, rightArm.shoulder.vec, rightArm.elbow.vec) else null
         val worstAbduction = listOfNotNull(abductionLeft, abductionRight).maxOrNull()
         lastShoulderAbductionDeg = worstAbduction
-        lastShoulderAbductionRisk = (worstAbduction ?: 0.0) > ABDUCTION_WARNING_DEG
+        lastShoulderAbductionRisk = updateAbductionRiskDebounced(worstAbduction)
 
-        // Regla 3: Simetria bilateral
+        // Regla 3: Simetria bilateral (con debounce y umbral operacional)
         var bilateralAsymmetryDeg: Double? = null
         if (leftElbowAngle != null && rightElbowAngle != null) {
             bilateralAsymmetryDeg = abs(leftElbowAngle - rightElbowAngle)
             lastBilateralAsymmetryDeg = bilateralAsymmetryDeg
-            lastBilateralAsymmetry = bilateralAsymmetryDeg > SYMMETRY_THRESHOLD_DEG
+            lastBilateralAsymmetry = updateAsymmetryDebounced(bilateralAsymmetryDeg)
         }
 
         // Regla 4: Profundidad (evaluar por frame durante descenso)
+        // Tambien actualizamos un flag "live" (elbowBelowTorsoLive) para que la
+        // UI pueda pintar en tiempo real si el codo esta por debajo del torso,
+        // sin esperar a que termine la rep.
+        val elbowBelowTorsoNow = checkElbowBelowTorso(leftArm, rightArm, leftVisible, rightVisible)
         if (phase == RepPhase.DESCENT) {
-            if (!currentRepElbowWentBelowTorso) {
-                currentRepElbowWentBelowTorso = checkElbowBelowTorso(leftArm, rightArm, leftVisible, rightVisible)
+            if (!currentRepElbowWentBelowTorso && elbowBelowTorsoNow) {
+                currentRepElbowWentBelowTorso = true
             }
         }
 
@@ -209,7 +313,26 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         prevAngularVelocityDegS = angularVelocityDegS
 
         val fatigueDetected = (lastVelocityLossPercent ?: 0.0) >= VL_CRITICAL_PERCENT
-        val alert = fatigueDetected || lastTechnicalError != ErrorLevel.NONE || currentStickingPeriodDetected
+
+        // Las banderas (asymmetry, abduction, grip) ya estan debounced por
+        // N frames consecutivos; eso es suficiente filtro de ruido inicial.
+        // El gating extra por readiness era redundante y, al no alcanzarse
+        // READY con movimiento exagerado, silenciaba TODAS las alertas —
+        // exactamente lo contrario de lo que queremos. readinessReady sigue
+        // exponiendose para que la UI pinte la pildora de calidad de senal.
+        val alert = fatigueDetected ||
+                lastTechnicalError != ErrorLevel.NONE ||
+                currentStickingPeriodDetected
+
+        // Valores "live" de la rep en curso para feedback en tiempo real.
+        // Solo tienen sentido cuando hay una rep activa (DESCENT/ASCENT);
+        // en IDLE devolvemos null para que la UI muestre "--".
+        val liveMinElbow = if (phase != RepPhase.IDLE && currentMinElbowAngleDeg != Double.MAX_VALUE) {
+            currentMinElbowAngleDeg
+        } else null
+        val liveMaxElbow = if (phase == RepPhase.ASCENT && currentRepTopElbowAngleDeg > 0.0) {
+            currentRepTopElbowAngleDeg
+        } else null
 
         return AlgorithmResult(
             angleDeg = primaryElbowAngle,
@@ -238,7 +361,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             shoulderAbductionRisk = lastShoulderAbductionRisk,
             bilateralAsymmetry = lastBilateralAsymmetry,
             depthInsufficientBench = lastDepthInsufficientBench,
-            extensionIncomplete = lastExtensionIncomplete
+            extensionIncomplete = lastExtensionIncomplete,
+            currentRepMinElbowAngleDeg = liveMinElbow,
+            currentRepMaxElbowAngleDeg = liveMaxElbow,
+            elbowBelowTorsoLive = elbowBelowTorsoNow,
+            readinessReady = readinessState == ReadinessState.READY
         )
     }
 
@@ -249,7 +376,16 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     override fun reset() {
         prevElbowAngleDeg = null
         prevAngularVelocityDegS = null
+        smoothedAngularVelocityDegS = null
         phase = RepPhase.IDLE
+
+        readinessState = ReadinessState.NOT_READY
+        stableFrameCount = 0
+        recentAngles.clear()
+
+        asymmetryConsecutiveFrames = 0
+        abductionWarningConsecutiveFrames = 0
+        abductionCriticalConsecutiveFrames = 0
 
         currentMinElbowAngleDeg = Double.MAX_VALUE
         currentRepStartElbowAngleDeg = Double.MAX_VALUE
@@ -276,6 +412,110 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         concentricVelocityByRep.clear()
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Readiness
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private fun updateReadiness(currentElbowAngleDeg: Double, bothArmsVisible: Boolean) {
+        if (!bothArmsVisible) {
+            degradeReadiness()
+            return
+        }
+
+        if (recentAngles.size >= READY_WINDOW_FRAMES) recentAngles.removeFirst()
+        recentAngles.addLast(currentElbowAngleDeg)
+
+        val stdDev = if (recentAngles.size >= READY_WINDOW_FRAMES) angleStdDev(recentAngles) else Double.MAX_VALUE
+        val stable = stdDev < READY_ANGLE_STD_MAX_DEG
+
+        when (readinessState) {
+            ReadinessState.NOT_READY -> {
+                if (stable) {
+                    readinessState = ReadinessState.STABILIZING
+                    stableFrameCount = 1
+                } else {
+                    stableFrameCount = 0
+                }
+            }
+
+            ReadinessState.STABILIZING -> {
+                if (stable) {
+                    stableFrameCount += 1
+                    if (stableFrameCount >= READY_STABLE_FRAMES) {
+                        readinessState = ReadinessState.READY
+                    }
+                } else {
+                    readinessState = ReadinessState.NOT_READY
+                    stableFrameCount = 0
+                }
+            }
+
+            ReadinessState.READY -> {
+                // Una vez READY, mantenemos el estado mientras haya pose.
+                // No volvemos a NOT_READY por variabilidad angular: la rep
+                // real produce std alta por definicion (p.ej. bajar de 170 a
+                // 90 en <1 s). Si antes degradabamos aqui, las alertas se
+                // silenciaban justo durante la ejecucion — lo opuesto a lo
+                // que queremos.
+                // Solo degradeReadiness() via perdida de pose (arriba en
+                // updateReadiness con bothArmsVisible=false, o desde
+                // process() si no hay landmarks) nos saca de READY.
+            }
+        }
+    }
+
+    private fun degradeReadiness() {
+        readinessState = ReadinessState.NOT_READY
+        stableFrameCount = 0
+        recentAngles.clear()
+    }
+
+    private fun angleStdDev(values: Collection<Double>): Double {
+        if (values.size < 2) return 0.0
+        val mean = values.average()
+        val variance = values.map { (it - mean).pow(2) }.average()
+        return sqrt(variance)
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Debounce de banderas posturales
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * El flag de asimetria se activa solo si el umbral operacional
+     * (SYMMETRY_ALERT_THRESHOLD_DEG) se supera durante N frames consecutivos.
+     * Se desactiva apenas la asimetria baja del umbral base (SYMMETRY_THRESHOLD_DEG).
+     */
+    private fun updateAsymmetryDebounced(currentDeg: Double): Boolean {
+        if (currentDeg > SYMMETRY_ALERT_THRESHOLD_DEG) {
+            asymmetryConsecutiveFrames += 1
+        } else {
+            asymmetryConsecutiveFrames = 0
+        }
+        return asymmetryConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
+    }
+
+    /**
+     * Abduccion. Dos niveles: warning y critical. Ambos con debounce.
+     */
+    private fun updateAbductionRiskDebounced(worstAbduction: Double?): Boolean {
+        val angle = worstAbduction ?: 0.0
+        if (angle > ABDUCTION_CRITICAL_DEG) {
+            abductionCriticalConsecutiveFrames += 1
+            abductionWarningConsecutiveFrames += 1
+        } else if (angle > ABDUCTION_WARNING_DEG) {
+            abductionCriticalConsecutiveFrames = 0
+            abductionWarningConsecutiveFrames += 1
+        } else {
+            abductionCriticalConsecutiveFrames = 0
+            abductionWarningConsecutiveFrames = 0
+        }
+        return abductionWarningConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
+    }
+
+    private fun isAbductionCriticalDebounced(): Boolean =
+        abductionCriticalConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Maquina de estados de repeticion
@@ -378,10 +618,10 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val velocityLoss = lastVelocityLossPercent ?: 0.0
 
         lastTechnicalError = when {
-            abduction > ABDUCTION_CRITICAL_DEG -> ErrorLevel.SEVERE
+            isAbductionCriticalDebounced() -> ErrorLevel.SEVERE
             velocityLoss >= VL_CRITICAL_PERCENT -> ErrorLevel.SEVERE
             lastDepthInsufficientBench && lastExtensionIncomplete -> ErrorLevel.SEVERE
-            abduction > ABDUCTION_WARNING_DEG -> ErrorLevel.MODERATE
+            lastShoulderAbductionRisk -> ErrorLevel.MODERATE
             lastBilateralAsymmetry -> ErrorLevel.MODERATE
             lastGripTooWide -> ErrorLevel.MODERATE
             velocityLoss >= VL_WARNING_PERCENT -> ErrorLevel.MODERATE

@@ -19,4 +19,5 @@
 local.properties
 
 # MediaPipe model (large binary, download separately)
-app/src/main/assets/pose_landmarker_lite.task
+app/src/main/assets/
+tests
