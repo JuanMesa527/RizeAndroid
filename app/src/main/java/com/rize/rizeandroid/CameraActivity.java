@@ -242,23 +242,34 @@ public class CameraActivity extends AppCompatActivity {
             );
         }
 
-        // ── Estabilidad → metric_stability ────────────────────────────────────
-        // Target: 100 si no hay fatiga ni error, baja proporcionalmente.
-        // Usamos EMA para que suba y baje con rango completo 0-100.
-        double targetStability = 100.0;
-        if (result.getFatigueDetected())       targetStability -= 50.0;
-        switch (result.getTechnicalError()) {
-            case MILD:     targetStability -= 20.0; break;
-            case MODERATE: targetStability -= 50.0; break;
-            case SEVERE:   targetStability -= 80.0; break;
-            default: break;
+        // ── Estabilidad (continua 0-100) ──────────────────────────────────────
+        // Combina pérdida de velocidad (§7) + desviación del pico (§8) + compensación
+        // del hombro si disparó error severo. Todo continuo, sin saltos binarios.
+        double penaltyVL = 0.0;
+        if (result.getVelocityLossPercent() != null) {
+            // VL 0% → 0 penalización; VL 40% → 80 penalización (proporcional a Rodríguez-Rosell 2023)
+            penaltyVL = Math.min(80.0, result.getVelocityLossPercent() * 2.0);
         }
-        targetStability = Math.max(0.0, targetStability);
 
-        // EMA: emaStability = emaStability + alpha * (target - emaStability)
+        double penaltyError = 0.0;
+        if (result.getErrorMagnitude() != null) {
+            // Error 0° → 0; Error 30° (≈ δ₂ típico) → 60 penalización
+            penaltyError = Math.min(60.0, result.getErrorMagnitude() * 2.0);
+        }
+
+        // Extra si ya hay alerta severa por compensación de hombro (boost final)
+        double penaltyShoulder = 0.0;
+        if (result.getTechnicalError() == ErrorLevel.SEVERE
+                && result.getFatigueReason() != null
+                && result.getFatigueReason().contains("Compensación del hombro")) {
+            penaltyShoulder = 30.0;
+        }
+
+        double targetStability = Math.max(0.0,
+                100.0 - penaltyVL - penaltyError - penaltyShoulder);
+
         emaStability = emaStability + STABILITY_ALPHA * (targetStability - emaStability);
         int displayStability = (int) Math.round(emaStability);
-
         metricStability.setText(String.format(Locale.US, "%d%%", displayStability));
 
         int stabilityColor;
@@ -271,25 +282,22 @@ public class CameraActivity extends AppCompatActivity {
         }
         metricStability.setTextColor(stabilityColor);
 
-        // ── Consistencia → progress_consistency ───────────────────────────────
-        // Solo actualizamos tras 3 reps (cuando θ_ref ya está calibrado).
-        // EMA con alpha más alto para reflejar cambios entre reps claramente.
+        // ── Consistencia (continua, siempre que haya errorMagnitude) ──────────
+        // Tras el fix en el algoritmo, errorMagnitude se reporta en TODAS las
+        // reps calibradas (no solo cuando hay error). La barra sube si el usuario
+        // mejora y baja si empeora.
         if (result.getErrorMagnitude() != null) {
             double error = result.getErrorMagnitude();
-            // Mapea error [0°, 45°] → target [100, 0]
-            // Rango del curl en MediaPipe ~130° (paper Fig.5: 0°-130° relativo)
-            // Error máximo realista = 65° (mitad del rango total)
-            double targetConsistency = Math.max(0.0, 100.0 - (error / 65.0) * 100.0);
+            // Mapa: error 0° → 100%; error 40° → 0%
+            double targetConsistency = Math.max(0.0, 100.0 - (error / 40.0) * 100.0);
 
             if (emaConsistency < 0) {
-                // Primera vez que llega un dato real: inicializar en el valor actual
                 emaConsistency = targetConsistency;
             } else {
                 emaConsistency = emaConsistency + CONSISTENCY_ALPHA * (targetConsistency - emaConsistency);
             }
             progressConsistency.setProgress((int) Math.round(emaConsistency));
         }
-        // Si errorMagnitude == null → calibrando, barra en 0 sin tocar
     }
 
     private void onSquatResult(AlgorithmResult result) {
