@@ -33,7 +33,9 @@ public class SummaryActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
-        findViewById(R.id.nav_stats).setOnClickListener(v -> { /* Stats placeholder */ });
+        findViewById(R.id.nav_stats).setOnClickListener(v -> {
+            startActivity(new Intent(this, VideoAnalysisActivity.class));
+        });
     }
 
     private void navigateHome() {

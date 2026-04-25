@@ -14,18 +14,20 @@ import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
+import java.util.concurrent.atomic.AtomicBoolean
 
 class PoseLandmarkerHelper(
     var minPoseDetectionConfidence: Float = DEFAULT_POSE_DETECTION_CONFIDENCE,
     var minPoseTrackingConfidence: Float = DEFAULT_POSE_TRACKING_CONFIDENCE,
     var minPosePresenceConfidence: Float = DEFAULT_POSE_PRESENCE_CONFIDENCE,
-    var currentDelegate: Int = DELEGATE_CPU,
+    var currentDelegate: Int = DELEGATE_GPU,
     var runningMode: RunningMode = RunningMode.LIVE_STREAM,
     val context: Context,
     val poseLandmarkerHelperListener: LandmarkerListener? = null
 ) {
 
     private var poseLandmarker: PoseLandmarker? = null
+    private val isProcessing = AtomicBoolean(false)
 
     init {
         setupPoseLandmarker()
@@ -51,9 +53,11 @@ class PoseLandmarkerHelper(
             val optionsBuilder =
                 PoseLandmarker.PoseLandmarkerOptions.builder()
                     .setBaseOptions(baseOptions)
-                    .setMinPoseDetectionConfidence(0.6f)
-                    .setMinTrackingConfidence(0.6f)
-                    .setMinPosePresenceConfidence(0.6f)
+                    .setMinPoseDetectionConfidence(minPoseDetectionConfidence)
+                    .setMinTrackingConfidence(minPoseTrackingConfidence)
+                    .setMinPosePresenceConfidence(minPosePresenceConfidence)
+                    .setNumPoses(1)
+                    .setOutputSegmentationMasks(false)
                     .setRunningMode(runningMode)
 
             if (runningMode == RunningMode.LIVE_STREAM) {
@@ -70,10 +74,17 @@ class PoseLandmarkerHelper(
             )
             Log.e(TAG, "MediaPipe failed to load the task with error: " + e.message)
         } catch (e: RuntimeException) {
-            poseLandmarkerHelperListener?.onError(
-                "Pose Landmarker failed to initialize. See error logs for details", GPU_ERROR
-            )
-            Log.e(TAG, "Image classifier failed to load model with error: " + e.message)
+            Log.e(TAG, "Pose Landmarker failed with delegate=$currentDelegate: ${e.message}")
+            if (currentDelegate == DELEGATE_GPU) {
+                Log.w(TAG, "GPU delegate failed. Falling back to CPU.")
+                currentDelegate = DELEGATE_CPU
+                setupPoseLandmarker()
+            } else {
+                poseLandmarkerHelperListener?.onError(
+                    "Pose Landmarker failed to initialize. See error logs for details",
+                    GPU_ERROR
+                )
+            }
         }
     }
 
@@ -86,6 +97,12 @@ class PoseLandmarkerHelper(
                 "Attempting to call detectLiveStream while not using RunningMode.LIVE_STREAM"
             )
         }
+
+        if (!isProcessing.compareAndSet(false, true)) {
+            imageProxy.close()
+            return
+        }
+
         val frameTime = SystemClock.uptimeMillis()
 
         val bitmapBuffer =
@@ -95,7 +112,6 @@ class PoseLandmarkerHelper(
                 Bitmap.Config.ARGB_8888
             )
         imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
-        imageProxy.close()
 
         val matrix = Matrix().apply {
             postRotate(imageProxy.imageInfo.rotationDegrees.toFloat())
@@ -123,6 +139,30 @@ class PoseLandmarkerHelper(
         poseLandmarker?.detectAsync(mpImage, frameTime)
     }
 
+    /**
+     * Detects pose in a single video frame (RunningMode.VIDEO — synchronous).
+     * Returns a ResultBundle or null if detection fails.
+     */
+    fun detectVideoFrame(bitmap: Bitmap, frameTimestampMs: Long): ResultBundle? {
+        if (runningMode != RunningMode.VIDEO) {
+            throw IllegalArgumentException(
+                "Attempting to call detectVideoFrame while not using RunningMode.VIDEO"
+            )
+        }
+        val startTime = SystemClock.uptimeMillis()
+        val mpImage = BitmapImageBuilder(bitmap).build()
+
+        val result = poseLandmarker?.detectForVideo(mpImage, frameTimestampMs) ?: return null
+        val inferenceTime = SystemClock.uptimeMillis() - startTime
+
+        return ResultBundle(
+            listOf(result),
+            inferenceTime,
+            bitmap.height,
+            bitmap.width
+        )
+    }
+
     private fun returnLivestreamResult(
         result: PoseLandmarkerResult,
         input: MPImage
@@ -138,9 +178,11 @@ class PoseLandmarkerHelper(
                 input.width
             )
         )
+        isProcessing.set(false)
     }
 
     private fun returnLivestreamError(error: RuntimeException) {
+        isProcessing.set(false)
         poseLandmarkerHelperListener?.onError(
             error.message ?: "An unknown error has occurred"
         )
@@ -150,12 +192,12 @@ class PoseLandmarkerHelper(
         const val TAG = "PoseLandmarkerHelper"
         const val DELEGATE_CPU = 0
         const val DELEGATE_GPU = 1
-        const val DEFAULT_POSE_DETECTION_CONFIDENCE = 0.5F
-        const val DEFAULT_POSE_TRACKING_CONFIDENCE = 0.5F
-        const val DEFAULT_POSE_PRESENCE_CONFIDENCE = 0.5F
+        const val DEFAULT_POSE_DETECTION_CONFIDENCE = 0.6F
+        const val DEFAULT_POSE_TRACKING_CONFIDENCE = 0.7F
+        const val DEFAULT_POSE_PRESENCE_CONFIDENCE = 0.6F
         const val OTHER_ERROR = 0
         const val GPU_ERROR = 1
-        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_lite.task"
+        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_full.task"
     }
 
     data class ResultBundle(
