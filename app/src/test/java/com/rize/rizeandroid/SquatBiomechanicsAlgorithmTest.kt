@@ -23,10 +23,10 @@ class SquatBiomechanicsAlgorithmTest {
         buildRepSequence(bottomKneeAngle = 50.0, bottomHipAngle = 85.0, downFrames = 20, upFrames = 45)
             .forEach { frame -> lastResult = algorithm.process(frame) }
 
-        assertTrue(lastResult.repCount >= 2)
-        assertNotNull(lastResult.velocityLossPercent)
-        assertTrue((lastResult.velocityLossPercent ?: 0.0) > 20.0)
-        assertTrue(lastResult.fatigueDetected)
+        assertTrue("repCount=${lastResult.repCount}, cvt=${lastResult.cvtPercent}, velocityLoss=${lastResult.velocityLossPercent}", lastResult.repCount >= 2)
+        assertNotNull("velocityLoss=${lastResult.velocityLossPercent}", lastResult.velocityLossPercent)
+        assertTrue("velocityLoss=${lastResult.velocityLossPercent}", (lastResult.velocityLossPercent ?: 0.0) > 20.0)
+        assertTrue("fatigueDetected=${lastResult.fatigueDetected}, velocityLoss=${lastResult.velocityLossPercent}", lastResult.fatigueDetected)
     }
 
     @Test
@@ -37,10 +37,10 @@ class SquatBiomechanicsAlgorithmTest {
         buildRepSequence(bottomKneeAngle = 60.0, bottomHipAngle = 50.0, downFrames = 20, upFrames = 20)
             .forEach { frame -> lastResult = algorithm.process(frame) }
 
-        assertEquals(1, lastResult.repCount)
-        assertTrue(lastResult.depthInsufficient)
-        assertTrue(lastResult.trunkLeanRisk)
-        assertTrue(lastResult.technicalError != ErrorLevel.NONE)
+        assertEquals("repCount=${lastResult.repCount}, cvt=${lastResult.cvtPercent}, velocityLoss=${lastResult.velocityLossPercent}", 1, lastResult.repCount)
+        assertTrue("depthInsufficient=${lastResult.depthInsufficient}", lastResult.depthInsufficient)
+        assertTrue("trunkLeanRisk=${lastResult.trunkLeanRisk}", lastResult.trunkLeanRisk)
+        assertTrue("technicalError=${lastResult.technicalError}", lastResult.technicalError != ErrorLevel.NONE)
     }
 
     private fun buildRepSequence(

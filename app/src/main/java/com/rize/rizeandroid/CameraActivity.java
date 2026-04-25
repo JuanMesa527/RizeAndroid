@@ -45,6 +45,11 @@ public class CameraActivity extends AppCompatActivity {
     private double currentAngle = 0.0;
     private double peakAngle    = 0.0;
 
+    private Double lastSquatCvtDisplay = null;
+    private Double lastSquatRetentionDisplay = null;
+    private int lastSquatAlertTextRes = -1;
+    private int lastSquatAlertColor = -1;
+
     // EMA (Exponential Moving Average) — reacciona rápido a cambios reales.
     // Alpha alto (~0.1) = muy reactivo, Alpha bajo (~0.02) = muy suave.
     // Estabilidad: alpha bajo porque queremos tendencia, no saltos frame a frame
@@ -136,6 +141,10 @@ public class CameraActivity extends AppCompatActivity {
             metricStabilityLabel.setText(R.string.camera_cvt);
             metricConsistencyLabel.setText(R.string.camera_velocity_retention);
             metricConsistencyHint.setText(R.string.camera_vl20_hint);
+            lastSquatCvtDisplay = null;
+            lastSquatRetentionDisplay = null;
+            lastSquatAlertTextRes = -1;
+            lastSquatAlertColor = -1;
             metricPeakAngle.setText("--");
             metricHipAngle.setText("Hip --");
             metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
@@ -237,6 +246,8 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onSquatResult(AlgorithmResult result) {
+        int repCount = result.getRepCount();
+
         Double kneeAngle = result.getKneeAngleDeg();
         if (kneeAngle != null) {
             metricPeakAngle.setText(String.format(Locale.US, "%.0f°", kneeAngle));
@@ -252,7 +263,12 @@ public class CameraActivity extends AppCompatActivity {
 
         Double cvt = result.getCvtPercent();
         if (cvt != null) {
+            lastSquatCvtDisplay = cvt;
             metricStability.setText(String.format(Locale.US, "%.1f%%", cvt));
+        } else if (lastSquatCvtDisplay != null) {
+            metricStability.setText(String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay));
+        } else if (repCount > 0) {
+            metricStability.setText(getString(R.string.camera_squat_cvt_calibrating, repCount));
         } else {
             metricStability.setText("--");
         }
@@ -268,44 +284,106 @@ public class CameraActivity extends AppCompatActivity {
         metricStability.setTextColor(stabilityColor);
 
         Double velocityLoss = result.getVelocityLossPercent();
+        String velocityLossText = "--";
         if (velocityLoss != null) {
             double retention = Math.max(0.0, 100.0 - velocityLoss);
+            lastSquatRetentionDisplay = retention;
             progressConsistency.setProgress((int) Math.round(retention));
+            velocityLossText = String.format(Locale.US, "%.1f%%", velocityLoss);
+        } else if (lastSquatRetentionDisplay != null) {
+            progressConsistency.setProgress((int) Math.round(lastSquatRetentionDisplay));
+        } else if (repCount > 0) {
+            progressConsistency.setProgress(100);
         }
 
-        updateSquatAlert(result, cvt, velocityLoss);
+        String cvtDebugText = cvt != null
+                ? String.format(Locale.US, "%.1f%%", cvt)
+                : (lastSquatCvtDisplay != null
+                ? String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay)
+                : "--");
+        // Debug visible en vivo para validar que el flujo de métricas está activo.
+        metricConsistencyHint.setText(String.format(Locale.US, "Reps:%d | VL:%s | CVT:%s", repCount, velocityLossText, cvtDebugText));
+
+        updateSquatAlert(result, cvt, velocityLoss, repCount);
     }
 
-    private void updateSquatAlert(AlgorithmResult result, Double cvt, Double velocityLoss) {
+    private void updateSquatAlert(AlgorithmResult result, Double cvt, Double velocityLoss, int repCount) {
         if (squatAlertText == null) {
             return;
         }
 
         int color = ContextCompat.getColor(this, R.color.improvement_green);
-        int messageRes = R.string.camera_squat_status_ok;
+        int messageRes = R.string.camera_squat_status_ready;
 
+        if (repCount <= 0) {
+            if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
+                squatAlertText.setText(messageRes);
+                squatAlertText.setTextColor(color);
+                lastSquatAlertTextRes = messageRes;
+                lastSquatAlertColor = color;
+            }
+            squatAlertText.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        if (repCount < 2 && cvt == null && velocityLoss == null) {
+            color = ContextCompat.getColor(this, R.color.silver_2);
+            if (color != lastSquatAlertColor) {
+                squatAlertText.setTextColor(color);
+                lastSquatAlertColor = color;
+            }
+            String message = getString(R.string.camera_squat_status_calibrating, repCount);
+            if (!message.contentEquals(squatAlertText.getText())) {
+                squatAlertText.setText(message);
+            }
+            lastSquatAlertTextRes = -1;
+            squatAlertText.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        // Severidad 1: Problemas críticos (profundidad + inclinación)
         if (result.getDepthInsufficient() && result.getTrunkLeanRisk()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_depth_and_trunk;
-        } else if (result.getDepthInsufficient()) {
+        }
+        // Severidad 2: Solo profundidad insuficiente
+        else if (result.getDepthInsufficient()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_depth;
-        } else if (result.getTrunkLeanRisk()) {
+        }
+        // Severidad 3: Solo inclinación de tronco
+        else if (result.getTrunkLeanRisk()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_trunk;
-        } else if (cvt != null && cvt > 10.0) {
-            color = ContextCompat.getColor(this, R.color.risk_red);
-            messageRes = R.string.camera_squat_alert_instability;
-        } else if (velocityLoss != null && velocityLoss >= 20.0) {
+        }
+        // Severidad 4: Fatiga significativa (prioridad sobre inestabilidad)
+        else if (result.getFatigueDetected() || (velocityLoss != null && velocityLoss >= 20.0)) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_fatigue;
-        } else if (cvt != null && cvt >= 5.0) {
+        }
+        // Severidad 5: Inestabilidad severa (CVT > 10)
+        else if (cvt != null && cvt > 10.0) {
+            color = ContextCompat.getColor(this, R.color.risk_red);
+            messageRes = R.string.camera_squat_alert_instability;
+        }
+        // Advertencia: Variabilidad moderada (5-10)
+        else if (cvt != null && cvt >= 5.0 && cvt <= 10.0) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_squat_alert_variability;
         }
+        // OK: Todo bien
+        else {
+            color = ContextCompat.getColor(this, R.color.improvement_green);
+            messageRes = R.string.camera_squat_status_ok;
+        }
 
-        squatAlertText.setText(messageRes);
-        squatAlertText.setTextColor(color);
+        if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
+            squatAlertText.setText(messageRes);
+            squatAlertText.setTextColor(color);
+            lastSquatAlertTextRes = messageRes;
+            lastSquatAlertColor = color;
+        }
+        squatAlertText.setVisibility(View.VISIBLE);
     }
 
     // ── Resto sin cambios ─────────────────────────────────────────────────────

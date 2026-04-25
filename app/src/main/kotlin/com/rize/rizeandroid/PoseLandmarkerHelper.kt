@@ -51,9 +51,9 @@ class PoseLandmarkerHelper(
             val optionsBuilder =
                 PoseLandmarker.PoseLandmarkerOptions.builder()
                     .setBaseOptions(baseOptions)
-                    .setMinPoseDetectionConfidence(minPoseDetectionConfidence)
-                    .setMinTrackingConfidence(minPoseTrackingConfidence)
-                    .setMinPosePresenceConfidence(minPosePresenceConfidence)
+                    .setMinPoseDetectionConfidence(0.6f)
+                    .setMinTrackingConfidence(0.6f)
+                    .setMinPosePresenceConfidence(0.6f)
                     .setRunningMode(runningMode)
 
             if (runningMode == RunningMode.LIVE_STREAM) {

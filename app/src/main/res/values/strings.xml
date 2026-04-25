@@ -49,6 +49,8 @@
     <string name="camera_squat_alert_instability">Inestabilidad tecnica: reduce variabilidad.</string>
     <string name="camera_squat_alert_variability">Variabilidad moderada: busca reps consistentes.</string>
     <string name="camera_squat_alert_fatigue">Fatiga tecnica (VL20): considera cerrar la serie.</string>
+    <string name="camera_squat_status_calibrating">Calibrando CVT/fatiga (%1$d/2 reps).</string>
+    <string name="camera_squat_cvt_calibrating">Cal (%1$d/2)</string>
     <string name="camera_min">MIN</string>
     <string name="camera_avg">AVG</string>
     <string name="camera_optimal">OPTIMAL</string>

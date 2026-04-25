@@ -20,41 +20,53 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val SAMPLE_RATE_HZ = 30.0
         private const val DT = 1.0 / SAMPLE_RATE_HZ
 
-        private const val MIN_VISIBILITY = 0.5f
+        private const val MIN_VISIBILITY = 0.6f
         private const val VELOCITY_HYSTERESIS = 8.0
+        private const val REP_END_VELOCITY_EPS = 4.0
+        private const val REP_END_LOW_VELOCITY_FRAMES = 2
 
-        private const val START_DESCENT_ANGLE = 150.0
-        private const val TOP_POSITION_ANGLE = 155.0
+        private const val START_DESCENT_ANGLE = 165.0
+        private const val TOP_POSITION_ANGLE = 148.0
+        private const val MIN_ASCENT_RECOVERY_DEG = 20.0
 
         private const val DEPTH_ERROR_THRESHOLD = 45.0
         private const val TRUNK_RISK_THRESHOLD = 55.0
         private const val TRUNK_SEVERE_THRESHOLD = 45.0
 
+        // Suavizado exponencial de la velocidad angular: estable sin bloquear
+        // los cambios de signo que ocurren al pasar de descenso a ascenso.
+        private const val OMEGA_EMA_ALPHA = 0.4
+
         private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0
-        private const val MIN_VALID_ROM_DEG = 25.0
+        private const val MIN_VALID_ROM_DEG = 18.0
         private const val MAX_VALID_BOTTOM_ANGLE_DEG = 130.0
         private const val MIN_VALID_BOTTOM_ANGLE_DEG = 25.0
         private const val CVT_WINDOW_REPS = 6
 
-        // ── Validación de posición (lateral vs frontal) ────────────────────────────
-        // En vista lateral correcta, la coordenada X (izq-der) debe variar poco.
-        // En vista frontal, la X varía mucho. Detectamos esta diferencia.
-        private const val MAX_X_VARIANCE_LATERAL = 0.15  // Vista lateral: coordenadas X concentradas
-        private const val MIN_X_VARIANCE_FRONTAL = 0.30  // Vista frontal: mucha dispersión en X
+        private const val MAX_X_VARIANCE_LATERAL = 0.15
+        private const val MIN_X_VARIANCE_FRONTAL = 0.30
     }
 
     private enum class RepPhase { IDLE, DESCENT, ASCENT }
 
+    // ── Instancias de filtros ──────────────────────────────────────
+    private val kneeAngleFilter = AngleFilter(windowSize = 5, minChangeThreshold = 0.8)
+    private val hipAngleFilter = AngleFilter(windowSize = 5, minChangeThreshold = 1.0)
+
+    private var prevRawKneeAngleDeg: Double? = null
     private var prevKneeAngleDeg: Double? = null
     private var prevAngularVelocityDegS: Double? = null
+    private var smoothedAngularVelocityDegS: Double? = null
 
     private var phase: RepPhase = RepPhase.IDLE
 
     private var currentMinKneeAngleDeg = Double.MAX_VALUE
     private var currentMinHipAngleDeg = Double.MAX_VALUE
+    private var currentMinRawHipAngleDeg = Double.MAX_VALUE
     private var currentPeakConcentricVelocityDegS = 0.0
     private var currentPeakEccentricVelocityDegS = 0.0
     private var currentRepStartKneeAngleDeg = Double.MAX_VALUE
+    private var lowVelocityFramesInAscent = 0
     private val currentRepHipAnglesDeg = mutableListOf<Double>()
 
     private var lastDepthInsufficient = false
@@ -73,10 +85,28 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         val leg = selectLeg(landmarkFlatList) ?: return emptyResult()
 
-        val kneeAngleDeg = computeAngle(leg.hip.vec, leg.knee.vec, leg.ankle.vec)
-        val hipAngleDeg = computeAngle(leg.shoulder.vec, leg.hip.vec, leg.knee.vec)
+        val rawKneeAngleDeg = computeAngle(leg.hip.vec, leg.knee.vec, leg.ankle.vec)
+        val rawHipAngleDeg = computeAngle(leg.shoulder.vec, leg.hip.vec, leg.knee.vec)
 
-        val angularVelocityDegS = prevKneeAngleDeg?.let { (kneeAngleDeg - it) / DT }
+        // La derivada para repeticiones/fatiga se calcula sobre el ángulo crudo,
+        // mientras que el valor filtrado se usa para mostrar la métrica estable.
+        val rawAngularVelocityDegS = prevRawKneeAngleDeg?.let { (rawKneeAngleDeg - it) / DT }
+
+        // ── Aplicar filtros ──────────────────────────────────────────
+        val kneeAngleDeg = kneeAngleFilter.filter(rawKneeAngleDeg)
+        val hipAngleDeg = hipAngleFilter.filter(rawHipAngleDeg)
+
+        val angularVelocityDegS = rawAngularVelocityDegS?.let { raw ->
+            val previous = smoothedAngularVelocityDegS
+            val next = if (previous == null) {
+                raw
+            } else {
+                OMEGA_EMA_ALPHA * raw + (1.0 - OMEGA_EMA_ALPHA) * previous
+            }
+            smoothedAngularVelocityDegS = next
+            next
+        }
+
         val angularAccelerationDegS2 = if (angularVelocityDegS != null && prevAngularVelocityDegS != null) {
             (angularVelocityDegS - prevAngularVelocityDegS!!) / DT
         } else {
@@ -84,9 +114,10 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
 
         if (angularVelocityDegS != null) {
-            updateRepState(kneeAngleDeg, hipAngleDeg, angularVelocityDegS)
+            updateRepState(kneeAngleDeg, hipAngleDeg, rawHipAngleDeg, angularVelocityDegS)
         }
 
+        prevRawKneeAngleDeg = rawKneeAngleDeg
         prevKneeAngleDeg = kneeAngleDeg
         prevAngularVelocityDegS = angularVelocityDegS
 
@@ -117,15 +148,22 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     }
 
     override fun reset() {
+        kneeAngleFilter.reset()
+        hipAngleFilter.reset()
+
+        prevRawKneeAngleDeg = null
         prevKneeAngleDeg = null
         prevAngularVelocityDegS = null
+        smoothedAngularVelocityDegS = null
         phase = RepPhase.IDLE
 
         currentMinKneeAngleDeg = Double.MAX_VALUE
         currentMinHipAngleDeg = Double.MAX_VALUE
+        currentMinRawHipAngleDeg = Double.MAX_VALUE
         currentPeakConcentricVelocityDegS = 0.0
         currentPeakEccentricVelocityDegS = 0.0
         currentRepStartKneeAngleDeg = Double.MAX_VALUE
+        lowVelocityFramesInAscent = 0
         currentRepHipAnglesDeg.clear()
 
         lastDepthInsufficient = false
@@ -140,13 +178,13 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         validBottomKneeAnglesByRep.clear()
     }
 
-    private fun updateRepState(kneeAngleDeg: Double, hipAngleDeg: Double, angularVelocityDegS: Double) {
+    private fun updateRepState(kneeAngleDeg: Double, hipAngleDeg: Double, rawHipAngleDeg: Double, angularVelocityDegS: Double) {
         currentRepHipAnglesDeg.add(hipAngleDeg)
         when (phase) {
             RepPhase.IDLE -> {
                 if (kneeAngleDeg < START_DESCENT_ANGLE && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
                     phase = RepPhase.DESCENT
-                    startNewRepTracking(kneeAngleDeg, hipAngleDeg)
+                    startNewRepTracking(kneeAngleDeg, hipAngleDeg, rawHipAngleDeg)
                     currentPeakEccentricVelocityDegS = maxOf(currentPeakEccentricVelocityDegS, -angularVelocityDegS)
                 }
             }
@@ -154,6 +192,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             RepPhase.DESCENT -> {
                 currentMinKneeAngleDeg = minOf(currentMinKneeAngleDeg, kneeAngleDeg)
                 currentMinHipAngleDeg = minOf(currentMinHipAngleDeg, hipAngleDeg)
+                currentMinRawHipAngleDeg = minOf(currentMinRawHipAngleDeg, rawHipAngleDeg)
 
                 if (angularVelocityDegS < 0.0) {
                     currentPeakEccentricVelocityDegS = maxOf(currentPeakEccentricVelocityDegS, -angularVelocityDegS)
@@ -162,6 +201,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
                 // Cambio de fase alrededor del mínimo local de rodilla.
                 if (angularVelocityDegS > VELOCITY_HYSTERESIS) {
                     phase = RepPhase.ASCENT
+                    lowVelocityFramesInAscent = 0
                     currentPeakConcentricVelocityDegS = maxOf(currentPeakConcentricVelocityDegS, angularVelocityDegS)
                 }
             }
@@ -169,25 +209,48 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             RepPhase.ASCENT -> {
                 currentMinKneeAngleDeg = minOf(currentMinKneeAngleDeg, kneeAngleDeg)
                 currentMinHipAngleDeg = minOf(currentMinHipAngleDeg, hipAngleDeg)
+                currentMinRawHipAngleDeg = minOf(currentMinRawHipAngleDeg, rawHipAngleDeg)
 
                 if (angularVelocityDegS > 0.0) {
                     currentPeakConcentricVelocityDegS = maxOf(currentPeakConcentricVelocityDegS, angularVelocityDegS)
                 }
 
-                if (kneeAngleDeg >= TOP_POSITION_ANGLE && angularVelocityDegS > -VELOCITY_HYSTERESIS) {
+                val ascentRecoveredDeg = kneeAngleDeg - currentMinKneeAngleDeg
+                val reachedTopPosition = kneeAngleDeg >= TOP_POSITION_ANGLE && angularVelocityDegS > -VELOCITY_HYSTERESIS
+                if (kotlin.math.abs(angularVelocityDegS) <= REP_END_VELOCITY_EPS) {
+                    lowVelocityFramesInAscent += 1
+                } else {
+                    lowVelocityFramesInAscent = 0
+                }
+
+                // Fallback para cámara real: si ya recuperó ROM suficiente y la
+                // velocidad se estabiliza cerca de 0, cerramos la repetición aun
+                // sin llegar al lockout ideal.
+                val reachedAscentPlateau = ascentRecoveredDeg >= MIN_ASCENT_RECOVERY_DEG
+                        && lowVelocityFramesInAscent >= REP_END_LOW_VELOCITY_FRAMES
+
+                // Si ya recuperó ROM y comienza un nuevo descenso, cerramos la
+                // repetición anterior para no perder conteo por falta de lockout.
+                val startedNextDescent = ascentRecoveredDeg >= MIN_ASCENT_RECOVERY_DEG
+                        && angularVelocityDegS < -VELOCITY_HYSTERESIS
+
+                if (reachedTopPosition || reachedAscentPlateau || startedNextDescent) {
                     completeRep()
                     phase = RepPhase.IDLE
+                    lowVelocityFramesInAscent = 0
                 }
             }
         }
     }
 
-    private fun startNewRepTracking(kneeAngleDeg: Double, hipAngleDeg: Double) {
+    private fun startNewRepTracking(kneeAngleDeg: Double, hipAngleDeg: Double, rawHipAngleDeg: Double) {
         currentRepStartKneeAngleDeg = kneeAngleDeg
         currentMinKneeAngleDeg = kneeAngleDeg
         currentMinHipAngleDeg = hipAngleDeg
+        currentMinRawHipAngleDeg = rawHipAngleDeg
         currentPeakConcentricVelocityDegS = 0.0
         currentPeakEccentricVelocityDegS = 0.0
+        lowVelocityFramesInAscent = 0
         currentRepHipAnglesDeg.clear()
         currentRepHipAnglesDeg.add(hipAngleDeg)
     }
@@ -219,8 +282,9 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val cvtSample = validBottomKneeAnglesByRep.takeLast(CVT_WINDOW_REPS)
         lastCvtPercent = computeCvt(cvtSample)
 
-        // Usamos el promedio de los 3 valores mas bajos para estabilizar ruido frame-a-frame.
-        val bottomHipAngleDeg = computeBottomHipAngle(currentRepHipAnglesDeg) ?: currentMinHipAngleDeg
+        // Usamos el mínimo real de la cadera como referencia principal para no
+        // ocultar una inclinación marcada cuando el fondo de la rep es corto.
+        val bottomHipAngleDeg = minOf(currentMinRawHipAngleDeg, currentMinHipAngleDeg)
         lastDepthInsufficient = currentMinKneeAngleDeg > DEPTH_ERROR_THRESHOLD
         lastTrunkLeanRisk = bottomHipAngleDeg < TRUNK_RISK_THRESHOLD
         val severeTrunkLeanRisk = bottomHipAngleDeg < TRUNK_SEVERE_THRESHOLD
