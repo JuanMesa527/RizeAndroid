@@ -114,7 +114,10 @@ public class CameraActivity extends AppCompatActivity {
 
         String exerciseName = getIntent().getStringExtra("exercise_name");
         if (exerciseName != null) {
-            cameraTitle.setText(exerciseName.toUpperCase(Locale.US) + " ANALYSIS");
+            cameraTitle.setText(getString(
+                    R.string.camera_title_analysis_format,
+                    exerciseName.toUpperCase(Locale.US)
+            ));
         }
 
         setupToolbar();
@@ -191,7 +194,7 @@ public class CameraActivity extends AppCompatActivity {
             lastSquatAlertTextRes = -1;
             lastSquatAlertColor = -1;
             metricPeakAngle.setText("--");
-            metricHipAngle.setText("Hip --");
+            metricHipAngle.setText(R.string.camera_hip_placeholder);
             metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
             metricStability.setText("--");
             progressConsistency.setProgress(0);
@@ -321,9 +324,9 @@ public class CameraActivity extends AppCompatActivity {
         metricHipAngle.setVisibility(View.VISIBLE);
         Double hipAngle = result.getHipAngleDeg();
         if (hipAngle != null) {
-            metricHipAngle.setText(String.format(Locale.US, "Hip %.0f°", hipAngle));
+            metricHipAngle.setText(getString(R.string.camera_hip_angle_format, hipAngle));
         } else {
-            metricHipAngle.setText("Hip --");
+            metricHipAngle.setText(R.string.camera_hip_placeholder);
         }
 
         Double cvt = result.getCvtPercent();
@@ -333,7 +336,7 @@ public class CameraActivity extends AppCompatActivity {
         } else if (lastSquatCvtDisplay != null) {
             metricStability.setText(String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay));
         } else if (repCount > 0) {
-            metricStability.setText(getString(R.string.camera_squat_cvt_calibrating, repCount));
+            metricStability.setText(getString(R.string.camera_squat_cvt_calibrando, repCount));
         } else {
             metricStability.setText("--");
         }
@@ -361,13 +364,19 @@ public class CameraActivity extends AppCompatActivity {
             progressConsistency.setProgress(100);
         }
 
-        String cvtDebugText = cvt != null
-                ? String.format(Locale.US, "%.1f%%", cvt)
-                : (lastSquatCvtDisplay != null
-                ? String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay)
-                : "--");
-        // Debug visible en vivo para validar que el flujo de métricas está activo.
-        metricConsistencyHint.setText(String.format(Locale.US, "Reps:%d | VL:%s | CVT:%s", repCount, velocityLossText, cvtDebugText));
+        // En release mantenemos el hint funcional; en debug mostramos trazas de validacion.
+        boolean isDebuggable = (getApplicationInfo().flags
+                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (isDebuggable) {
+            String cvtDebugText = cvt != null
+                    ? String.format(Locale.US, "%.1f%%", cvt)
+                    : (lastSquatCvtDisplay != null
+                    ? String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay)
+                    : "--");
+            metricConsistencyHint.setText(String.format(Locale.US, "Reps:%d | VL:%s | CVT:%s", repCount, velocityLossText, cvtDebugText));
+        } else {
+            metricConsistencyHint.setText(R.string.camera_vl20_hint);
+        }
 
         updateSquatAlert(result, cvt, velocityLoss, repCount);
     }
@@ -397,7 +406,7 @@ public class CameraActivity extends AppCompatActivity {
                 squatAlertText.setTextColor(color);
                 lastSquatAlertColor = color;
             }
-            String message = getString(R.string.camera_squat_status_calibrating, repCount);
+            String message = getString(R.string.camera_squat_status_calibrando, repCount);
             if (!message.contentEquals(squatAlertText.getText())) {
                 squatAlertText.setText(message);
             }
@@ -432,7 +441,7 @@ public class CameraActivity extends AppCompatActivity {
             messageRes = R.string.camera_squat_alert_instability;
         }
         // Advertencia: Variabilidad moderada (5-10)
-        else if (cvt != null && cvt >= 5.0 && cvt <= 10.0) {
+        else if (cvt != null && cvt >= 5.0) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_squat_alert_variability;
         }
@@ -561,7 +570,7 @@ public class CameraActivity extends AppCompatActivity {
         int depthStatus;
         if (result.getDepthInsufficientBench() && minElbow == null) {
             // No hay rep activa y la ultima fue insuficiente
-            depthTxt = "Falta";
+            depthTxt = getString(R.string.camera_value_missing);
             depthStatus = STATUS_RISK;
         } else if (minElbow != null) {
             depthTxt = String.format(Locale.US, "%.0f° min", minElbow);
@@ -585,7 +594,7 @@ public class CameraActivity extends AppCompatActivity {
             if (extMissDeg != null) {
                 extTxt = String.format(Locale.US, "-%.0f°", extMissDeg);
             } else {
-                extTxt = "Falta";
+                extTxt = getString(R.string.camera_value_missing);
             }
             extStatus = STATUS_RISK;
         } else if (maxElbow != null) {
@@ -799,7 +808,7 @@ public class CameraActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startCamera();
             } else {
-                Toast.makeText(this, "Camera permission is required", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.camera_permission_required, Toast.LENGTH_LONG).show();
                 finish();
             }
         }

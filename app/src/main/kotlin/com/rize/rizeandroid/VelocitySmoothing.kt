@@ -25,8 +25,11 @@ class VelocitySmoothing(
         // de dirección. Un cambio de signo es esperado en sentadilla (descenso
         // -> ascenso), así que no debe quedar bloqueado por este filtro.
         if (previous != null) {
-            val sameDirection = rawVelocity == 0.0 || previous == 0.0 || (rawVelocity > 0.0) == (previous > 0.0)
-            if (sameDirection && abs(rawVelocity - previous) > outlierThreshold) {
+            // Evita clasificar como outlier el primer cambio real desde reposo
+            // (p. ej. 0 -> -180 deg/s al iniciar descenso).
+            val sameDirection = rawVelocity * previous > 0.0
+            val previousIsStable = abs(previous) >= 1.0
+            if (previousIsStable && sameDirection && abs(rawVelocity - previous) > outlierThreshold) {
                 return previous
             }
         }

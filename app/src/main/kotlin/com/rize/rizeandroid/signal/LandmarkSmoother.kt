@@ -1,7 +1,6 @@
 package com.rize.rizeandroid.signal
 
-/**
- * Suavizador temporal para los 33 landmarks de MediaPipe Pose.
+/** Suavizador temporal para los 33 landmarks de MediaPipe Pose.
  *
  * Aplica un filtro 1€ independiente a cada componente (x, y, z) de cada
  * landmark, y un EMA ligero sobre visibility. Recibe el flat-list de 132

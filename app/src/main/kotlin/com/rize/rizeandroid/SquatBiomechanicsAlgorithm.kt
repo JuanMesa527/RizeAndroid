@@ -21,9 +21,11 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val DT = 1.0 / SAMPLE_RATE_HZ
 
         private const val MIN_VISIBILITY = 0.6f
-        private const val VELOCITY_HYSTERESIS = 8.0
-        private const val REP_END_VELOCITY_EPS = 4.0
-        private const val REP_END_LOW_VELOCITY_FRAMES = 2
+        // Aumentado levemente de 5.5 a 6.5 deg/s para compensar ruido del smoother
+        // menos suave. Ahora los landmarks siguen de cerca el movimiento.
+        private const val VELOCITY_HYSTERESIS = 6.5
+        private const val REP_END_VELOCITY_EPS = 6.5
+        private const val REP_END_LOW_VELOCITY_FRAMES = 1
 
         private const val START_DESCENT_ANGLE = 165.0
         private const val TOP_POSITION_ANGLE = 148.0
@@ -45,13 +47,20 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         private const val MAX_X_VARIANCE_LATERAL = 0.15
         private const val MIN_X_VARIANCE_FRONTAL = 0.30
+
+        // Requiere algunos frames continuos con pose valida antes de habilitar
+        // deteccion de repeticiones; reduce falsos positivos al encuadrar.
+        private const val READY_VISIBLE_FRAMES = 6
     }
 
     private enum class RepPhase { IDLE, DESCENT, ASCENT }
 
-    // ── Instancias de filtros ──────────────────────────────────────
-    private val kneeAngleFilter = AngleFilter(windowSize = 5, minChangeThreshold = 0.8)
-    private val hipAngleFilter = AngleFilter(windowSize = 5, minChangeThreshold = 1.0)
+    // ELIMINADO: VelocitySmoothing no es necesario.
+    // Los landmarks ya llegan estabilizados por LandmarkSmoother (filtro 1€),
+    // por lo que la velocidad derivada es relativamente limpia.
+    // Mantener doble suavizado añade ~2-3 frames de latencia innecesarios
+    // que retrasan la detección de cambios de fase (DESCENT→ASCENT).
+    // private val velocitySmoothing = VelocitySmoothing(windowSize = 3, outlierThreshold = 70.0)
 
     private var prevRawKneeAngleDeg: Double? = null
     private var prevKneeAngleDeg: Double? = null
@@ -80,10 +89,18 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private val concentricVelocityByRep = mutableListOf<Double>()
     private val validBottomKneeAnglesByRep = mutableListOf<Double>()
 
+    private var visiblePoseFrames = 0
+
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
         if (landmarkFlatList.size < 132) return emptyResult()
 
-        val leg = selectLeg(landmarkFlatList) ?: return emptyResult()
+        val leg = selectLeg(landmarkFlatList) ?: run {
+            visiblePoseFrames = 0
+            resetTransientRepState()
+            return emptyResult()
+        }
+        visiblePoseFrames += 1
+        val readinessReady = visiblePoseFrames >= READY_VISIBLE_FRAMES
 
         val rawKneeAngleDeg = computeAngle(leg.hip.vec, leg.knee.vec, leg.ankle.vec)
         val rawHipAngleDeg = computeAngle(leg.shoulder.vec, leg.hip.vec, leg.knee.vec)
@@ -92,19 +109,17 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // mientras que el valor filtrado se usa para mostrar la métrica estable.
         val rawAngularVelocityDegS = prevRawKneeAngleDeg?.let { (rawKneeAngleDeg - it) / DT }
 
-        // ── Aplicar filtros ──────────────────────────────────────────
-        val kneeAngleDeg = kneeAngleFilter.filter(rawKneeAngleDeg)
-        val hipAngleDeg = hipAngleFilter.filter(rawHipAngleDeg)
+        // No aplicamos un segundo filtro de angulo aqui para evitar sobre-suavizado
+        // que puede retrasar/cancelar cierres de rep. Se usa el angulo directo del
+        // landmark ya filtrado temporalmente en el pipeline comun.
+        val kneeAngleDeg = rawKneeAngleDeg
+        val hipAngleDeg = rawHipAngleDeg
 
+        // La velocidad angular ya está relativamente limpia porque los landmarks
+        // vienen filtrados por LandmarkSmoother. Usar directamente sin suavizado adicional.
         val angularVelocityDegS = rawAngularVelocityDegS?.let { raw ->
-            val previous = smoothedAngularVelocityDegS
-            val next = if (previous == null) {
-                raw
-            } else {
-                OMEGA_EMA_ALPHA * raw + (1.0 - OMEGA_EMA_ALPHA) * previous
-            }
-            smoothedAngularVelocityDegS = next
-            next
+            smoothedAngularVelocityDegS = raw
+            raw
         }
 
         val angularAccelerationDegS2 = if (angularVelocityDegS != null && prevAngularVelocityDegS != null) {
@@ -113,8 +128,10 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             null
         }
 
-        if (angularVelocityDegS != null) {
+        if (angularVelocityDegS != null && readinessReady) {
             updateRepState(kneeAngleDeg, hipAngleDeg, rawHipAngleDeg, angularVelocityDegS)
+        } else if (!readinessReady) {
+            resetTransientRepState()
         }
 
         prevRawKneeAngleDeg = rawKneeAngleDeg
@@ -143,19 +160,19 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             cvtPercent = lastCvtPercent,
             repCount = repCount,
             depthInsufficient = lastDepthInsufficient,
-            trunkLeanRisk = lastTrunkLeanRisk
+            trunkLeanRisk = lastTrunkLeanRisk,
+            readinessReady = readinessReady
         )
     }
 
     override fun reset() {
-        kneeAngleFilter.reset()
-        hipAngleFilter.reset()
 
         prevRawKneeAngleDeg = null
         prevKneeAngleDeg = null
         prevAngularVelocityDegS = null
         smoothedAngularVelocityDegS = null
-        phase = RepPhase.IDLE
+        visiblePoseFrames = 0
+        resetTransientRepState()
 
         currentMinKneeAngleDeg = Double.MAX_VALUE
         currentMinHipAngleDeg = Double.MAX_VALUE
@@ -176,6 +193,18 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         repCount = 0
         concentricVelocityByRep.clear()
         validBottomKneeAnglesByRep.clear()
+    }
+
+    private fun resetTransientRepState() {
+        phase = RepPhase.IDLE
+        currentMinKneeAngleDeg = Double.MAX_VALUE
+        currentMinHipAngleDeg = Double.MAX_VALUE
+        currentMinRawHipAngleDeg = Double.MAX_VALUE
+        currentPeakConcentricVelocityDegS = 0.0
+        currentPeakEccentricVelocityDegS = 0.0
+        currentRepStartKneeAngleDeg = Double.MAX_VALUE
+        lowVelocityFramesInAscent = 0
+        currentRepHipAnglesDeg.clear()
     }
 
     private fun updateRepState(kneeAngleDeg: Double, hipAngleDeg: Double, rawHipAngleDeg: Double, angularVelocityDegS: Double) {
@@ -348,8 +377,13 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rightOk = rightVisibility.all { it >= MIN_VISIBILITY }
         val leftOk = leftVisibility.all { it >= MIN_VISIBILITY }
 
+        // Optimización: calcular promedios solo si ambas piernas son válidas
         return when {
-            rightOk && leftOk -> if (rightVisibility.average() >= leftVisibility.average()) right else left
+            rightOk && leftOk -> {
+                val rightAvg = rightVisibility.average()
+                val leftAvg = leftVisibility.average()
+                if (rightAvg >= leftAvg) right else left
+            }
             rightOk -> right
             leftOk -> left
             else -> null
