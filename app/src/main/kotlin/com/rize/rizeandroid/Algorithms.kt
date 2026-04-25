@@ -21,6 +21,17 @@ class Algorithms {
      */
     private val landmarkSmoother = LandmarkSmoother()
 
+    /**
+     * Suavizador AGRESIVAMENTE OPTIMIZADO para SENTADILLA.
+     * MÁXIMA responsividad para seguir movimientos rápidos:
+     *   minCutoff = 2.0 Hz   — mucho más agresivo, responde al movimiento rápido
+     *   beta      = 0.08     — ALTO, se adapta bien a aceleraciones
+     *
+     * Esto es necesario para reps rápidas. Los landmarks siguen casi sin delay
+     * la velocidad real del movimiento.
+     */
+    private val landmarkSmootherForSquat = LandmarkSmoother(minCutoff = 2.0, beta = 0.08)
+
     var currentResult: AlgorithmResult? = null
         private set
 
@@ -40,13 +51,20 @@ class Algorithms {
         }
         activeAlgorithm.reset()
         landmarkSmoother.reset()
+        landmarkSmootherForSquat.reset()
+    }
+
+    private fun getCurrentSmoother(): LandmarkSmoother {
+        return if (activeAlgorithm === squatBiomechanics) {
+            landmarkSmootherForSquat
+        } else {
+            landmarkSmoother
+        }
     }
 
     fun onPoseData(landmarkFlatList: List<Double>) {
-        val smoothed = landmarkSmoother.filter(
-            landmarkFlatList,
-            System.currentTimeMillis()
-        )
+        val smoother = getCurrentSmoother()
+        val smoothed = smoother.filter(landmarkFlatList, System.currentTimeMillis())
         val result = activeAlgorithm.process(smoothed)
         currentResult = result
         onResult?.invoke(result)
@@ -58,7 +76,8 @@ class Algorithms {
      * maneja la linea temporal de captura.
      */
     fun onPoseData(landmarkFlatList: List<Double>, timestampMs: Long) {
-        val smoothed = landmarkSmoother.filter(landmarkFlatList, timestampMs)
+        val smoother = getCurrentSmoother()
+        val smoothed = smoother.filter(landmarkFlatList, timestampMs)
         val result = activeAlgorithm.process(smoothed)
         currentResult = result
         onResult?.invoke(result)
@@ -67,6 +86,7 @@ class Algorithms {
     fun reset() {
         activeAlgorithm.reset()
         landmarkSmoother.reset()
+        landmarkSmootherForSquat.reset()
         currentResult = null
     }
 }

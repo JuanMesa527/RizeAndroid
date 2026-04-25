@@ -197,7 +197,7 @@ class PoseLandmarkerHelper(
         const val DEFAULT_POSE_PRESENCE_CONFIDENCE = 0.6F
         const val OTHER_ERROR = 0
         const val GPU_ERROR = 1
-        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_full.task"
+        const val MP_POSE_LANDMARKER_TASK = "pose_landmarker_lite.task"
     }
 
     data class ResultBundle(

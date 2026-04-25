@@ -37,6 +37,13 @@
     <string name="camera_stability">STABILITY</string>
     <string name="camera_session_consistency">Session Consistency</string>
     <string name="camera_target_depth">65% Target Depth</string>
+    <string name="camera_title_analysis_format">%1$s ANALYSIS</string>
+    <string name="camera_hip_placeholder">Hip --</string>
+    <string name="camera_hip_angle_format">Hip %1$.0f°</string>
+    <string name="camera_value_missing">Falta</string>
+    <string name="camera_permission_required">Camera permission is required</string>
+    <string name="camera_squat_cvt_calibrando">CVT calibrando (rep %1$d)</string>
+    <string name="camera_squat_status_calibrando">Calibrando metrica... rep %1$d</string>
     <string name="camera_knee_angle">KNEE ANGLE</string>
     <string name="camera_cvt">TECHNICAL CVT</string>
     <string name="camera_velocity_retention">Velocity Retention</string>
