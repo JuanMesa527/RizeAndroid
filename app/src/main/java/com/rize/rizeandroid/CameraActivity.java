@@ -68,11 +68,11 @@ public class CameraActivity extends AppCompatActivity {
     // EMA (Exponential Moving Average) — reacciona rápido a cambios reales.
     // Alpha alto (~0.1) = muy reactivo, Alpha bajo (~0.02) = muy suave.
     // Estabilidad: alpha bajo porque queremos tendencia, no saltos frame a frame
-    private static final double STABILITY_ALPHA    = 0.05;
+    private static final double STABILITY_ALPHA    = 0.12;
     private double emaStability    = 100.0; // arranca en 100%
 
     // Consistencia: alpha más alto porque queremos ver el cambio entre reps
-    private static final double CONSISTENCY_ALPHA  = 0.08;
+    private static final double CONSISTENCY_ALPHA  = 0.12;
     private double emaConsistency  = -1.0;  // -1 = sin datos aún (calibrando)
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -259,9 +259,10 @@ public class CameraActivity extends AppCompatActivity {
 
         // Extra si ya hay alerta severa por compensación de hombro (boost final)
         double penaltyShoulder = 0.0;
+        String fr = result.getFatigueReason();
         if (result.getTechnicalError() == ErrorLevel.SEVERE
-                && result.getFatigueReason() != null
-                && result.getFatigueReason().contains("Compensación del hombro")) {
+                && fr != null
+                && fr.contains("Compensación del hombro")) {
             penaltyShoulder = 30.0;
         }
 

@@ -361,12 +361,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         var worst: ErrorLevel = ErrorLevel.NONE
         var magnitudeReported: Double? = null
 
-        // E1 — Desviación del pico: siempre reportar magnitud (aunque sea NONE)
-        // para que la UI pueda dibujar una barra de consistencia continua.
-        if (repPeakAngles.size > MIN_REPS_FOR_REF) {
+        // E1 — Tras al menos MIN_REPS_FOR_REF reps completadas, ref y σ ya existen
+        if (repPeakAngles.size >= MIN_REPS_FOR_REF) {
             val lastPeak = repPeakAngles.last()
             val e = abs(lastPeak - refPeak)
-            magnitudeReported = e   // ← siempre, no solo cuando hay error
+            magnitudeReported = e
             val lvl = when {
                 e < delta1 -> ErrorLevel.NONE
                 e < delta2 -> ErrorLevel.MILD
@@ -378,8 +377,8 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             }
         }
 
-        // E2 — Rango de movimiento insuficiente (Pinto 2012 / Goto 2019: full ROM ≥ 110°)
-        if (refValley != null && repPeakAngles.size > MIN_REPS_FOR_REF) {
+        // E2 — Misma condición que E1
+        if (refValley != null && repPeakAngles.size >= MIN_REPS_FOR_REF) {
             val lastRom = repValleyAngles.lastOrNull()?.minus(repPeakAngles.last())
             if (lastRom != null && lastRom < FULL_ROM_MIN_DEG) {
                 reasons += "Rango incompleto (${String.format("%.0f°", lastRom)} < 110°)"
@@ -387,7 +386,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             }
         }
 
-        // E3 — Compensación del hombro (Liu et al. 2024)
+        // E3 — sin cambio
         val rest = thetaShoulderRest
         if (rest != null) {
             val shoulderShift = abs(shoulderDeg - rest)
