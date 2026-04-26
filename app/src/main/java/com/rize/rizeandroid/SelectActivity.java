@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,9 +26,17 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         setContentView(R.layout.activity_select);
 
         setupToolbar();
+        setupAutoSaveToggle();
         setupExerciseList();
         setupSearch();
         setupBottomNav();
+    }
+
+    private void setupAutoSaveToggle() {
+        SwitchMaterial toggle = findViewById(R.id.auto_save_switch);
+        toggle.setChecked(AppPreferences.isAutoSaveEnabled(this));
+        toggle.setOnCheckedChangeListener((btn, checked) ->
+                AppPreferences.setAutoSaveEnabled(this, checked));
     }
 
     private void setupToolbar() {
@@ -115,6 +125,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra("exercise_name", exercise.name);
         intent.putExtra("exercise_type", exercise.exerciseType.name());
+        intent.putExtra(CameraActivity.EXTRA_AUTO_SAVE, AppPreferences.isAutoSaveEnabled(this));
         startActivity(intent);
     }
 }

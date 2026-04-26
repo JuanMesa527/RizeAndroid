@@ -49,6 +49,21 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
+            <!-- Saved badge (visible solo cuando la sesion ya esta guardada) -->
+            <TextView
+                android:id="@+id/summary_saved_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_chip_sage"
+                android:text="@string/summary_already_saved_badge"
+                android:textColor="@color/dry_sage"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:visibility="gone" />
+
             <!-- Performance Banner -->
             <FrameLayout
                 android:layout_width="match_parent"

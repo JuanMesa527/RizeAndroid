@@ -172,6 +172,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var currentStickingPeriodDetected = false
 
     // ── Estado persistente entre reps ────────────────────────────────────────
+    private var lastGripWidthRatioMeasured: Double? = null
     private var lastDepthInsufficientBench = false
     private var lastExtensionIncomplete = false
     private var lastExtensionIncompleteDeg: Double? = null
@@ -187,6 +188,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     // ── Historial de velocidad ───────────────────────────────────────────────
     private val concentricVelocityByRep = mutableListOf<Double>()
+
+    // ── Snapshots de la ultima rep cerrada (para persistencia per-rep) ──────
+    private var snapLastRepMinElbow: Double? = null
+    private var snapLastRepRom: Double? = null
+    private var snapLastRepConcVel: Double? = null
+    private var snapLastRepBilateralAsymmetryDeg: Double? = null
+    private var snapLastRepShoulderAbductionDeg: Double? = null
+    private var snapLastRepGripWidthRatio: Double? = null
+    private var snapLastRepExtensionIncompleteDeg: Double? = null
+    private var snapLastRepStickingPeriodDetected = false
+    private var snapLastRepGripTooWide = false
+    private var snapLastRepBilateralAsymmetry = false
+    private var snapLastRepDepthInsufficientBench = false
+    private var snapLastRepExtensionIncomplete = false
+    private var snapLastRepFormQuality: ErrorLevel? = null
 
     // ═══════════════════════════════════════════════════════════════════════════
     // process()
@@ -252,6 +268,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             val biacromialDist = distance(leftArm.shoulder.vec, rightArm.shoulder.vec)
             if (biacromialDist > 1e-6) {
                 gripWidthRatio = wristDist / biacromialDist
+                lastGripWidthRatioMeasured = gripWidthRatio
                 // Solo marcamos "demasiado ancho" (riesgo real) cuando cruza el
                 // umbral critico. Las advertencias entre MAX y CRITICAL se
                 // pintan en la UI como ambar pero no disparan el flag de error
@@ -365,7 +382,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             currentRepMinElbowAngleDeg = liveMinElbow,
             currentRepMaxElbowAngleDeg = liveMaxElbow,
             elbowBelowTorsoLive = elbowBelowTorsoNow,
-            readinessReady = readinessState == ReadinessState.READY
+            readinessReady = readinessState == ReadinessState.READY,
+            // Snapshots per-rep para persistencia.
+            lastRepMinElbowAngleDeg = snapLastRepMinElbow,
+            lastRepBenchRomDeg = snapLastRepRom,
+            lastRepConcentricPeakVelocityDegS = snapLastRepConcVel,
+            lastRepBilateralAsymmetryDeg = snapLastRepBilateralAsymmetryDeg,
+            lastRepShoulderAbductionDeg = snapLastRepShoulderAbductionDeg,
+            lastRepGripWidthRatio = snapLastRepGripWidthRatio,
+            lastRepExtensionIncompleteDeg = snapLastRepExtensionIncompleteDeg,
+            lastRepStickingPeriodDetected = snapLastRepStickingPeriodDetected,
+            lastRepGripTooWide = snapLastRepGripTooWide,
+            lastRepBilateralAsymmetry = snapLastRepBilateralAsymmetry,
+            lastRepDepthInsufficientBench = snapLastRepDepthInsufficientBench,
+            lastRepExtensionIncomplete = snapLastRepExtensionIncomplete,
+            lastRepFormQuality = snapLastRepFormQuality
         )
     }
 
@@ -411,6 +442,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         repCount = 0
 
         concentricVelocityByRep.clear()
+
+        lastGripWidthRatioMeasured = null
+        snapLastRepMinElbow = null
+        snapLastRepRom = null
+        snapLastRepConcVel = null
+        snapLastRepBilateralAsymmetryDeg = null
+        snapLastRepShoulderAbductionDeg = null
+        snapLastRepGripWidthRatio = null
+        snapLastRepExtensionIncompleteDeg = null
+        snapLastRepStickingPeriodDetected = false
+        snapLastRepGripTooWide = false
+        snapLastRepBilateralAsymmetry = false
+        snapLastRepDepthInsufficientBench = false
+        snapLastRepExtensionIncomplete = false
+        snapLastRepFormQuality = null
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -638,6 +684,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         lastErrorMagnitude = listOf(depthMagnitude, extensionMagnitude, abductionMagnitude, asymmetryMagnitude, vlMagnitude)
             .maxOrNull()?.takeIf { it > 0.0 }
+
+        // Snapshot de la rep recien cerrada — para persistencia per-rep.
+        snapLastRepMinElbow = currentMinElbowAngleDeg
+        snapLastRepRom = repRomDeg
+        snapLastRepConcVel = currentPeakConcentricVelocityDegS.takeIf { it > 0.0 }
+        snapLastRepBilateralAsymmetryDeg = lastBilateralAsymmetryDeg
+        snapLastRepShoulderAbductionDeg = lastShoulderAbductionDeg
+        snapLastRepGripWidthRatio = lastGripWidthRatioMeasured
+        snapLastRepExtensionIncompleteDeg = lastExtensionIncompleteDeg
+        snapLastRepStickingPeriodDetected = currentStickingPeriodDetected
+        snapLastRepGripTooWide = lastGripTooWide
+        snapLastRepBilateralAsymmetry = lastBilateralAsymmetry
+        snapLastRepDepthInsufficientBench = lastDepthInsufficientBench
+        snapLastRepExtensionIncomplete = lastExtensionIncomplete
+        snapLastRepFormQuality = lastTechnicalError
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

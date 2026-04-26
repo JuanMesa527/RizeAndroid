@@ -113,6 +113,13 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var thetaShoulderRest: Double? = null
     private var restVarianceBuffer = ArrayDeque<Double>(VARIANCE_WINDOW)
 
+    // Snapshots de la ultima rep cerrada — exportados para persistencia per-rep.
+    // Se actualizan cuando repPeakAngles.size cambia (nueva rep completada).
+    private var lastSeenRepCount = 0
+    private var snapLastRepConcVelDegS: Double? = null
+    private var snapLastRepShoulderCompDeg: Double? = null
+    private var snapLastRepFormQuality: ErrorLevel? = null
+
     // ── BiomechanicsAlgorithm ─────────────────────────────────────────────────
 
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
@@ -204,6 +211,15 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             liveDegS ?: lastDegS
         }
 
+        // Snapshot de la rep recien cerrada (si aplica) — para persistencia
+        // per-rep. Se calcula DESPUES de classifyError para incluir su nivel.
+        if (repPeakAngles.size > lastSeenRepCount) {
+            snapLastRepConcVelDegS = repPeakOmegas.lastOrNull()?.let { Math.toDegrees(it) }
+            snapLastRepShoulderCompDeg = shoulderShiftDeg
+            snapLastRepFormQuality = errorResult.level
+            lastSeenRepCount = repPeakAngles.size
+        }
+
         return AlgorithmResult(
             angleDeg            = angleDeg,
             angularVelocity     = omega,
@@ -223,7 +239,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             lastRepPeakFlexionDeg        = lastPeak,
             lastRepRomDeg                = lastRom,
             shoulderCompensationDeg      = shoulderShiftDeg,
-            concentricPeakVelocityDegS   = concentricPeakDegS
+            concentricPeakVelocityDegS   = concentricPeakDegS,
+            // Snapshot de la ultima rep — para persistencia per-rep.
+            lastRepConcentricPeakVelocityDegS = snapLastRepConcVelDegS,
+            lastRepShoulderCompensationDeg    = snapLastRepShoulderCompDeg,
+            lastRepFormQuality                = snapLastRepFormQuality
         )
     }
 
@@ -246,6 +266,10 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         thetaShoulderRest  = null
         shoulderRestBuffer.clear()
         restVarianceBuffer.clear()
+        lastSeenRepCount   = 0
+        snapLastRepConcVelDegS = null
+        snapLastRepShoulderCompDeg = null
+        snapLastRepFormQuality = null
     }
 
     // ── §1 Ángulo articular del codo ──────────────────────────────────────────

@@ -56,6 +56,19 @@
     <string name="select_cat_strength">FUERZA</string>
     <string name="select_cat_compound">COMPUESTO</string>
     <string name="select_cat_isolation">AISLAMIENTO</string>
+    <string name="select_auto_save_label">Guardado automático</string>
+    <string name="select_auto_save_desc">Guarda la sesión al terminar (con al menos 1 repetición)</string>
+    <string name="session_no_reps_toast">Sin repeticiones registradas</string>
+    <string name="session_saved_toast">Sesión guardada</string>
+    <string name="session_save_failed_toast">No se pudo guardar la sesión</string>
+    <string name="summary_save_btn">Guardar</string>
+    <string name="summary_discard_btn">Descartar</string>
+    <string name="summary_done_btn">Listo</string>
+    <string name="summary_already_saved_badge">Sesión guardada</string>
+    <string name="summary_discard_dialog_title">Descartar sesión</string>
+    <string name="summary_discard_dialog_msg">Esta sesión no se guardará en el historial. ¿Continuar?</string>
+    <string name="summary_discard_dialog_confirm">Descartar</string>
+    <string name="summary_discard_dialog_cancel">Cancelar</string>
 
     <!-- Camera -->
     <string name="camera_rec">REC</string>
@@ -170,7 +183,7 @@
     <string name="summary_tempo_balance_desc">Tu fase concéntrica es perfecta, pero intenta ralentizar el movimiento excéntrico para una mejor hipertrofia.</string>
     <string name="summary_risk_warning">Advertencia de Riesgo</string>
     <string name="summary_joint_stress_title">Estrés Articular Elevado Detectado</string>
-    <string name="summary_joint_stress_desc">La IA de RIZE detectó valgo de rodilla significativo durante tus sentadillas. Para prevenir tensión en el LCA, enfócate en empujar las rodillas hacia afuera. Considera reducir el peso un 10% hasta que la técnica se estabilice.</string>
+    <string name="summary_joint_stress_desc">La IA de RIZE detectó valgo de rodilla significativo durante tus sentadillas. Para prevenir tensión en el LCA, enfócate en empujar las rodillas hacia afuera. Considera reducir el peso un 10%% hasta que la técnica se estabilice.</string>
     <string name="summary_go_home">Ir al Inicio</string>
     <string name="summary_save_workout">Guardar Entrenamiento</string>
 </resources>

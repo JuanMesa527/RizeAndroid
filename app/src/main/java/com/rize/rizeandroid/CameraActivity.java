@@ -13,16 +13,29 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.rize.rizeandroid.data.PendingRep;
+import com.rize.rizeandroid.data.PendingSessionBuilder;
+import com.rize.rizeandroid.data.PendingSessionData;
+import com.rize.rizeandroid.data.PendingSessionHolder;
+import com.rize.rizeandroid.data.entity.WorkoutSession;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class CameraActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_REQUEST = 100;
+    public static final String EXTRA_AUTO_SAVE = "auto_save";
+    public static final String EXTRA_EXERCISE_TYPE = "exercise_type";
+    public static final String EXTRA_EXERCISE_NAME = "exercise_name_display";
+    public static final String EXTRA_ALREADY_SAVED = "already_saved";
 
     private FrameLayout cameraContainer;
     private TextView cameraTitle;
@@ -101,6 +114,13 @@ public class CameraActivity extends AppCompatActivity {
     // necesitamos asegurar que SummaryActivity solo se abre una vez por sesion.
     private boolean sessionFinishing = false;
 
+    // ── Persistencia de sesion ────────────────────────────────────────────────
+    private boolean autoSaveEnabled = false;
+    private long sessionStartMs = 0L;
+    private String exerciseDisplayName = "";
+    private final List<PendingRep> pendingReps = new ArrayList<>();
+    private int lastSeenRepCount = 0;
+
     private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -137,8 +157,13 @@ public class CameraActivity extends AppCompatActivity {
             ));
         }
 
+        exerciseDisplayName = exerciseName == null ? "" : exerciseName;
+        autoSaveEnabled = getIntent().getBooleanExtra(EXTRA_AUTO_SAVE, true);
+        sessionStartMs = System.currentTimeMillis();
+
         setupToolbar();
         setupBottomNav();
+        setupBackNavigation();
         setupAlgorithms(exerciseName);
         checkCameraPermission();
     }
@@ -298,6 +323,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onAlgorithmResult(AlgorithmResult result) {
+        captureRepIfClosed(result);
         if (isSquatExercise) {
             onSquatResult(result);
             return;
@@ -307,6 +333,32 @@ public class CameraActivity extends AppCompatActivity {
             return;
         }
         onCurlResult(result);
+    }
+
+    /**
+     * Detecta el cierre de una nueva rep comparando repCount con el ultimo
+     * valor visto. Cuando incrementa, captura un snapshot a partir de los
+     * campos lastRep* del AlgorithmResult y lo añade a la lista de la sesion.
+     */
+    private void captureRepIfClosed(AlgorithmResult result) {
+        int currentRepCount = result.getRepCount();
+        if (currentRepCount <= lastSeenRepCount) return;
+
+        long timestampOffsetMs = System.currentTimeMillis() - sessionStartMs;
+        // Pueden haberse cerrado varias reps entre callbacks (raro pero posible).
+        // Solo registramos UN snapshot — el algoritmo solo expone la ultima.
+        // Si en el futuro queremos historico denso habria que emitir eventos.
+        int repNumber = currentRepCount;
+        PendingRep pendingRep;
+        if (isSquatExercise) {
+            pendingRep = PendingSessionBuilder.buildSquatRep(repNumber, timestampOffsetMs, result);
+        } else if (isBenchPressExercise) {
+            pendingRep = PendingSessionBuilder.buildBenchRep(repNumber, timestampOffsetMs, result);
+        } else {
+            pendingRep = PendingSessionBuilder.buildCurlRep(repNumber, timestampOffsetMs, result);
+        }
+        pendingReps.add(pendingRep);
+        lastSeenRepCount = currentRepCount;
     }
 
     /**
@@ -1068,17 +1120,17 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void setupBottomNav() {
-        findViewById(R.id.nav_home).setOnClickListener(v -> {
-            Intent intent = new Intent(this, HomepageActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-        });
-        findViewById(R.id.nav_fab).setOnClickListener(v -> {
-            Intent intent = new Intent(this, SelectActivity.class);
-            startActivity(intent);
-        });
-        findViewById(R.id.nav_stats).setOnClickListener(v -> {
-            startActivity(new Intent(this, VideoAnalysisActivity.class));
+        findViewById(R.id.nav_home).setOnClickListener(v -> finishSession());
+        findViewById(R.id.nav_fab).setOnClickListener(v -> finishSession());
+        findViewById(R.id.nav_stats).setOnClickListener(v -> finishSession());
+    }
+
+    private void setupBackNavigation() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finishSession();
+            }
         });
     }
 
@@ -1130,19 +1182,65 @@ public class CameraActivity extends AppCompatActivity {
         if (sessionFinishing) return;
         sessionFinishing = true;
         stopTimer();
+
+        int totalReps = pendingReps.size();
+        boolean analyzed = isAnalyzedExercise;
+
+        // Caso 0 reps (o ejercicio sin analisis): no hay nada que guardar ni
+        // que mostrar en summary — vamos directo a home con un toast.
+        if (!analyzed || totalReps == 0) {
+            if (analyzed) {
+                Toast.makeText(this, R.string.session_no_reps_toast, Toast.LENGTH_SHORT).show();
+            }
+            navigateHome();
+            return;
+        }
+
+        String exerciseType = resolveExerciseType();
+        AlgorithmResult finalResult = algorithms != null ? algorithms.getCurrentResult() : null;
+        long endMs = System.currentTimeMillis();
+
+        PendingSessionData data = PendingSessionBuilder.build(
+                exerciseType,
+                exerciseDisplayName,
+                sessionStartMs,
+                endMs,
+                elapsedSeconds,
+                autoSaveEnabled,
+                finalResult,
+                new ArrayList<>(pendingReps)
+        );
+
         Intent intent = new Intent(this, SummaryActivity.class);
+        intent.putExtra(EXTRA_EXERCISE_TYPE, exerciseType);
+        intent.putExtra(EXTRA_EXERCISE_NAME, exerciseDisplayName);
+
+        if (autoSaveEnabled) {
+            // Persistimos en background. La nueva pantalla solo refleja que la
+            // sesion ya quedo guardada — el usuario no decide nada.
+            RizeApplication.get().getSessionRepository().saveSessionAsync(data);
+            intent.putExtra(EXTRA_ALREADY_SAVED, true);
+        } else {
+            // Pasamos los datos via singleton in-memory. SummaryActivity decide.
+            PendingSessionHolder.INSTANCE.set(data);
+            intent.putExtra(EXTRA_ALREADY_SAVED, false);
+        }
+
         startActivity(intent);
         finish();
     }
 
-    /**
-     * Captura el back de sistema (boton fisico / gesto desde el borde) para
-     * llevar al usuario al Workout Summary igual que el back del top bar, en
-     * vez del comportamiento por defecto que solo cerraba la pantalla.
-     */
-    @Override
-    public void onBackPressed() {
-        finishSession();
+    private String resolveExerciseType() {
+        if (isSquatExercise) return WorkoutSession.TYPE_SQUAT;
+        if (isBenchPressExercise) return WorkoutSession.TYPE_BENCH;
+        return WorkoutSession.TYPE_CURL;
+    }
+
+    private void navigateHome() {
+        Intent intent = new Intent(this, HomepageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
     }
 
     @Override

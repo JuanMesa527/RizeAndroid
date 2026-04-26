@@ -173,7 +173,35 @@ data class AlgorithmResult(
     // Compensacion del hombro en GRADOS respecto al reposo establecido en los
     // primeros 0.5 s (Liu et al. 2024 arXiv:2402.11421). Util como senal
     // continua de tecnica, NO solo como flag de error severo.
-    val shoulderCompensationDeg: Double?    = null
+    val shoulderCompensationDeg: Double?    = null,
+
+    // ── Snapshot de la ultima rep cerrada (para persistencia per-rep) ─────────
+    // Cada algoritmo rellena los campos pertinentes en el process() inmediato
+    // posterior al cierre de la rep. CameraActivity detecta el incremento de
+    // repCount y captura estos campos.
+    val lastRepConcentricPeakVelocityDegS: Double? = null,
+    val lastRepFormQuality: ErrorLevel?            = null,
+    // Squat
+    val lastRepMinKneeAngleDeg: Double?            = null,
+    val lastRepMinHipAngleDeg: Double?             = null,
+    val lastRepDepthInsufficient: Boolean          = false,
+    val lastRepTrunkLeanRisk: Boolean              = false,
+    val lastRepSquatRomDeg: Double?                = null,
+    val lastRepEccentricPeakVelocityDegS: Double?  = null,
+    // Curl extra
+    val lastRepShoulderCompensationDeg: Double?    = null,
+    // Bench
+    val lastRepMinElbowAngleDeg: Double?           = null,
+    val lastRepBenchRomDeg: Double?                = null,
+    val lastRepBilateralAsymmetryDeg: Double?      = null,
+    val lastRepShoulderAbductionDeg: Double?       = null,
+    val lastRepGripWidthRatio: Double?             = null,
+    val lastRepExtensionIncompleteDeg: Double?     = null,
+    val lastRepStickingPeriodDetected: Boolean     = false,
+    val lastRepGripTooWide: Boolean                = false,
+    val lastRepBilateralAsymmetry: Boolean         = false,
+    val lastRepDepthInsufficientBench: Boolean     = false,
+    val lastRepExtensionIncomplete: Boolean        = false
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }

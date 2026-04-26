@@ -91,6 +91,16 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private var visiblePoseFrames = 0
 
+    // Snapshots de la ultima rep cerrada — exportados para persistencia per-rep.
+    private var snapLastRepMinKnee: Double? = null
+    private var snapLastRepMinHip: Double? = null
+    private var snapLastRepRom: Double? = null
+    private var snapLastRepConcVel: Double? = null
+    private var snapLastRepEccVel: Double? = null
+    private var snapLastRepDepthInsufficient = false
+    private var snapLastRepTrunkLeanRisk = false
+    private var snapLastRepFormQuality: ErrorLevel? = null
+
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
         if (landmarkFlatList.size < 132) return emptyResult()
 
@@ -161,7 +171,16 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             repCount = repCount,
             depthInsufficient = lastDepthInsufficient,
             trunkLeanRisk = lastTrunkLeanRisk,
-            readinessReady = readinessReady
+            readinessReady = readinessReady,
+            // Snapshots per-rep para persistencia.
+            lastRepMinKneeAngleDeg = snapLastRepMinKnee,
+            lastRepMinHipAngleDeg = snapLastRepMinHip,
+            lastRepSquatRomDeg = snapLastRepRom,
+            lastRepConcentricPeakVelocityDegS = snapLastRepConcVel,
+            lastRepEccentricPeakVelocityDegS = snapLastRepEccVel,
+            lastRepDepthInsufficient = snapLastRepDepthInsufficient,
+            lastRepTrunkLeanRisk = snapLastRepTrunkLeanRisk,
+            lastRepFormQuality = snapLastRepFormQuality
         )
     }
 
@@ -193,6 +212,15 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         repCount = 0
         concentricVelocityByRep.clear()
         validBottomKneeAnglesByRep.clear()
+
+        snapLastRepMinKnee = null
+        snapLastRepMinHip = null
+        snapLastRepRom = null
+        snapLastRepConcVel = null
+        snapLastRepEccVel = null
+        snapLastRepDepthInsufficient = false
+        snapLastRepTrunkLeanRisk = false
+        snapLastRepFormQuality = null
     }
 
     private fun resetTransientRepState() {
@@ -331,6 +359,17 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val trunkMagnitude = if (lastTrunkLeanRisk) TRUNK_RISK_THRESHOLD - bottomHipAngleDeg else 0.0
         val instabilityMagnitude = if (hasInstability) cvt - 10.0 else 0.0
         lastErrorMagnitude = listOf(depthMagnitude, trunkMagnitude, instabilityMagnitude).maxOrNull()?.takeIf { it > 0.0 }
+
+        // Snapshots de la rep recien cerrada — usados por CameraActivity para
+        // crear el registro per-rep en la DB.
+        snapLastRepMinKnee = currentMinKneeAngleDeg
+        snapLastRepMinHip = bottomHipAngleDeg
+        snapLastRepRom = repRomDeg
+        snapLastRepConcVel = currentPeakConcentricVelocityDegS.takeIf { it > 0.0 }
+        snapLastRepEccVel = currentPeakEccentricVelocityDegS.takeIf { it > 0.0 }
+        snapLastRepDepthInsufficient = lastDepthInsufficient
+        snapLastRepTrunkLeanRisk = lastTrunkLeanRisk
+        snapLastRepFormQuality = lastTechnicalError
     }
 
     private fun computeBottomHipAngle(values: List<Double>): Double? {
