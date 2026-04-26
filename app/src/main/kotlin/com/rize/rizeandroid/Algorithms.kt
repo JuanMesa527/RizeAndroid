@@ -138,7 +138,26 @@ data class AlgorithmResult(
     val elbowBelowTorsoLive: Boolean?       = null,
     // Readiness expuesto para que la UI muestre un indicador independiente
     // del torrente de alertas.
-    val readinessReady: Boolean             = false
+    val readinessReady: Boolean             = false,
+
+    // ── Curl-specific live telemetry ─────────────────────────────────────────
+    // Pico de flexion de la rep en curso (= angulo MINIMO observado durante la
+    // fase concentrica activa). Serbest 2022, Fig 5: ~30-50 deg en MediaPipe.
+    val currentRepPeakFlexionDeg: Double?   = null,
+    // Valle de extension (= angulo MAXIMO observado en la fase excentrica).
+    // Morrey 1981 / Soldado 2019: ~170-180 deg al final de la extension.
+    val currentRepValleyExtensionDeg: Double? = null,
+    // ROM = valle - pico de la rep (en curso o ultima cerrada). Pinto 2012 /
+    // Goto 2019: full ROM curl >= 110 deg.
+    val currentRepRomDeg: Double?           = null,
+    // Pico/ROM de la ULTIMA rep cerrada — se mantiene visible entre reps para
+    // que el panel no parpadee a "--" en cada extension.
+    val lastRepPeakFlexionDeg: Double?      = null,
+    val lastRepRomDeg: Double?              = null,
+    // Compensacion del hombro en GRADOS respecto al reposo establecido en los
+    // primeros 0.5 s (Liu et al. 2024 arXiv:2402.11421). Util como senal
+    // continua de tecnica, NO solo como flag de error severo.
+    val shoulderCompensationDeg: Double?    = null
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }

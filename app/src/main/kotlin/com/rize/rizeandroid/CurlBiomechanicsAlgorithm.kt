@@ -174,6 +174,36 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val reasonCombined = listOfNotNull(fatigue.reason, errorResult.reason)
             .joinToString(" | ").ifEmpty { null }
 
+        // ── Telemetria en vivo para el panel del curl ─────────────────────────
+        // Pico de la rep en curso = minimo θ observado en concentrica.
+        // Valle de la rep en curso = maximo θ observado en excentrica/inicio.
+        // Solo son validos si ya se han poblado (isFinite).
+        val livePeak  = currentPeak.takeIf  { it.isFinite() && it < FLEXION_PEAK_THRESHOLD }
+        val liveValley = currentValley.takeIf { it.isFinite() }
+        val liveRom = if (livePeak != null && liveValley != null) liveValley - livePeak else null
+
+        // Ultima rep cerrada — persiste entre reps para que el panel no se
+        // quede en blanco mientras el usuario baja el peso.
+        val lastPeak   = repPeakAngles.lastOrNull()
+        val lastValley = repValleyAngles.lastOrNull()
+        val lastRom    = if (lastPeak != null && lastValley != null) lastValley - lastPeak else null
+
+        // Compensacion del hombro (Liu 2024). Continuo, no solo flag binario.
+        val shoulderShiftDeg = thetaShoulderRest?.let { abs(shoulderDeg - it) }
+
+        // Velocidad angular pico (deg/s) — VBT (Sanchez-Medina 2011,
+        // Rodriguez-Rosell 2023). Mientras la rep esta activa devuelvo el
+        // peak |omega| acumulado de la rep actual; entre reps caigo al
+        // peak de la ULTIMA rep cerrada para que el panel no parpadee a 0
+        // mientras el usuario baja el peso. Antes del primer movimiento real
+        // (currentRepMaxOmega == 0 y sin reps cerradas) devuelvo null.
+        val concentricPeakDegS: Double? = run {
+            val liveDegS = if (currentRepMaxOmega > 0.0)
+                Math.toDegrees(currentRepMaxOmega) else null
+            val lastDegS = repPeakOmegas.lastOrNull()?.let { Math.toDegrees(it) }
+            liveDegS ?: lastDegS
+        }
+
         return AlgorithmResult(
             angleDeg            = angleDeg,
             angularVelocity     = omega,
@@ -185,7 +215,15 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             velocityLossPercent = fatigue.velocityLossPct,   // ← nuevo
             alert               = alert,
             repCount            = repPeakAngles.size,
-            algorithmName       = "CurlBiomechanics"
+            algorithmName       = "CurlBiomechanics",
+            // Live telemetry — usados por CameraActivity para los 3 paneles.
+            currentRepPeakFlexionDeg     = livePeak,
+            currentRepValleyExtensionDeg = liveValley,
+            currentRepRomDeg             = liveRom,
+            lastRepPeakFlexionDeg        = lastPeak,
+            lastRepRomDeg                = lastRom,
+            shoulderCompensationDeg      = shoulderShiftDeg,
+            concentricPeakVelocityDegS   = concentricPeakDegS
         )
     }
 

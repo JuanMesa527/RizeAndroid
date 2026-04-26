@@ -41,6 +41,13 @@ public class CameraActivity extends AppCompatActivity {
     private TextView metricConsistencyLabel;
     private TextView metricConsistencyHint;
     private TextView squatAlertText;
+    // Curl-specific: card de Velocity + Live Flex que sustituye al
+    // progress_consistency cuando el ejercicio activo es curl. consistencyCard
+    // es el contenedor del progress bar para poder ocultarlo en curl.
+    private View consistencyCard;
+    private View curlMetricsRow;
+    private TextView metricCurlVelocity;
+    private TextView metricCurlFlex;
 
     // ── Views de métricas (panel press banca: 5 reglas + alert banner) ───────
     private View metricsBenchPanel;
@@ -71,18 +78,28 @@ public class CameraActivity extends AppCompatActivity {
     private int lastSquatAlertColor = -1;
 
     // EMA (Exponential Moving Average) — reacciona rápido a cambios reales.
-    // Alpha alto (~0.1) = muy reactivo, Alpha bajo (~0.02) = muy suave.
-    // Estabilidad: alpha bajo porque queremos tendencia, no saltos frame a frame
-    private static final double STABILITY_ALPHA    = 0.12;
+    // Alpha alto (~0.4) = muy reactivo, Alpha bajo (~0.05) = muy suave.
+    //
+    //   STABILITY_ALPHA = 0.06  — score lento, tendencia (suaviza ~17 frames a 30 Hz)
+    //   CURL_ANGLE_ALPHA = 0.30 — angulo y flex viven con el movimiento pero no
+    //                             saltan frame a frame por jitter de MediaPipe.
+    //   CURL_VEL_ALPHA   = 0.45 — velocidad casi en vivo, solo amortigua picos
+    //                             aislados que el suavizador 1€ deja pasar.
+    private static final double STABILITY_ALPHA    = 0.06;
+    private static final double CURL_ANGLE_ALPHA   = 0.30;
+    private static final double CURL_VEL_ALPHA     = 0.45;
     private double emaStability    = 100.0; // arranca en 100%
-
-    // Consistencia: alpha más alto porque queremos ver el cambio entre reps
-    private static final double CONSISTENCY_ALPHA  = 0.12;
-    private double emaConsistency  = -1.0;  // -1 = sin datos aún (calibrando)
+    private Double emaCurlAngle    = null;  // null hasta el primer frame con pose
+    private Double emaCurlFlex     = null;
+    private Double emaCurlVelocity = null;
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private int elapsedSeconds = 0;
     private boolean timerRunning = false;
+    // Guard de idempotencia para finishSession(). El back fisico, el gesto
+    // de borde y el boton del top bar comparten el mismo flujo, por lo que
+    // necesitamos asegurar que SummaryActivity solo se abre una vez por sesion.
+    private boolean sessionFinishing = false;
 
     private final Runnable timerRunnable = new Runnable() {
         @Override
@@ -141,6 +158,11 @@ public class CameraActivity extends AppCompatActivity {
         metricConsistencyLabel = findViewById(R.id.metric_consistency_label);
         metricConsistencyHint  = findViewById(R.id.metric_consistency_hint);
         squatAlertText         = findViewById(R.id.squat_alert_text);
+        // Curl-specific
+        consistencyCard        = findViewById(R.id.consistency_card);
+        curlMetricsRow         = findViewById(R.id.curl_metrics_row);
+        metricCurlVelocity     = findViewById(R.id.metric_curl_velocity);
+        metricCurlFlex         = findViewById(R.id.metric_curl_flex);
 
         // Views del nuevo panel de press banca
         metricsBenchPanel           = findViewById(R.id.metrics_bench);
@@ -169,7 +191,8 @@ public class CameraActivity extends AppCompatActivity {
             // Ocultar las métricas para ejercicios sin análisis
             findViewById(R.id.metric_peak_angle).setVisibility(View.GONE);
             findViewById(R.id.metric_stability).setVisibility(View.GONE);
-            findViewById(R.id.progress_consistency).setVisibility(View.GONE);
+            if (consistencyCard != null) consistencyCard.setVisibility(View.GONE);
+            if (curlMetricsRow != null) curlMetricsRow.setVisibility(View.GONE);
             if (metricHipAngle != null) {
                 metricHipAngle.setVisibility(View.GONE);
             }
@@ -185,6 +208,9 @@ public class CameraActivity extends AppCompatActivity {
         if (isSquatExercise) {
             metricsStandardPanel.setVisibility(View.VISIBLE);
             metricsBenchPanel.setVisibility(View.GONE);
+            // Squat usa el card clasico de progreso, NO los dos cards de curl.
+            consistencyCard.setVisibility(View.VISIBLE);
+            curlMetricsRow.setVisibility(View.GONE);
             metricAngleLabel.setText(R.string.camera_knee_angle);
             metricStabilityLabel.setText(R.string.camera_cvt);
             metricConsistencyLabel.setText(R.string.camera_velocity_retention);
@@ -207,14 +233,42 @@ public class CameraActivity extends AppCompatActivity {
             metricsBenchPanel.setVisibility(View.VISIBLE);
             resetBenchPanel();
         } else {
+            // ── Curl de biceps ──────────────────────────────────────────
+            // Layout reutilizado del panel estandar pero recableado para
+            // exhibir, EN VIVO durante la rep:
+            //   * metric_peak_angle  → pico de flexion real (min θ MediaPipe)
+            //   * metric_hip_angle   → "Now XX°" con el angulo actual
+            //   * metric_stability   → estabilidad dominada por compensacion
+            //                          de hombro (Liu 2024)
+            //   * curl_metrics_row   → DOS tarjetas en horizontal:
+            //                          - Velocity (Sanchez-Medina 2011 / VBT)
+            //                          - Live Flex % (Pinto 2012, theta(t))
+            //                          Sustituye al progress_consistency.
+            //   * squat_alert_text   → mensaje contextual del curl
             metricsStandardPanel.setVisibility(View.VISIBLE);
             metricsBenchPanel.setVisibility(View.GONE);
-            metricAngleLabel.setText(R.string.camera_peak_angle);
-            metricHipAngle.setVisibility(View.GONE);
-            metricStabilityLabel.setText(R.string.camera_stability);
-            metricConsistencyLabel.setText(R.string.camera_session_consistency);
-            metricConsistencyHint.setText(R.string.camera_target_depth);
-            squatAlertText.setVisibility(View.GONE);
+            // Ocultamos el card del progress bar y mostramos las dos tarjetas
+            // nuevas en su lugar.
+            consistencyCard.setVisibility(View.GONE);
+            curlMetricsRow.setVisibility(View.VISIBLE);
+            metricAngleLabel.setText(R.string.camera_curl_peak_label);
+            metricHipAngle.setVisibility(View.VISIBLE);
+            metricHipAngle.setText(R.string.bench_status_placeholder);
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            metricStabilityLabel.setText(R.string.camera_curl_stability_label);
+            metricPeakAngle.setText("--");
+            metricStability.setText("--");
+            metricCurlVelocity.setText("--");
+            metricCurlFlex.setText("--");
+            squatAlertText.setVisibility(View.VISIBLE);
+            squatAlertText.setText(R.string.camera_curl_status_ready);
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            // Reset de los EMAs del curl: queremos arrancar limpios sin
+            // arrastre del ejercicio anterior.
+            emaStability    = 100.0;
+            emaCurlAngle    = null;
+            emaCurlFlex     = null;
+            emaCurlVelocity = null;
         }
 
         algorithms = new Algorithms();
@@ -239,47 +293,131 @@ public class CameraActivity extends AppCompatActivity {
             onBenchPressResult(result);
             return;
         }
+        onCurlResult(result);
+    }
 
-        // ── Ángulo articular → metric_peak_angle ──────────────────────────────
-        // FIX: mostramos el ángulo ACTUAL en tiempo real, no solo el pico.
-        // El pico lo guardamos internamente pero no bloqueamos la actualización.
-        if (result.getAngleDeg() != null) {
-            currentAngle = result.getAngleDeg();
-            if (currentAngle > peakAngle) {
-                peakAngle = currentAngle;
-            }
-            // Muestra el ángulo en tiempo real (no el pico fijo)
-            metricPeakAngle.setText(
-                    String.format(Locale.US, "%.0f°", currentAngle)
-            );
+    /**
+     * Handler especifico del curl de biceps.
+     *
+     * Lo que muestra cada panel — todos en VIVO durante la repeticion:
+     *
+     *  1) PEAK ANGLE (metric_peak_angle) — angulo theta(t) en VIVO.
+     *     Convencion MediaPipe (Serbest 2022, Fig 5): brazo extendido ~170-180°,
+     *     pico de flexion ~30-50°. El numero principal sigue al codo cada frame.
+     *     Codigo de color anclado a Liu et al. 2024 (arXiv:2402.11421) que fija
+     *     el umbral de compensacion clara del hombro en 15° respecto al reposo:
+     *       * shoulderCompensationDeg >= 15°  → ROJO  (compensacion confirmada)
+     *       * shoulderCompensationDeg en [8°,15°) → AMBAR (zona de aviso)
+     *       * resto / sin dato            → VERDE (forma limpia o pre-rep)
+     *       * sin pose                    → "--" en plata
+     *     Sub-texto "Pico XX°" = minimo theta observado en la rep en curso, o
+     *     el de la ultima rep cerrada si no hay rep activa (Pinto 2012 ancla
+     *     el objetivo en pico <= 60° para alcanzar ROM >= 110°).
+     *
+     *  2) STABILITY (metric_stability)
+     *     Score 0-100 dominado por la compensacion del hombro en grados
+     *     (Liu et al. 2024 arXiv:2402.11421), que es la senal directa de
+     *     tecnica para el curl. Pondera secundariamente la perdida de
+     *     velocidad (Sanchez-Medina 2011 / Rodriguez-Rosell 2023) y la
+     *     desviacion del pico personal (E1 del algoritmo). Suavizado EMA.
+     *
+     *  3) Velocity (metric_curl_velocity) [Sanchez-Medina 2011 / VBT]
+     *     Pico de velocidad angular concentrica (deg/s) de la rep en curso,
+     *     fallback al peak de la ultima rep cerrada cuando el usuario baja
+     *     el peso. Es la metrica de oro del Velocity Based Training:
+     *     correlacion 0.91-0.97 con marcadores fisiologicos de fatiga
+     *     (Sanchez-Medina & Gonzalez-Badillo 2011).
+     *
+     *  4) Live Flex (metric_curl_flex) [Pinto 2012 / Goto 2019]
+     *     theta(t) actual normalizada al rango anatomico extendido(170°) →
+     *     full flex(30°). Cada frame: 0% = brazo extendido, 100% = pico de
+     *     flexion. Visualmente la barra del curl en directo. Pinto (2012)
+     *     ancla el target ROM >=110° (= ~78% en este display), util como
+     *     guia visual sin esperar a calibracion.
+     *
+     *  5) Alerta contextual (squat_alert_text)
+     *     Prioriza compensacion de hombro > fatiga (VL>=20) > ROM parcial >
+     *     calibracion > tecnica estable.
+     */
+    private void onCurlResult(AlgorithmResult result) {
+        Double curAngle = result.getAngleDeg();
+        if (curAngle != null) {
+            currentAngle = curAngle;
+            if (currentAngle > peakAngle) peakAngle = currentAngle;
         }
 
-        // ── Estabilidad (continua 0-100) ──────────────────────────────────────
-        // Combina pérdida de velocidad (§7) + desviación del pico (§8) + compensación
-        // del hombro si disparó error severo. Todo continuo, sin saltos binarios.
+        // Compensacion de hombro (Liu 2024) — la usamos en panel 1 (color del
+        // angulo) y en panel 2 (penalizacion de stability). Una sola lectura.
+        Double shoulderShift = result.getShoulderCompensationDeg();
+
+        // ── Panel 1: ÁNGULO — theta(t) en VIVO con color verde/rojo ─────────
+        // Numero principal = angulo actual del codo, suavizado con EMA para
+        // que NO salte frame a frame por jitter de MediaPipe (ya pasa por el
+        // suavizador 1€ aguas arriba; aqui le añadimos una segunda pasada
+        // ligera). Color por compensacion de hombro (umbral clave 15°): asi
+        // el usuario ve el angulo subir/bajar de forma fluida y, en paralelo,
+        // si su forma es limpia (verde) o esta cruzando el umbral (rojo).
+        if (curAngle != null) {
+            if (emaCurlAngle == null) emaCurlAngle = curAngle;
+            else emaCurlAngle = emaCurlAngle + CURL_ANGLE_ALPHA * (curAngle - emaCurlAngle);
+
+            metricPeakAngle.setText(String.format(Locale.US, "%.0f°", emaCurlAngle));
+
+            int peakColor;
+            if (shoulderShift != null && shoulderShift >= 15.0) {
+                // Compensacion clara — el algoritmo dispara error E2.
+                peakColor = ContextCompat.getColor(this, R.color.risk_red);
+            } else if (shoulderShift != null && shoulderShift >= 8.0) {
+                // Zona de aviso (mitad inferior del rango).
+                peakColor = ContextCompat.getColor(this, R.color.toasted_almond);
+            } else {
+                // Sin compensacion / aun calibrando → forma limpia.
+                peakColor = ContextCompat.getColor(this, R.color.improvement_green);
+            }
+            metricPeakAngle.setTextColor(peakColor);
+        } else {
+            metricPeakAngle.setText("--");
+            metricPeakAngle.setTextColor(ContextCompat.getColor(this, R.color.white));
+        }
+
+        // Sub-texto: pico de flexion (min θ) de la rep en curso o ultima
+        // cerrada. Pinto 2012 / Goto 2019 marcan target de full ROM >=110°,
+        // i.e. pico <= 60° en convencion MediaPipe.
+        Double livePeak = result.getCurrentRepPeakFlexionDeg();
+        Double lastPeak = result.getLastRepPeakFlexionDeg();
+        Double displayPeak = livePeak != null ? livePeak : lastPeak;
+        if (displayPeak != null) {
+            metricHipAngle.setVisibility(View.VISIBLE);
+            metricHipAngle.setText(getString(R.string.camera_curl_peak_format, displayPeak));
+            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+        } else {
+            metricHipAngle.setVisibility(View.GONE);
+        }
+
+        // ── Panel 2: STABILITY ───────────────────────────────────────────────
+        // Penalizacion CONTINUA por compensacion de hombro (Liu 2024). El
+        // umbral SHOULDER_COMPENSATION_DEG=15° del algoritmo se traduce a
+        // 50 puntos de penalizacion (~mitad del rango), de modo que cruzarlo
+        // arrastra la estabilidad al 50% sin esperar a flag binario.
+        double penaltyShoulder = 0.0;
+        if (shoulderShift != null) {
+            penaltyShoulder = Math.min(100.0, (shoulderShift / 15.0) * 50.0);
+        }
+
+        // Penalizacion menor por fatiga (Sanchez-Medina 2011) — VL40% → 40 puntos.
         double penaltyVL = 0.0;
         if (result.getVelocityLossPercent() != null) {
-            // VL 0% → 0 penalización; VL 40% → 80 penalización (proporcional a Rodríguez-Rosell 2023)
-            penaltyVL = Math.min(80.0, result.getVelocityLossPercent() * 2.0);
+            penaltyVL = Math.min(40.0, result.getVelocityLossPercent());
         }
 
+        // Penalizacion por desviacion del pico (E1) — error de 20° → 30 puntos.
         double penaltyError = 0.0;
         if (result.getErrorMagnitude() != null) {
-            // Error 0° → 0; Error 30° (≈ δ₂ típico) → 60 penalización
-            penaltyError = Math.min(60.0, result.getErrorMagnitude() * 2.0);
-        }
-
-        // Extra si ya hay alerta severa por compensación de hombro (boost final)
-        double penaltyShoulder = 0.0;
-        String fr = result.getFatigueReason();
-        if (result.getTechnicalError() == ErrorLevel.SEVERE
-                && fr != null
-                && fr.contains("Compensación del hombro")) {
-            penaltyShoulder = 30.0;
+            penaltyError = Math.min(30.0, result.getErrorMagnitude() * 1.5);
         }
 
         double targetStability = Math.max(0.0,
-                100.0 - penaltyVL - penaltyError - penaltyShoulder);
+                100.0 - penaltyShoulder - penaltyVL - penaltyError);
 
         emaStability = emaStability + STABILITY_ALPHA * (targetStability - emaStability);
         int displayStability = (int) Math.round(emaStability);
@@ -295,22 +433,164 @@ public class CameraActivity extends AppCompatActivity {
         }
         metricStability.setTextColor(stabilityColor);
 
-        // ── Consistencia (continua, siempre que haya errorMagnitude) ──────────
-        // Tras el fix en el algoritmo, errorMagnitude se reporta en TODAS las
-        // reps calibradas (no solo cuando hay error). La barra sube si el usuario
-        // mejora y baja si empeora.
-        if (result.getErrorMagnitude() != null) {
-            double error = result.getErrorMagnitude();
-            // Mapa: error 0° → 100%; error 40° → 0%
-            double targetConsistency = Math.max(0.0, 100.0 - (error / 40.0) * 100.0);
-
-            if (emaConsistency < 0) {
-                emaConsistency = targetConsistency;
-            } else {
-                emaConsistency = emaConsistency + CONSISTENCY_ALPHA * (targetConsistency - emaConsistency);
-            }
-            progressConsistency.setProgress((int) Math.round(emaConsistency));
+        // ── Panel 3: VELOCIDAD (°/s) — instantanea con EMA ligera ───────────
+        // Antes mostrabamos el pico de la rep (solo subia, casi nunca bajaba):
+        // sentir "vivo" requiere mostrar |omega| del frame actual. omega viene
+        // del algoritmo en rad/s; convertimos a deg/s y suavizamos con un EMA
+        // de alpha 0.45 para que siga al brazo sin parpadeos.
+        //   - Activa (movimiento real): el numero sube y baja con cada fase.
+        //   - Pausa (|omega| ~ 0): cae a "--" para no llenar la UI de ceros.
+        // Color: VL del propio algoritmo (verde / ambar / rojo) marca fatiga.
+        Double omegaRad = result.getAngularVelocity();
+        if (omegaRad != null) {
+            double instDegS = Math.abs(Math.toDegrees(omegaRad));
+            if (emaCurlVelocity == null) emaCurlVelocity = instDegS;
+            else emaCurlVelocity = emaCurlVelocity
+                    + CURL_VEL_ALPHA * (instDegS - emaCurlVelocity);
         }
+
+        if (emaCurlVelocity != null && emaCurlVelocity > 5.0) {
+            metricCurlVelocity.setText(
+                    String.format(Locale.US, "%.0f", emaCurlVelocity));
+            int velColor;
+            Double vl = result.getVelocityLossPercent();
+            if (vl != null && vl >= 40.0) {
+                velColor = ContextCompat.getColor(this, R.color.risk_red);
+            } else if (vl != null && vl >= 20.0) {
+                velColor = ContextCompat.getColor(this, R.color.toasted_almond);
+            } else {
+                velColor = ContextCompat.getColor(this, R.color.improvement_green);
+            }
+            metricCurlVelocity.setTextColor(velColor);
+        } else {
+            metricCurlVelocity.setText("--");
+            metricCurlVelocity.setTextColor(
+                    ContextCompat.getColor(this, R.color.silver_2));
+        }
+
+        // ── Panel 4: FLEXIÓN (%) — theta(t) en % del rango anatomico ────────
+        // Brazo extendido (~170°) = 0%, pico anatomico (~30°) = 100%. Cada
+        // frame el porcentaje sigue al antebrazo. ROM objetivo >=110° = ~78%.
+        // Aplicamos el mismo EMA que al angulo (de hecho derivamos el % a
+        // partir del angulo ya suavizado para coherencia 1:1 entre paneles).
+        if (curAngle != null) {
+            final double EXTENDED_DEG  = 170.0;
+            final double FULL_FLEX_DEG = 30.0;
+            double range = EXTENDED_DEG - FULL_FLEX_DEG; // 140°
+            double rawFlexPct = ((EXTENDED_DEG - curAngle) / range) * 100.0;
+            rawFlexPct = Math.max(0.0, Math.min(100.0, rawFlexPct));
+            if (emaCurlFlex == null) emaCurlFlex = rawFlexPct;
+            else emaCurlFlex = emaCurlFlex
+                    + CURL_ANGLE_ALPHA * (rawFlexPct - emaCurlFlex);
+
+            metricCurlFlex.setText(String.format(Locale.US, "%.0f", emaCurlFlex));
+            int flexColor;
+            if (emaCurlFlex < 30.0) {
+                flexColor = ContextCompat.getColor(this, R.color.silver_2);
+            } else {
+                flexColor = ContextCompat.getColor(this, R.color.improvement_green);
+            }
+            metricCurlFlex.setTextColor(flexColor);
+        } else {
+            metricCurlFlex.setText("--");
+            metricCurlFlex.setTextColor(
+                    ContextCompat.getColor(this, R.color.silver_2));
+        }
+
+        // Para la alerta seguimos pasando el ROM de la ultima rep cerrada
+        // — la regla "(3) ROM incompleto" sigue siendo Pinto 2012 / Goto 2019.
+        Double displayRom = result.getCurrentRepRomDeg();
+        if (displayRom == null) displayRom = result.getLastRepRomDeg();
+
+        // ── Panel 5: alerta contextual ───────────────────────────────────────
+        updateCurlAlert(result, shoulderShift, displayRom, livePeak);
+    }
+
+    /**
+     * Linea de estado bajo los cuatro paneles. Cada mensaje apunta DIRECTO al
+     * panel afectado, asi el usuario sabe por que ese panel cambio de color.
+     * En estado OK, en lugar de un texto generico, mostramos un resumen vivo
+     * con los tres datos mas accionables: rep actual, pico de la ultima rep
+     * y velocidad pico de la ultima rep — todos numeros ya familiares de los
+     * paneles de arriba.
+     *
+     * Prioridad:
+     *   (1) Compensacion de hombro >15°   → ROJO   apunta a ÁNGULO
+     *   (2) Fatiga VL>=20%                → ROJO   apunta a VELOCIDAD
+     *   (3) ROM ultima rep <110°          → ÁMBAR  apunta a FLEXIÓN
+     *   (4) Calibrando (<3 reps)          → GRIS   informativo
+     *   (5) Todo OK                       → VERDE  resumen vivo (Rep · Pico · Vel pico)
+     */
+    private void updateCurlAlert(AlgorithmResult result,
+                                 Double shoulderShift,
+                                 Double displayRom,
+                                 Double livePeak) {
+        if (squatAlertText == null) return;
+        squatAlertText.setVisibility(View.VISIBLE);
+
+        int repCount = result.getRepCount();
+        Double vl = result.getVelocityLossPercent();
+
+        // Pre-arranque: aun no se ha iniciado el primer curl.
+        if (repCount == 0 && livePeak == null && (shoulderShift == null || shoulderShift < 2.0)) {
+            squatAlertText.setText(R.string.camera_curl_status_ready);
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            return;
+        }
+
+        // (1) Compensacion de hombro — apunta al panel ÁNGULO (que ahora mismo
+        // esta en rojo por el mismo motivo).
+        if (shoulderShift != null && shoulderShift > 15.0) {
+            squatAlertText.setText(getString(R.string.camera_curl_alert_shoulder, shoulderShift));
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.risk_red));
+            return;
+        }
+
+        // (2) Fatiga VL≥20% — apunta al panel VELOCIDAD (que ahora mismo lleva
+        // color ambar/rojo por VL).
+        if (vl != null && vl >= 20.0) {
+            squatAlertText.setText(getString(R.string.camera_curl_alert_fatigue, vl));
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.risk_red));
+            return;
+        }
+
+        // (3) ROM incompleto en la ULTIMA rep cerrada (no en una rep activa
+        // que aun no ha llegado al pico). repCount > 0 garantiza que hay una
+        // rep terminada; livePeak == null indica que no estamos en concentrica.
+        // Apunta al panel FLEXIÓN.
+        if (repCount > 0 && livePeak == null
+                && displayRom != null && displayRom < 110.0) {
+            squatAlertText.setText(getString(R.string.camera_curl_alert_partial_rom, displayRom));
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.toasted_almond));
+            return;
+        }
+
+        // (4) Calibrando — referencias se congelan a las 3 reps.
+        if (repCount < 3) {
+            squatAlertText.setText(getString(R.string.camera_curl_calibrando, repCount));
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            return;
+        }
+
+        // (5) Estado OK → resumen vivo. Tomamos el pico y la velocidad pico de
+        // la ULTIMA rep cerrada (no la rep activa, para que no parpadee mientras
+        // bajas el peso). Si por algun motivo falta uno, degradamos a un formato
+        // mas corto en vez de poner placeholders.
+        Double summaryPeak     = result.getLastRepPeakFlexionDeg();
+        Double summaryPeakVel  = result.getConcentricPeakVelocityDegS();
+        if (summaryPeak != null && summaryPeakVel != null) {
+            squatAlertText.setText(getString(
+                    R.string.camera_curl_summary_full_format,
+                    repCount, summaryPeak, summaryPeakVel));
+        } else if (summaryPeak != null) {
+            squatAlertText.setText(getString(
+                    R.string.camera_curl_summary_partial_format,
+                    repCount, summaryPeak));
+        } else {
+            squatAlertText.setText(getString(
+                    R.string.camera_curl_summary_repcount_format, repCount));
+        }
+        squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.improvement_green));
     }
 
     private void onSquatResult(AlgorithmResult result) {
@@ -831,10 +1111,25 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void finishSession() {
+        // Idempotente: si ya estamos cerrando la sesion (por ej. el usuario
+        // pulsa el back de sistema y luego el del top bar), no abrir Summary
+        // dos veces.
+        if (sessionFinishing) return;
+        sessionFinishing = true;
         stopTimer();
         Intent intent = new Intent(this, SummaryActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * Captura el back de sistema (boton fisico / gesto desde el borde) para
+     * llevar al usuario al Workout Summary igual que el back del top bar, en
+     * vez del comportamiento por defecto que solo cerraba la pantalla.
+     */
+    @Override
+    public void onBackPressed() {
+        finishSession();
     }
 
     @Override

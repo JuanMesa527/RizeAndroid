@@ -33,11 +33,11 @@
     <!-- Camera -->
     <string name="camera_rec">REC</string>
     <string name="camera_settings">Settings</string>
-    <string name="camera_peak_angle">PEAK ANGLE</string>
-    <string name="camera_stability">STABILITY</string>
+    <string name="camera_peak_angle">ÁNGULO</string>
+    <string name="camera_stability">ESTABILIDAD</string>
     <string name="camera_session_consistency">Session Consistency</string>
     <string name="camera_target_depth">65% Target Depth</string>
-    <string name="camera_title_analysis_format">%1$s ANALYSIS</string>
+    <string name="camera_title_analysis_format">ANÁLISIS DE %1$s</string>
     <string name="camera_hip_placeholder">Hip --</string>
     <string name="camera_hip_angle_format">Hip %1$.0f°</string>
     <string name="camera_value_missing">Falta</string>
@@ -75,6 +75,29 @@
     <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>
     <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL25): considera cerrar la serie.</string>
     <string name="camera_bench_alert_depth_and_extension">Corrige profundidad y extension en esta repeticion.</string>
+
+    <!-- Curl de biceps — telemetria en vivo -->
+    <string name="camera_curl_peak_label">ÁNGULO</string>
+    <string name="camera_curl_now_format">Ahora %1$.0f°</string>
+    <string name="camera_curl_peak_format">Pico %1$.0f°</string>
+    <string name="camera_curl_rom_hint">ROM objetivo ≥110°</string>
+    <string name="camera_curl_stability_label">ESTABILIDAD</string>
+    <!-- Velocidad concentrica + Flexion en vivo -->
+    <string name="camera_curl_velocity_label">VELOCIDAD</string>
+    <string name="camera_curl_velocity_unit">°/s</string>
+    <string name="camera_curl_flex_label">FLEXIÓN</string>
+    <string name="camera_curl_flex_unit">%</string>
+    <string name="camera_curl_status_ready">Levanta el peso para iniciar el análisis.</string>
+    <string name="camera_curl_status_ok">Curl técnicamente estable.</string>
+    <string name="camera_curl_calibrando">Calibrando referencias… rep %1$d/3</string>
+    <!-- Alertas reescritas para apuntar al panel afectado -->
+    <string name="camera_curl_alert_shoulder">Ángulo: codo separado %1$.0f° del torso, pégalo al costado.</string>
+    <string name="camera_curl_alert_partial_rom">Flexión: ROM %1$.0f° (objetivo ≥110°), baja y sube más.</string>
+    <string name="camera_curl_alert_fatigue">Velocidad: caída del %1$.0f%%, considera cerrar la serie.</string>
+    <!-- Linea de resumen en estado OK: Rep · Pico · Velocidad pico -->
+    <string name="camera_curl_summary_full_format">Rep %1$d · Pico %2$.0f° · Vel pico %3$.0f°/s</string>
+    <string name="camera_curl_summary_partial_format">Rep %1$d · Pico %2$.0f°</string>
+    <string name="camera_curl_summary_repcount_format">Rep %1$d · sigue así</string>
 
     <!-- Bench Press — Panel de 5 reglas -->
     <string name="bench_rules_header">Reglas en tiempo real</string>
