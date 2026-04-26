@@ -22,10 +22,10 @@ public class HomepageActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         TextView btnGetStarted = findViewById(R.id.btn_get_started);
-        TextView btnViewAll = findViewById(R.id.btn_view_all);
+        TextView btnAbout = findViewById(R.id.btn_about);
 
         btnGetStarted.setOnClickListener(v -> navigateToSelect());
-        btnViewAll.setOnClickListener(v -> navigateToSelect());
+        btnAbout.setOnClickListener(v -> startActivity(new Intent(this, AboutActivity.class)));
     }
 
     private void setupBottomNav() {

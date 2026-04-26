@@ -21,48 +21,31 @@
             android:paddingBottom="16dp">
 
             <!-- Top Bar -->
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
+                android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_stats"
-                        app:tint="@color/toasted_almond"
-                        android:contentDescription="Logo" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_name"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:layout_marginStart="8dp" />
-                </LinearLayout>
-
                 <ImageView
-                    android:id="@+id/btn_menu"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/ic_menu"
-                    android:padding="4dp"
-                    android:contentDescription="Menu" />
-            </RelativeLayout>
+                    android:src="@drawable/ic_stats"
+                    app:tint="@color/toasted_almond"
+                    android:contentDescription="Logo" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
 
             <!-- Hero Card -->
             <FrameLayout
@@ -70,14 +53,17 @@
                 android:layout_height="220dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_card_dark"
+                android:clipToOutline="true"
+                android:outlineProvider="background">
 
                 <ImageView
                     android:id="@+id/hero_image"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:background="@drawable/bg_card_dark"
+                    android:src="@drawable/main_page"
                     android:contentDescription="Hero" />
 
                 <View
@@ -122,35 +108,16 @@
             </FrameLayout>
 
             <!-- The RIZE Experience -->
-            <RelativeLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:text="@string/home_experience_title"
-                    android:textColor="@color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btn_view_all"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:text="@string/home_view_all"
-                    android:textColor="@color/toasted_almond"
-                    android:textSize="14sp"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </RelativeLayout>
+                android:paddingEnd="16dp"
+                android:text="@string/home_experience_title"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Experience Cards Horizontal Scroll -->
             <HorizontalScrollView
@@ -236,6 +203,25 @@
 
                 </LinearLayout>
             </HorizontalScrollView>
+
+            <!-- Conoce la app -->
+            <TextView
+                android:id="@+id/btn_about"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_button_outline"
+                android:gravity="center"
+                android:text="@string/home_about"
+                android:drawableEnd="@drawable/ic_arrow_forward"
+                android:drawablePadding="8dp"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
             <!-- Elevate Your Movement -->
             <LinearLayout

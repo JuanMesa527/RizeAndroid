@@ -36,21 +36,21 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
     private void setupExerciseList() {
         allExercises = new ArrayList<>();
         allExercises.add(new ExerciseAdapter.Exercise(
-                "Bench Press",
+                getString(R.string.exercise_bench_press),
                 getString(R.string.select_cat_strength),
-                "Chest, Shoulders, Triceps",
+                getString(R.string.muscles_bench_press),
                 0
         ));
         allExercises.add(new ExerciseAdapter.Exercise(
-                "Barbell Squat",
+                getString(R.string.exercise_barbell_squat),
                 getString(R.string.select_cat_compound),
-                "Quads, Glutes, Lower Back",
+                getString(R.string.muscles_barbell_squat),
                 0
         ));
         allExercises.add(new ExerciseAdapter.Exercise(
-                "Dumbbell Curl",
+                getString(R.string.exercise_dumbbell_curl),
                 getString(R.string.select_cat_isolation),
-                "Biceps Brachii, Forearms",
+                getString(R.string.muscles_dumbbell_curl),
                 0
         ));
 

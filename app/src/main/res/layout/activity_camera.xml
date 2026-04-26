@@ -48,7 +48,7 @@
                     android:id="@+id/camera_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="SQUAT DEPTH ANALYSIS"
+                    android:text="@string/camera_squat_depth_title"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -166,7 +166,7 @@
                             android:id="@+id/metric_hip_angle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Hip --"
+                            android:text="@string/camera_hip_angle_empty"
                             android:textColor="@color/silver_2"
                             android:textSize="12sp"
                             android:layout_marginBottom="6dp" />

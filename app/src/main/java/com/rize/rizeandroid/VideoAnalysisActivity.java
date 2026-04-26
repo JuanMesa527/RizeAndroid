@@ -136,7 +136,11 @@ public class VideoAnalysisActivity extends AppCompatActivity {
     }
 
     private void setupSpinner() {
-        String[] exercises = {"Bench Press", "Barbell Squat", "Dumbbell Curl"};
+        String[] exercises = {
+                getString(R.string.exercise_bench_press),
+                getString(R.string.exercise_barbell_squat),
+                getString(R.string.exercise_dumbbell_curl)
+        };
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, exercises);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -432,7 +436,7 @@ public class VideoAnalysisActivity extends AppCompatActivity {
     }
 
     private void showMetrics(AlgorithmResult r) {
-        String txt = "Rep " + r.getRepCount()
+        String txt = getString(R.string.video_rep_label) + r.getRepCount()
                 + "   " + r.getTechnicalError()
                 + (r.getFatigueDetected() ? "  ⚡ Fatiga" : "");
         metricsText.setText(txt);
@@ -463,9 +467,9 @@ public class VideoAnalysisActivity extends AppCompatActivity {
         }
         return "Ejercicio: " + exerciseSpinner.getSelectedItem() + "\n"
                 + "Repeticiones: " + reps + "\n"
-                + "Frames analizados: " + frames.size() + "\n"
-                + "Frames con alerta: " + alertF + "\n"
-                + "Frames con fatiga: " + fatigueF;
+                + getString(R.string.video_frames_analyzed) + frames.size() + "\n"
+                + getString(R.string.video_frames_alert) + alertF + "\n"
+                + getString(R.string.video_frames_fatigue) + fatigueF;
     }
 
     // ═════════════════════════════════════════════════════════════════════════

@@ -181,10 +181,12 @@ public class CameraActivity extends AppCompatActivity {
         benchRuleExtensionDot       = findViewById(R.id.bench_rule_extension_dot);
         benchRuleExtensionValue     = findViewById(R.id.bench_rule_extension_value);
 
-        String normalizedName = exerciseName == null ? "" : exerciseName.toLowerCase(Locale.US);
-        isCurlExercise = normalizedName.contains("curl");
-        isSquatExercise = normalizedName.contains("squat");
-        isBenchPressExercise = normalizedName.contains("bench");
+        // IMPORTANTE: los nombres vienen del strings.xml en español.
+        // Se mantienen ambas palabras clave (EN + ES) para sobrevivir futuros merges.
+        String normalizedName = exerciseName == null ? "" : exerciseName.toLowerCase(Locale.ROOT);
+        isCurlExercise       = normalizedName.contains("curl")  || normalizedName.contains("mancuerna");
+        isSquatExercise      = normalizedName.contains("squat") || normalizedName.contains("sentadilla");
+        isBenchPressExercise = normalizedName.contains("bench") || normalizedName.contains("banca");
         isAnalyzedExercise = isCurlExercise || isSquatExercise || isBenchPressExercise;
 
         if (!isAnalyzedExercise) {

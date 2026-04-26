@@ -2,52 +2,77 @@
     <string name="app_name">RIZE</string>
 
     <!-- Bottom Nav -->
-    <string name="nav_home">Home</string>
-    <string name="nav_stats">Stats</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_stats">Estadísticas</string>
 
     <!-- Homepage -->
-    <string name="home_hero_chip">KINEMATICS</string>
-    <string name="home_hero_title">Master your kinematics</string>
-    <string name="home_hero_subtitle">Precision-engineered movement for the modern athlete.</string>
-    <string name="home_experience_title">The RIZE Experience</string>
-    <string name="home_view_all">View All</string>
-    <string name="home_form_analysis">Form Analysis</string>
-    <string name="home_form_analysis_desc">AI-powered tracking to ensure every rep is biomechanically perfect.</string>
-    <string name="home_load_tracking">Load Tracking</string>
-    <string name="home_load_tracking_desc">Detailed volume and intensity metrics for optimal programming.</string>
-    <string name="home_elevate_title">Elevate Your Movement</string>
-    <string name="home_elevate_desc">Join 50k+ athletes using RIZE to reach peak performance through data-driven training methodologies.</string>
-    <string name="home_get_started">Get Started</string>
+    <string name="home_hero_chip">CINEMÁTICA</string>
+    <string name="home_hero_title">Domina tu cinemática</string>
+    <string name="home_hero_subtitle">Movimiento de precisión diseñado para el atleta moderno.</string>
+    <string name="home_experience_title">La Experiencia RIZE</string>
+    <string name="home_view_all">Ver Todo</string>
+    <string name="home_form_analysis">Análisis de Forma</string>
+    <string name="home_form_analysis_desc">Seguimiento con IA para garantizar que cada repetición sea biomecánicamente perfecta.</string>
+    <string name="home_load_tracking">Seguimiento de Carga</string>
+    <string name="home_load_tracking_desc">Métricas detalladas de volumen e intensidad para una programación óptima.</string>
+    <string name="home_elevate_title">Eleva Tu Movimiento</string>
+    <string name="home_elevate_desc">Únete a más de 50k atletas que usan RIZE para alcanzar el máximo rendimiento mediante metodologías de entrenamiento basadas en datos.</string>
+    <string name="home_get_started">Comenzar</string>
+    <string name="home_about">Conoce la app</string>
+
+    <!-- About / Tutorial -->
+    <string name="about_toolbar_title">Conoce RIZE</string>
+    <string name="about_what_title">¿Qué es RIZE?</string>
+    <string name="about_what_desc">RIZE es tu asistente de entrenamiento inteligente. Usa visión por computadora e inteligencia artificial para analizar tu técnica en tiempo real mientras entrenas, ayudándote a mejorar tu rendimiento y prevenir lesiones.</string>
+    <string name="about_goal_title">¿Para qué sirve?</string>
+    <string name="about_goal_desc">RIZE detecta errores biomecánicos en tus movimientos — como profundidad insuficiente en sentadillas o asimetría en press de banca — y te da retroalimentación instantánea para que cada repetición sea perfecta.</string>
+    <string name="about_step1_title">1. Elige tu ejercicio</string>
+    <string name="about_step1_desc">Desde la pantalla principal, toca el botón central de la barra inferior para seleccionar el ejercicio que vas a realizar.</string>
+    <string name="about_step2_title">2. Posiciónate frente a la cámara</string>
+    <string name="about_step2_desc">Coloca tu teléfono de forma que toda tu silueta sea visible. Para sentadillas, posiciónate de lado. Para press de banca, de frente.</string>
+    <string name="about_step3_title">3. Entrena y recibe feedback</string>
+    <string name="about_step3_desc">RIZE analiza cada repetición en tiempo real. Las alertas aparecen en pantalla al instante para que puedas corregir tu técnica sobre la marcha.</string>
+    <string name="about_step4_title">4. Revisa tu resumen</string>
+    <string name="about_step4_desc">Al terminar, accede al resumen de tu sesión con métricas de precisión, repeticiones y recomendaciones de la IA para tu próximo entrenamiento.</string>
+    <string name="about_start_btn">Empezar a entrenar</string>
 
     <!-- Select Exercise -->
-    <string name="select_toolbar_title">RIZE Training</string>
-    <string name="select_title_prefix">Choose Your </string>
-    <string name="select_title_highlight">Exercise</string>
-    <string name="select_subtitle">Select a movement to begin your session and track your progress.</string>
-    <string name="select_search_hint">Search exercises…</string>
-    <string name="select_start_sets">Start Sets</string>
-    <string name="select_cat_strength">STRENGTH</string>
-    <string name="select_cat_compound">COMPOUND</string>
-    <string name="select_cat_isolation">ISOLATION</string>
+    <string name="select_toolbar_title">Entrenamiento RIZE</string>
+
+    <!-- Exercise names -->
+    <string name="exercise_bench_press">Press de Banca</string>
+    <string name="exercise_barbell_squat">Sentadilla con Barra</string>
+    <string name="exercise_dumbbell_curl">Curl con Mancuerna</string>
+
+    <!-- Muscle groups -->
+    <string name="muscles_bench_press">Pecho, Hombros, Tríceps</string>
+    <string name="muscles_barbell_squat">Cuádriceps, Glúteos, Zona Lumbar</string>
+    <string name="muscles_dumbbell_curl">Bíceps Braquial, Antebrazos</string>
+    <string name="select_title_prefix">Elige Tu </string>
+    <string name="select_title_highlight">Ejercicio</string>
+    <string name="select_subtitle">Selecciona un movimiento para comenzar tu sesión y rastrear tu progreso.</string>
+    <string name="select_search_hint">Buscar ejercicios…</string>
+    <string name="select_start_sets">Iniciar Series</string>
+    <string name="select_cat_strength">FUERZA</string>
+    <string name="select_cat_compound">COMPUESTO</string>
+    <string name="select_cat_isolation">AISLAMIENTO</string>
 
     <!-- Camera -->
     <string name="camera_rec">REC</string>
-    <string name="camera_settings">Settings</string>
-    <string name="camera_peak_angle">ÁNGULO</string>
+    <string name="camera_settings">Ajustes</string>
+    <string name="camera_peak_angle">ÁNGULO PICO</string>
     <string name="camera_stability">ESTABILIDAD</string>
-    <string name="camera_session_consistency">Session Consistency</string>
-    <string name="camera_target_depth">65% Target Depth</string>
+    <string name="camera_session_consistency">Consistencia de Sesión</string>
+    <string name="camera_target_depth">65% Profundidad Objetivo</string>
+    <string name="camera_knee_angle">ÁNGULO DE RODILLA</string>
+    <string name="camera_cvt">CVT TÉCNICO</string>
+    <string name="camera_velocity_retention">Retención de Velocidad</string>
+    <string name="camera_vl20_hint">Umbral de Fatiga VL20</string>
     <string name="camera_title_analysis_format">ANÁLISIS DE %1$s</string>
     <string name="camera_hip_placeholder">Hip --</string>
-    <string name="camera_hip_angle_format">Hip %1$.0f°</string>
     <string name="camera_value_missing">Falta</string>
-    <string name="camera_permission_required">Camera permission is required</string>
     <string name="camera_squat_cvt_calibrando">CVT calibrando (rep %1$d)</string>
     <string name="camera_squat_status_calibrando">Calibrando metrica... rep %1$d</string>
-    <string name="camera_knee_angle">KNEE ANGLE</string>
-    <string name="camera_cvt">TECHNICAL CVT</string>
-    <string name="camera_velocity_retention">Velocity Retention</string>
-    <string name="camera_vl20_hint">VL20 Fatigue Threshold</string>
     <string name="camera_squat_status_ready">Alineate de lado para iniciar el analisis.</string>
     <string name="camera_squat_status_ok">Tecnica estable.</string>
     <string name="camera_squat_alert_depth">Profundidad insuficiente: baja un poco mas.</string>
@@ -56,11 +81,10 @@
     <string name="camera_squat_alert_instability">Inestabilidad tecnica: reduce variabilidad.</string>
     <string name="camera_squat_alert_variability">Variabilidad moderada: busca reps consistentes.</string>
     <string name="camera_squat_alert_fatigue">Fatiga tecnica (VL20): considera cerrar la serie.</string>
-    <!-- Bench Press Camera -->
-    <string name="camera_elbow_angle">ELBOW ANGLE</string>
-    <string name="camera_abduction">ABDUCTION</string>
-    <string name="camera_bench_velocity_retention">Velocity Retention</string>
-    <string name="camera_bench_vl_hint">VL15/VL25 Fatigue Threshold</string>
+    <string name="camera_elbow_angle">ÁNGULO DE CODO</string>
+    <string name="camera_abduction">ABDUCCIÓN</string>
+    <string name="camera_bench_velocity_retention">Retención de Velocidad</string>
+    <string name="camera_bench_vl_hint">Umbral de Fatiga VL15/VL25</string>
     <string name="camera_bench_status_ready">Posicionate de frente para iniciar el analisis.</string>
     <string name="camera_bench_status_ok">Tecnica estable.</string>
     <string name="camera_bench_alert_grip">Agarre excesivo: riesgo de hombro, acerca las manos.</string>
@@ -114,27 +138,39 @@
     <string name="bench_status_placeholder">--</string>
 
     <!-- Camera Switch -->
-    <string name="camera_switch">Switch Camera</string>
+    <string name="camera_switch">Cambiar Cámara</string>
 
-    <string name="camera_min">MIN</string>
-    <string name="camera_avg">AVG</string>
-    <string name="camera_optimal">OPTIMAL</string>
+    <!-- Camera Hip metric -->
+    <string name="camera_hip_angle_empty">Cadera --</string>
+    <string name="camera_hip_angle_format">Cadera %.0f°</string>
+    <string name="camera_squat_depth_title">ANÁLISIS DE PROFUNDIDAD DE SENTADILLA</string>
+    <string name="camera_permission_required">Se requiere permiso de cámara</string>
+
+    <!-- Video Analysis -->
+    <string name="video_rep_label">Rep </string>
+    <string name="video_frames_analyzed">Frames analizados: </string>
+    <string name="video_frames_alert">Frames con alerta: </string>
+    <string name="video_frames_fatigue">Frames con fatiga: </string>
+
+    <string name="camera_min">MÍN</string>
+    <string name="camera_avg">PROM</string>
+    <string name="camera_optimal">ÓPTIMO</string>
 
     <!-- Summary -->
-    <string name="summary_toolbar_title">Workout Summary</string>
-    <string name="summary_session_chip">POWER SESSION</string>
-    <string name="summary_performance_title">Elite Performance!</string>
-    <string name="summary_performance_subtitle">You outperformed 85% of your past sessions.</string>
-    <string name="summary_form_accuracy">Form Accuracy</string>
-    <string name="summary_rep_count">Rep Count</string>
-    <string name="summary_ai_insights">AI Insights</string>
-    <string name="summary_movement_efficiency">Movement Efficiency</string>
-    <string name="summary_movement_efficiency_desc">Keep your back straighter during the final 3 reps of your deadlift sets to maximize torque.</string>
-    <string name="summary_tempo_balance">Tempo Balance</string>
-    <string name="summary_tempo_balance_desc">Your concentric phase is perfect, but try slowing down the eccentric movement for better hypertrophy.</string>
-    <string name="summary_risk_warning">Risk Warning</string>
-    <string name="summary_joint_stress_title">High Joint Stress Detected</string>
-    <string name="summary_joint_stress_desc">RIZE AI noticed significant knee valgus during your squats. To prevent ACL strain, focus on pushing your knees outward. Consider reducing weight by 10% until form stabilizes.</string>
-    <string name="summary_go_home">Go Home</string>
-    <string name="summary_save_workout">Save Workout</string>
+    <string name="summary_toolbar_title">Resumen del Entrenamiento</string>
+    <string name="summary_session_chip">SESIÓN DE POTENCIA</string>
+    <string name="summary_performance_title">¡Rendimiento Élite!</string>
+    <string name="summary_performance_subtitle">Superaste el 85% de tus sesiones anteriores.</string>
+    <string name="summary_form_accuracy">Precisión de Forma</string>
+    <string name="summary_rep_count">Conteo de Repeticiones</string>
+    <string name="summary_ai_insights">Análisis con IA</string>
+    <string name="summary_movement_efficiency">Eficiencia de Movimiento</string>
+    <string name="summary_movement_efficiency_desc">Mantén la espalda más recta durante las últimas 3 repeticiones de tus series de peso muerto para maximizar el torque.</string>
+    <string name="summary_tempo_balance">Balance de Tempo</string>
+    <string name="summary_tempo_balance_desc">Tu fase concéntrica es perfecta, pero intenta ralentizar el movimiento excéntrico para una mejor hipertrofia.</string>
+    <string name="summary_risk_warning">Advertencia de Riesgo</string>
+    <string name="summary_joint_stress_title">Estrés Articular Elevado Detectado</string>
+    <string name="summary_joint_stress_desc">La IA de RIZE detectó valgo de rodilla significativo durante tus sentadillas. Para prevenir tensión en el LCA, enfócate en empujar las rodillas hacia afuera. Considera reducir el peso un 10% hasta que la técnica se estabilice.</string>
+    <string name="summary_go_home">Ir al Inicio</string>
+    <string name="summary_save_workout">Guardar Entrenamiento</string>
 </resources>

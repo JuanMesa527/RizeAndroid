@@ -44,9 +44,12 @@ class Algorithms {
 
     fun selectAlgorithm(exerciseName: String) {
         activeAlgorithm = when {
-            exerciseName.contains("curl", ignoreCase = true) -> curlBiomechanics
-            exerciseName.contains("squat", ignoreCase = true) -> squatBiomechanics
-            exerciseName.contains("bench", ignoreCase = true) -> benchPressBiomechanics
+            exerciseName.contains("curl", ignoreCase = true) ||
+            exerciseName.contains("mancuerna", ignoreCase = true) -> curlBiomechanics
+            exerciseName.contains("squat", ignoreCase = true) ||
+            exerciseName.contains("sentadilla", ignoreCase = true) -> squatBiomechanics
+            exerciseName.contains("bench", ignoreCase = true) ||
+            exerciseName.contains("banca", ignoreCase = true) -> benchPressBiomechanics
             else -> curlBiomechanics
         }
         activeAlgorithm.reset()
