@@ -18,12 +18,14 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         public final String category;
         public final String muscles;
         public final int imageRes;
+        public final ExerciseType exerciseType;
 
-        public Exercise(String name, String category, String muscles, int imageRes) {
+        public Exercise(String name, String category, String muscles, int imageRes, ExerciseType exerciseType) {
             this.name = name;
             this.category = category;
             this.muscles = muscles;
             this.imageRes = imageRes;
+            this.exerciseType = exerciseType;
         }
     }
 

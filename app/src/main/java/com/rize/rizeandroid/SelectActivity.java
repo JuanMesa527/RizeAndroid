@@ -39,19 +39,22 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
                 getString(R.string.exercise_bench_press),
                 getString(R.string.select_cat_strength),
                 getString(R.string.muscles_bench_press),
-                0
+                0,
+                ExerciseType.BENCH_PRESS
         ));
         allExercises.add(new ExerciseAdapter.Exercise(
                 getString(R.string.exercise_barbell_squat),
                 getString(R.string.select_cat_compound),
                 getString(R.string.muscles_barbell_squat),
-                0
+                0,
+                ExerciseType.SQUAT
         ));
         allExercises.add(new ExerciseAdapter.Exercise(
                 getString(R.string.exercise_dumbbell_curl),
                 getString(R.string.select_cat_isolation),
                 getString(R.string.muscles_dumbbell_curl),
-                0
+                0,
+                ExerciseType.CURL
         ));
 
         adapter = new ExerciseAdapter(new ArrayList<>(allExercises), this);
@@ -111,6 +114,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
     public void onStartSets(ExerciseAdapter.Exercise exercise) {
         Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra("exercise_name", exercise.name);
+        intent.putExtra("exercise_type", exercise.exerciseType.name());
         startActivity(intent);
     }
 }

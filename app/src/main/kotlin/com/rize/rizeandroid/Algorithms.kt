@@ -42,6 +42,19 @@ class Algorithms {
     @set:JvmName("setResultCallback")
     var onResult: ((AlgorithmResult) -> Unit)? = null
 
+    /** Versión tipada — preferida, inmune al idioma. */
+    fun selectAlgorithm(type: ExerciseType) {
+        activeAlgorithm = when (type) {
+            ExerciseType.SQUAT       -> squatBiomechanics
+            ExerciseType.BENCH_PRESS -> benchPressBiomechanics
+            ExerciseType.CURL        -> curlBiomechanics
+            ExerciseType.UNKNOWN     -> curlBiomechanics
+        }
+        activeAlgorithm.reset()
+        landmarkSmoother.reset()
+    }
+
+    /** Versión legacy por string — mantenida para VideoAnalysisActivity. */
     fun selectAlgorithm(exerciseName: String) {
         activeAlgorithm = when {
             exerciseName.contains("curl", ignoreCase = true) ||

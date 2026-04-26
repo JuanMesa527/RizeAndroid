@@ -181,13 +181,24 @@ public class CameraActivity extends AppCompatActivity {
         benchRuleExtensionDot       = findViewById(R.id.bench_rule_extension_dot);
         benchRuleExtensionValue     = findViewById(R.id.bench_rule_extension_value);
 
-        // IMPORTANTE: los nombres vienen del strings.xml en español.
-        // Se mantienen ambas palabras clave (EN + ES) para sobrevivir futuros merges.
-        String normalizedName = exerciseName == null ? "" : exerciseName.toLowerCase(Locale.ROOT);
-        isCurlExercise       = normalizedName.contains("curl")  || normalizedName.contains("mancuerna");
-        isSquatExercise      = normalizedName.contains("squat") || normalizedName.contains("sentadilla");
-        isBenchPressExercise = normalizedName.contains("bench") || normalizedName.contains("banca");
-        isAnalyzedExercise = isCurlExercise || isSquatExercise || isBenchPressExercise;
+        // Detectar tipo de ejercicio desde el extra tipado (inmune al idioma).
+        // Fallback a detección por string para compatibilidad con VideoAnalysisActivity.
+        String exerciseTypeRaw = getIntent().getStringExtra("exercise_type");
+        ExerciseType exerciseType = ExerciseType.UNKNOWN;
+        if (exerciseTypeRaw != null) {
+            try { exerciseType = ExerciseType.valueOf(exerciseTypeRaw); }
+            catch (IllegalArgumentException ignored) {}
+        }
+        if (exerciseType == ExerciseType.UNKNOWN && exerciseName != null) {
+            String n = exerciseName.toLowerCase(Locale.ROOT);
+            if (n.contains("curl")  || n.contains("mancuerna"))   exerciseType = ExerciseType.CURL;
+            else if (n.contains("squat") || n.contains("sentadilla")) exerciseType = ExerciseType.SQUAT;
+            else if (n.contains("bench") || n.contains("banca"))      exerciseType = ExerciseType.BENCH_PRESS;
+        }
+        isCurlExercise       = exerciseType == ExerciseType.CURL;
+        isSquatExercise      = exerciseType == ExerciseType.SQUAT;
+        isBenchPressExercise = exerciseType == ExerciseType.BENCH_PRESS;
+        isAnalyzedExercise   = exerciseType != ExerciseType.UNKNOWN;
 
         if (!isAnalyzedExercise) {
             // Ocultar las métricas para ejercicios sin análisis
@@ -274,7 +285,7 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         algorithms = new Algorithms();
-        algorithms.selectAlgorithm(exerciseName);
+        algorithms.selectAlgorithm(exerciseType);
 
         PoseDataManager.INSTANCE.setPoseDataListener(landmarkData -> {
             algorithms.onPoseData(landmarkData);
