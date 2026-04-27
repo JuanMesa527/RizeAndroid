@@ -13,42 +13,47 @@ import kotlin.math.sqrt
  *
  * Reglas de correccion postural:
  *   1. Ancho de agarre: distancia entre munecas vs. ancho biacromial.
- *      Nota de calibracion: la tesis cita el umbral de 1.5x biacromial
- *      asociado al limite IPF de 81 cm entre indices. Ese 1.5 esta
- *      medido de punta de dedos a punta de dedos. MediaPipe entrega los
- *      landmarks de muneca (no de dedos), por lo que la razon medida es
- *      ~15-25% menor que la razon de dedos. En campo, un agarre "normal"
- *      visualmente correcto cae en 1.6-2.1 con landmarks de muneca. Los
- *      umbrales operacionales se recalibran en consecuencia manteniendo
- *      la intencion biomecanica (penalizar el agarre excesivo).
- *   2. Abduccion de hombro: angulo cadera-hombro-codo. Alerta >45, critico >90
- *   3. Simetria bilateral: |codo izq - codo der| <= 2.75 (umbral de literatura)
- *   4. Profundidad de descenso: codo debe bajar por debajo de la linea del torso
+ *   2. Abduccion de hombro: angulo cadera-hombro-codo en la parte baja.
+ *      Solo se evalua cuando el angulo del codo es <90°. Verde 45-80°, critico >90°
+ *   3. Simetria bilateral: diferencia vertical de munecas normalizada por hombros.
+ *   4. Profundidad de descenso: angulo minimo de codo debe alcanzar <= 95
  *   5. Extension completa: angulo de codo debe alcanzar >= 176 en la cima
  *
  * Prediccion de fatiga/fallo:
  *   6. Periodo de estancamiento: velocidad ~0 durante >870ms en fase concentrica
  *   7. Perdida de velocidad: VL15 (advertencia), VL25 (critico)
  *
- * Vista de camara: LATERAL a la altura del hombro recomendada.
- * La vista frontal produce ambiguedad por proyeccion sobre el eje optico;
- * los landmarks son fiables pero θ puede compararse mal con goniometro.
+ * ─── Vista de camara y geometria 2D (v3) ────────────────────────────────
  *
- * ─── Robustez operacional (v2) ──────────────────────────────────────────
+ * La vista de bench-press en RIZE es FRONTAL a la altura de la cabeza,
+ * ligeramente picada. En esta toma el eje del press (sube/baja la barra)
+ * coincide con el eje optico de la camara, lo que hace que el componente
+ * Z de los landmarks de MediaPipe sea la coordenada con mayor varianza
+ * (BlazePose infiere Z monocularmente, sin sensor de profundidad).
+ *
+ * Por eso TODAS las medidas geometricas en este algoritmo se calculan en
+ * el plano de imagen 2D (ignorando Z). La proyeccion XY conserva senal
+ * suficiente: la apertura lateral de codos y munecas durante el descenso
+ * vive en X, y la subida/bajada de las munecas durante extension/flexion
+ * vive en Y debido al ligero picado de la camara. Squat y curl, que usan
+ * vistas laterales, mantienen su geometria 3D.
+ *
+ * ─── Robustez operacional (v3) ──────────────────────────────────────────
  *
  * Los landmarks que llegan aqui ya vienen filtrados por LandmarkSmoother
- * (1€-Filter, ver Algorithms.kt). Sobre eso, este algoritmo aplica:
+ * con perfil bench (minCutoff=1.2 Hz, beta=0.015) — ver Algorithms.kt.
+ * Sobre eso, este algoritmo aplica:
  *
  *   a) Estado READY/NOT_READY para no emitir alertas hasta que la pose
  *      es estable y visible. Protege al usuario del ruido inicial mientras
  *      encuadra la camara.
  *   b) EMA sobre velocidad angular para suavizar el residuo de ruido que
  *      queda tras derivar con diferencia finita.
- *   c) Debounce de banderas de asimetria y abduccion — un frame aislado
- *      que cruza el umbral no basta; se requieren N frames consecutivos.
- *   d) Umbrales operacionales por encima del suelo de ruido medido en
- *      campo, sin cambiar los umbrales biomecanicos de la tesis (que
- *      siguen documentados como SYMMETRY_THRESHOLD_DEG etc.).
+ *   c) Mediana movil de 5 muestras sobre la asimetria bilateral antes de
+ *      compararla al umbral, para absorber el pico transitorio durante la
+ *      fase rapida del descenso.
+ *   d) Debounce de banderas (10 frames ~ 330 ms) para no parpadear.
+ *   e) Umbrales operacionales por encima del suelo de ruido medido en campo.
  */
 class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
@@ -72,29 +77,54 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // Con 1€-Filter el ruido de velocidad cae a <10 deg/s en reposo; 15
         // deja margen sin perder sensibilidad a reps reales (~40-200 deg/s).
         private const val VELOCITY_HYSTERESIS = 15.0
-        private const val START_DESCENT_ANGLE = 160.0     // angulo codo para iniciar descenso
-        private const val TOP_POSITION_ANGLE = 165.0      // angulo codo para confirmar rep completa
+        private const val START_DESCENT_ANGLE = 155.0     // angulo codo para iniciar descenso
+        private const val TOP_POSITION_ANGLE = 160.0      // angulo codo para confirmar rep completa
 
         // ── Regla 1: Ancho de agarre ────────────────────────────────────────
-        // Umbrales operacionales ajustados a landmarks de muneca (MediaPipe):
-        //  - < GRIP_WIDTH_RATIO_MIN       -> demasiado estrecho (estres muneca/codo)
-        //  - [MIN, MAX]                   -> rango seguro (agarre optimo)
-        //  - (MAX, CRITICAL]              -> ancho moderado, advertencia
-        //  - > CRITICAL                   -> excesivo, riesgo hombro (flag gripTooWide)
-        private const val GRIP_WIDTH_RATIO_MIN = 1.3
-        private const val GRIP_WIDTH_RATIO_MAX = 2.1
-        private const val GRIP_WIDTH_RATIO_CRITICAL = 2.5
+        // El objetivo biomecanico es 1.5x el ancho biacromial:
+        //   gripRatio = ancho horizontal entre munecas / ancho horizontal entre hombros.
+        // Usamos solo X porque el "ancho" del agarre no debe inflarse por diferencias
+        // verticales entre munecas durante el press.
+        //  - [1.25, 1.75] -> optimo (verde, centrado en 1.5x)
+        //  - fuera de ese rango -> advertencia (ambar)
+        //  - > 1.8 -> excesivo, riesgo hombro (rojo / flag gripTooWide)
+        private const val GRIP_WIDTH_RATIO_TARGET = 1.5
+        private const val GRIP_WIDTH_RATIO_MIN = GRIP_WIDTH_RATIO_TARGET - 0.25
+        private const val GRIP_WIDTH_RATIO_MAX = GRIP_WIDTH_RATIO_TARGET + 0.25
+        private const val GRIP_WIDTH_RATIO_CRITICAL = 2.0
+        // Calibracion empirica para la perspectiva actual: las munecas suelen
+        // estar mas cerca de la camara que los hombros, inflando el ratio 2D.
+        // Medicion de referencia: 2.5x observado debe mapear a 1.5x real.
+        private const val GRIP_PERSPECTIVE_CORRECTION = 0.6
 
         // ── Regla 2: Abduccion de hombro ────────────────────────────────────
-        private const val ABDUCTION_WARNING_DEG = 45.0
+        private const val ABDUCTION_EVALUATION_ELBOW_DEG = 90.0
+        private const val ABDUCTION_MIN_OK_DEG = 45.0
+        private const val ABDUCTION_MAX_OK_DEG = 80.0
         private const val ABDUCTION_CRITICAL_DEG = 90.0
 
         // ── Regla 3: Simetria bilateral ─────────────────────────────────────
-        // 2.75 es el umbral biomecanico (Spector et al., 2012). En la practica
-        // esta por debajo del jitter residual de MediaPipe incluso tras filtrar.
-        // Usamos 2.75 como referencia y 8.0 como umbral operacional de alerta.
-        private const val SYMMETRY_THRESHOLD_DEG = 2.75
-        private const val SYMMETRY_ALERT_THRESHOLD_DEG = 8.0
+        // En vista frontal el indicador mas estable es si ambas munecas estan
+        // a la misma altura. Usamos diferencia vertical normalizada por ancho
+        // biacromial horizontal:
+        //   symmetryPct = |wristL.y - wristR.y| / |shoulderL.x - shoulderR.x| * 100
+        //  - < 8%  -> simetria OK
+        //  - >= 8% -> advertencia visual
+        //  - >= 15% sostenido -> asimetria tecnica (flag)
+        private const val SYMMETRY_THRESHOLD_PERCENT = 8.0
+        private const val SYMMETRY_ALERT_THRESHOLD_PERCENT = 15.0
+
+        // ── Regla 4: Profundidad de descenso ────────────────────────────────
+        // Criterio adaptado a vista frontal-cabeza: en lugar de "codo debajo
+        // del torso" (no observable en este encuadre porque la linea hombro-
+        // cadera es ~vertical en imagen y el codo no cruza Y de forma
+        // significativa), evaluamos el ANGULO MINIMO de codo alcanzado en
+        // la rep. La tesis describe la profundidad como "barra finalizar
+        // 4-6 cm sobre el pecho" — para un brazo medio adulto eso traduce
+        // a un angulo de codo en la fase inferior cercano a 90-100°.
+        // 95° toma el punto medio como umbral operacional: si el codo no
+        // baja de 95°, la rep es de profundidad insuficiente.
+        private const val BENCH_DEPTH_MIN_ELBOW_DEG = 95.0
 
         // ── Regla 5: Extension completa ─────────────────────────────────────
         private const val FULL_EXTENSION_MIN_DEG = 176.0
@@ -121,8 +151,16 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         // ── Debounce de banderas posturales ─────────────────────────────────
         // Un frame aislado que cruza el umbral no dispara alerta; se exigen N
-        // frames consecutivos (~170 ms a 30 Hz).
-        private const val POSTURAL_DEBOUNCE_FRAMES = 5
+        // frames consecutivos (~330 ms a 30 Hz). Subido de 5 a 10 tras pasar
+        // a geometria 2D para absorber picos transitorios durante la fase
+        // rapida del descenso de la barra.
+        private const val POSTURAL_DEBOUNCE_FRAMES = 10
+
+        // ── Mediana movil de simetria bilateral ─────────────────────────────
+        // Tamano de ventana para suavizar |L-R| antes de comparar al umbral.
+        // Una mediana de 5 muestras (~167 ms) elimina picos transitorios
+        // sin retrasar significativamente la deteccion de asimetria real.
+        private const val SYMMETRY_MEDIAN_WINDOW = 5
 
         // ── Estado READY ────────────────────────────────────────────────────
         // Frames estables requeridos antes de marcar READY. Mas permisivo que
@@ -159,6 +197,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var abductionWarningConsecutiveFrames = 0
     private var abductionCriticalConsecutiveFrames = 0
 
+    // ── Mediana movil para asimetria bilateral ───────────────────────────────
+    private val asymmetryWindow = ArrayDeque<Double>(SYMMETRY_MEDIAN_WINDOW)
+
     // ── Tracking por rep ─────────────────────────────────────────────────────
     private var currentMinElbowAngleDeg = Double.MAX_VALUE
     private var currentRepStartElbowAngleDeg = Double.MAX_VALUE
@@ -166,6 +207,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var currentPeakEccentricVelocityDegS = 0.0
     private var currentRepElbowWentBelowTorso = false
     private var currentRepTopElbowAngleDeg = 0.0
+    private var currentRepWorstShoulderAbductionDeg: Double? = null
+    private var currentRepShoulderAbductionRisk = false
+    private var currentRepShoulderAbductionCritical = false
 
     // ── Sticking period (Regla 6) ────────────────────────────────────────────
     private var stickingStartMs: Long? = null
@@ -224,9 +268,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             return emptyResult()
         }
 
-        // Calcular angulos de codo bilaterales
-        val leftElbowAngle = if (leftVisible) computeAngle(leftArm.shoulder.vec, leftArm.elbow.vec, leftArm.wrist.vec) else null
-        val rightElbowAngle = if (rightVisible) computeAngle(rightArm.shoulder.vec, rightArm.elbow.vec, rightArm.wrist.vec) else null
+        // Calcular angulos de codo bilaterales en 2D imagen (X-Y, sin Z)
+        val leftElbowAngle = if (leftVisible) computeAngle2D(leftArm.shoulder.vec, leftArm.elbow.vec, leftArm.wrist.vec) else null
+        val rightElbowAngle = if (rightVisible) computeAngle2D(rightArm.shoulder.vec, rightArm.elbow.vec, rightArm.wrist.vec) else null
 
         // Angulo primario = promedio de ambos lados (o el disponible)
         val primaryElbowAngle = when {
@@ -261,13 +305,13 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         // ── Reglas por frame ─────────────────────────────────────────────────
 
-        // Regla 1: Ancho de agarre
+        // Regla 1: Ancho de agarre — apertura horizontal (X) en vista frontal.
         var gripWidthRatio: Double? = null
         if (leftVisible && rightVisible) {
-            val wristDist = distance(leftArm.wrist.vec, rightArm.wrist.vec)
-            val biacromialDist = distance(leftArm.shoulder.vec, rightArm.shoulder.vec)
+            val wristDist = horizontalDistance(leftArm.wrist.vec, rightArm.wrist.vec)
+            val biacromialDist = horizontalDistance(leftArm.shoulder.vec, rightArm.shoulder.vec)
             if (biacromialDist > 1e-6) {
-                gripWidthRatio = wristDist / biacromialDist
+                gripWidthRatio = (wristDist / biacromialDist) * GRIP_PERSPECTIVE_CORRECTION
                 lastGripWidthRatioMeasured = gripWidthRatio
                 // Solo marcamos "demasiado ancho" (riesgo real) cuando cruza el
                 // umbral critico. Las advertencias entre MAX y CRITICAL se
@@ -277,30 +321,64 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             }
         }
 
-        // Regla 2: Abduccion de hombro (con debounce)
-        val abductionLeft = if (leftVisible) computeAngle(leftArm.hip.vec, leftArm.shoulder.vec, leftArm.elbow.vec) else null
-        val abductionRight = if (rightVisible) computeAngle(rightArm.hip.vec, rightArm.shoulder.vec, rightArm.elbow.vec) else null
-        val worstAbduction = listOfNotNull(abductionLeft, abductionRight).maxOrNull()
+        // Regla 2: Abduccion de hombro — solo se evalua en la parte baja.
+        // En vista frontal, el angulo torso-codo es interpretable cuando el
+        // codo ya esta flexionado (<90°). En la parte alta se inflaba por
+        // proyeccion y generaba falsos positivos.
+        val evaluateAbductionNow = primaryElbowAngle < ABDUCTION_EVALUATION_ELBOW_DEG
+        val abductionLeft = if (evaluateAbductionNow && leftVisible) {
+            computeAngle2D(leftArm.hip.vec, leftArm.shoulder.vec, leftArm.elbow.vec)
+        } else null
+        val abductionRight = if (evaluateAbductionNow && rightVisible) {
+            computeAngle2D(rightArm.hip.vec, rightArm.shoulder.vec, rightArm.elbow.vec)
+        } else null
+        val abductionValues = listOfNotNull(abductionLeft, abductionRight)
+        val worstAbduction = when {
+            abductionValues.any { it > ABDUCTION_MAX_OK_DEG } -> abductionValues.maxOrNull()
+            abductionValues.any { it < ABDUCTION_MIN_OK_DEG } -> abductionValues.minOrNull()
+            else -> abductionValues.maxOrNull()
+        }
         lastShoulderAbductionDeg = worstAbduction
         lastShoulderAbductionRisk = updateAbductionRiskDebounced(worstAbduction)
-
-        // Regla 3: Simetria bilateral (con debounce y umbral operacional)
-        var bilateralAsymmetryDeg: Double? = null
-        if (leftElbowAngle != null && rightElbowAngle != null) {
-            bilateralAsymmetryDeg = abs(leftElbowAngle - rightElbowAngle)
-            lastBilateralAsymmetryDeg = bilateralAsymmetryDeg
-            lastBilateralAsymmetry = updateAsymmetryDebounced(bilateralAsymmetryDeg)
+        if (worstAbduction != null && phase != RepPhase.IDLE) {
+            currentRepWorstShoulderAbductionDeg = maxOf(
+                currentRepWorstShoulderAbductionDeg ?: worstAbduction,
+                worstAbduction
+            )
+            currentRepShoulderAbductionRisk =
+                currentRepShoulderAbductionRisk || isAbductionOutsideOkRange(worstAbduction)
+            currentRepShoulderAbductionCritical =
+                currentRepShoulderAbductionCritical || worstAbduction > ABDUCTION_CRITICAL_DEG
         }
 
-        // Regla 4: Profundidad (evaluar por frame durante descenso)
-        // Tambien actualizamos un flag "live" (elbowBelowTorsoLive) para que la
-        // UI pueda pintar en tiempo real si el codo esta por debajo del torso,
-        // sin esperar a que termine la rep.
-        val elbowBelowTorsoNow = checkElbowBelowTorso(leftArm, rightArm, leftVisible, rightVisible)
-        if (phase == RepPhase.DESCENT) {
-            if (!currentRepElbowWentBelowTorso && elbowBelowTorsoNow) {
-                currentRepElbowWentBelowTorso = true
+        // Regla 3: Simetria bilateral — diferencia vertical de munecas.
+        // Aunque el campo expuesto conserva el nombre legacy "Deg", en bench
+        // representa porcentaje del ancho biacromial para evitar falsos
+        // positivos por angulos 2D proyectados.
+        var bilateralAsymmetryDeg: Double? = null
+        if (leftVisible && rightVisible) {
+            val shoulderWidth = horizontalDistance(leftArm.shoulder.vec, rightArm.shoulder.vec)
+            val rawAsymmetry = if (shoulderWidth > 1e-6) {
+                (verticalDistance(leftArm.wrist.vec, rightArm.wrist.vec) / shoulderWidth) * 100.0
+            } else null
+            if (rawAsymmetry != null) {
+                val smoothedAsymmetry = pushAndMedian(asymmetryWindow, rawAsymmetry, SYMMETRY_MEDIAN_WINDOW)
+                bilateralAsymmetryDeg = smoothedAsymmetry
+                lastBilateralAsymmetryDeg = smoothedAsymmetry
+                lastBilateralAsymmetry = updateAsymmetryDebounced(smoothedAsymmetry)
             }
+        }
+
+        // Regla 4: Profundidad — evaluacion por frame con angulo de codo.
+        // En vista frontal-cabeza no se puede observar "codo bajo el torso"
+        // (la linea hombro-cadera es ~vertical en imagen y el codo no cruza
+        // Y de manera significativa). Usamos el angulo de codo comparado
+        // contra BENCH_DEPTH_MIN_ELBOW_DEG: si la rep alcanza un minimo
+        // por debajo del umbral, la profundidad es suficiente.
+        val elbowAtDepthNow = phase != RepPhase.IDLE
+                && primaryElbowAngle <= BENCH_DEPTH_MIN_ELBOW_DEG
+        if (phase == RepPhase.DESCENT && elbowAtDepthNow) {
+            currentRepElbowWentBelowTorso = true
         }
 
         // Regla 6: Sticking period (durante ascenso)
@@ -381,7 +459,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             extensionIncomplete = lastExtensionIncomplete,
             currentRepMinElbowAngleDeg = liveMinElbow,
             currentRepMaxElbowAngleDeg = liveMaxElbow,
-            elbowBelowTorsoLive = elbowBelowTorsoNow,
+            elbowBelowTorsoLive = elbowAtDepthNow,
             readinessReady = readinessState == ReadinessState.READY,
             // Snapshots per-rep para persistencia.
             lastRepMinElbowAngleDeg = snapLastRepMinElbow,
@@ -417,6 +495,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         asymmetryConsecutiveFrames = 0
         abductionWarningConsecutiveFrames = 0
         abductionCriticalConsecutiveFrames = 0
+        asymmetryWindow.clear()
 
         currentMinElbowAngleDeg = Double.MAX_VALUE
         currentRepStartElbowAngleDeg = Double.MAX_VALUE
@@ -424,6 +503,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeakEccentricVelocityDegS = 0.0
         currentRepElbowWentBelowTorso = false
         currentRepTopElbowAngleDeg = 0.0
+        currentRepWorstShoulderAbductionDeg = null
+        currentRepShoulderAbductionRisk = false
+        currentRepShoulderAbductionCritical = false
 
         stickingStartMs = null
         currentStickingPeriodDetected = false
@@ -530,11 +612,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     /**
      * El flag de asimetria se activa solo si el umbral operacional
-     * (SYMMETRY_ALERT_THRESHOLD_DEG) se supera durante N frames consecutivos.
-     * Se desactiva apenas la asimetria baja del umbral base (SYMMETRY_THRESHOLD_DEG).
+     * (SYMMETRY_ALERT_THRESHOLD_PERCENT) se supera durante N frames consecutivos.
+     * Se desactiva apenas la asimetria baja del umbral base (SYMMETRY_THRESHOLD_PERCENT).
      */
-    private fun updateAsymmetryDebounced(currentDeg: Double): Boolean {
-        if (currentDeg > SYMMETRY_ALERT_THRESHOLD_DEG) {
+    private fun updateAsymmetryDebounced(currentPercent: Double): Boolean {
+        if (currentPercent >= SYMMETRY_ALERT_THRESHOLD_PERCENT) {
             asymmetryConsecutiveFrames += 1
         } else {
             asymmetryConsecutiveFrames = 0
@@ -550,7 +632,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         if (angle > ABDUCTION_CRITICAL_DEG) {
             abductionCriticalConsecutiveFrames += 1
             abductionWarningConsecutiveFrames += 1
-        } else if (angle > ABDUCTION_WARNING_DEG) {
+        } else if (isAbductionOutsideOkRange(angle)) {
             abductionCriticalConsecutiveFrames = 0
             abductionWarningConsecutiveFrames += 1
         } else {
@@ -562,6 +644,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private fun isAbductionCriticalDebounced(): Boolean =
         abductionCriticalConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
+
+    private fun isAbductionOutsideOkRange(angle: Double): Boolean =
+        angle < ABDUCTION_MIN_OK_DEG || angle > ABDUCTION_MAX_OK_DEG
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Maquina de estados de repeticion
@@ -618,6 +703,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeakEccentricVelocityDegS = 0.0
         currentRepElbowWentBelowTorso = false
         currentRepTopElbowAngleDeg = 0.0
+        currentRepWorstShoulderAbductionDeg = null
+        currentRepShoulderAbductionRisk = false
+        currentRepShoulderAbductionCritical = false
         stickingStartMs = null
         currentStickingPeriodDetected = false
     }
@@ -638,8 +726,14 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         repCount += 1
 
-        // Regla 4: Profundidad de descenso
+        // Regla 4: Profundidad de descenso — el codo debe haber bajado de
+        // BENCH_DEPTH_MIN_ELBOW_DEG en algun momento de la rep (flag
+        // currentRepElbowWentBelowTorso, reaprovechado con nueva semantica).
+        // Tambien validamos contra el min observado por seguridad si el flag
+        // no se levanto pero el min final cumple (proteccion contra perdida
+        // momentanea de la pose).
         lastDepthInsufficientBench = !currentRepElbowWentBelowTorso
+                && currentMinElbowAngleDeg > BENCH_DEPTH_MIN_ELBOW_DEG
 
         // Regla 5: Extension completa
         lastExtensionIncomplete = currentRepTopElbowAngleDeg < FULL_EXTENSION_MIN_DEG
@@ -660,14 +754,14 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
 
         // Clasificacion de error tecnico
-        val abduction = lastShoulderAbductionDeg ?: 0.0
+        val abduction = currentRepWorstShoulderAbductionDeg ?: lastShoulderAbductionDeg ?: 0.0
         val velocityLoss = lastVelocityLossPercent ?: 0.0
 
         lastTechnicalError = when {
-            isAbductionCriticalDebounced() -> ErrorLevel.SEVERE
+            currentRepShoulderAbductionCritical -> ErrorLevel.SEVERE
             velocityLoss >= VL_CRITICAL_PERCENT -> ErrorLevel.SEVERE
             lastDepthInsufficientBench && lastExtensionIncomplete -> ErrorLevel.SEVERE
-            lastShoulderAbductionRisk -> ErrorLevel.MODERATE
+            currentRepShoulderAbductionRisk -> ErrorLevel.MODERATE
             lastBilateralAsymmetry -> ErrorLevel.MODERATE
             lastGripTooWide -> ErrorLevel.MODERATE
             velocityLoss >= VL_WARNING_PERCENT -> ErrorLevel.MODERATE
@@ -678,8 +772,12 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // Magnitud del error (el mayor de los errores activos)
         val depthMagnitude = if (lastDepthInsufficientBench) 5.0 else 0.0
         val extensionMagnitude = lastExtensionIncompleteDeg ?: 0.0
-        val abductionMagnitude = if (abduction > ABDUCTION_WARNING_DEG) abduction - ABDUCTION_WARNING_DEG else 0.0
-        val asymmetryMagnitude = if (lastBilateralAsymmetry) (lastBilateralAsymmetryDeg ?: 0.0) - SYMMETRY_THRESHOLD_DEG else 0.0
+        val abductionMagnitude = when {
+            abduction > ABDUCTION_MAX_OK_DEG -> abduction - ABDUCTION_MAX_OK_DEG
+            abduction < ABDUCTION_MIN_OK_DEG -> ABDUCTION_MIN_OK_DEG - abduction
+            else -> 0.0
+        }
+        val asymmetryMagnitude = if (lastBilateralAsymmetry) (lastBilateralAsymmetryDeg ?: 0.0) - SYMMETRY_THRESHOLD_PERCENT else 0.0
         val vlMagnitude = if (velocityLoss >= VL_WARNING_PERCENT) velocityLoss - VL_WARNING_PERCENT else 0.0
 
         lastErrorMagnitude = listOf(depthMagnitude, extensionMagnitude, abductionMagnitude, asymmetryMagnitude, vlMagnitude)
@@ -690,7 +788,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         snapLastRepRom = repRomDeg
         snapLastRepConcVel = currentPeakConcentricVelocityDegS.takeIf { it > 0.0 }
         snapLastRepBilateralAsymmetryDeg = lastBilateralAsymmetryDeg
-        snapLastRepShoulderAbductionDeg = lastShoulderAbductionDeg
+        snapLastRepShoulderAbductionDeg = currentRepWorstShoulderAbductionDeg
         snapLastRepGripWidthRatio = lastGripWidthRatioMeasured
         snapLastRepExtensionIncompleteDeg = lastExtensionIncompleteDeg
         snapLastRepStickingPeriodDetected = currentStickingPeriodDetected
@@ -702,52 +800,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Regla 4: Profundidad — codo por debajo de la linea del torso
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * En vista frontal con persona acostada, verifica si el codo esta
-     * por debajo de la linea hombro-cadera (torso).
-     * En coordenadas MediaPipe normalizadas, Y=0 arriba, Y=1 abajo.
-     * El codo "abajo del torso" significa que su Y es mayor que la Y
-     * interpolada de la linea hombro-cadera en esa posicion lateral.
-     */
-    private fun checkElbowBelowTorso(
-        leftArm: ArmLandmarks,
-        rightArm: ArmLandmarks,
-        leftVisible: Boolean,
-        rightVisible: Boolean
-    ): Boolean {
-        val leftBelow = if (leftVisible) {
-            isPointBelowLine(leftArm.elbow.vec, leftArm.shoulder.vec, leftArm.hip.vec)
-        } else false
-
-        val rightBelow = if (rightVisible) {
-            isPointBelowLine(rightArm.elbow.vec, rightArm.shoulder.vec, rightArm.hip.vec)
-        } else false
-
-        return leftBelow || rightBelow
-    }
-
-    /**
-     * Verifica si el punto P esta por debajo de la linea A-B.
-     * "Por debajo" en coordenadas de imagen = Y mayor.
-     * Interpola la Y de la linea A-B en la posicion X del punto P.
-     */
-    private fun isPointBelowLine(point: Vec3, lineA: Vec3, lineB: Vec3): Boolean {
-        val dx = lineB.x - lineA.x
-        if (abs(dx) < 1e-6) {
-            // Linea vertical: comparar Y directamente con el promedio
-            return point.y > (lineA.y + lineB.y) / 2.0
-        }
-        val t = (point.x - lineA.x) / dx
-        val interpolatedY = lineA.y + t * (lineB.y - lineA.y)
-        return point.y > interpolatedY
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
     // Utilidades
     // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Mantiene una ventana FIFO de tamano [windowSize] y devuelve la
+     * mediana de los valores acumulados (1..windowSize) tras anadir
+     * [value]. Util para suavizar picos transitorios sin retrasar mucho.
+     */
+    private fun pushAndMedian(window: ArrayDeque<Double>, value: Double, windowSize: Int): Double {
+        if (window.size >= windowSize) window.removeFirst()
+        window.addLast(value)
+        val sorted = window.sorted()
+        val n = sorted.size
+        return if (n % 2 == 1) sorted[n / 2] else (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+    }
 
     private fun buildFatigueReason(): String? {
         val loss = lastVelocityLossPercent ?: return null
@@ -759,13 +826,21 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
     }
 
-    private fun computeAngle(a: Vec3, b: Vec3, c: Vec3): Double {
-        val ba = Vec3(a.x - b.x, a.y - b.y, a.z - b.z)
-        val bc = Vec3(c.x - b.x, c.y - b.y, c.z - b.z)
+    /**
+     * Angulo formado por A-B-C proyectado en el plano de imagen 2D
+     * (componentes X-Y, ignorando Z). En vista frontal-cabeza Z es la
+     * coordenada con mayor varianza de BlazePose, asi que ignorarla
+     * estabiliza dramaticamente el angulo medido.
+     */
+    private fun computeAngle2D(a: Vec3, b: Vec3, c: Vec3): Double {
+        val bax = a.x - b.x
+        val bay = a.y - b.y
+        val bcx = c.x - b.x
+        val bcy = c.y - b.y
 
-        val dot = ba.x * bc.x + ba.y * bc.y + ba.z * bc.z
-        val magBa = sqrt(ba.x * ba.x + ba.y * ba.y + ba.z * ba.z)
-        val magBc = sqrt(bc.x * bc.x + bc.y * bc.y + bc.z * bc.z)
+        val dot = bax * bcx + bay * bcy
+        val magBa = sqrt(bax * bax + bay * bay)
+        val magBc = sqrt(bcx * bcx + bcy * bcy)
 
         if (magBa < 1e-6 || magBc < 1e-6) return 0.0
 
@@ -773,12 +848,13 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         return Math.toDegrees(acos(cosValue))
     }
 
-    private fun distance(a: Vec3, b: Vec3): Double {
-        val dx = a.x - b.x
-        val dy = a.y - b.y
-        val dz = a.z - b.z
-        return sqrt(dx * dx + dy * dy + dz * dz)
-    }
+    /**
+     * Separacion horizontal entre dos landmarks. Para el agarre de press banca
+     * buscamos ancho lateral, no distancia euclidiana X-Y.
+     */
+    private fun horizontalDistance(a: Vec3, b: Vec3): Double = abs(a.x - b.x)
+
+    private fun verticalDistance(a: Vec3, b: Vec3): Double = abs(a.y - b.y)
 
     private fun getLandmark(flat: List<Double>, index: Int): Landmark {
         val base = index * 4

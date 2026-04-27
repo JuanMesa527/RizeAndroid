@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rize.rizeandroid.data.dao.RepDao
 import com.rize.rizeandroid.data.dao.WorkoutSessionDao
 import com.rize.rizeandroid.data.entity.BenchSessionDetails
@@ -26,7 +28,7 @@ import com.rize.rizeandroid.data.entity.WorkoutSession
         RepCurlDetails::class,
         RepBenchDetails::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class RizeDatabase : RoomDatabase() {
@@ -46,7 +48,17 @@ abstract class RizeDatabase : RoomDatabase() {
                     context.applicationContext,
                     RizeDatabase::class.java,
                     DB_NAME
-                ).build().also { INSTANCE = it }
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build()
+                    .also { INSTANCE = it }
+            }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // No-op: version 2 reemplazo una recreacion destructiva temporal
+                // sin cambios de esquema persistentes.
             }
         }
     }

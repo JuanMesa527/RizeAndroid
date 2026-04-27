@@ -32,6 +32,17 @@ class Algorithms {
      */
     private val landmarkSmootherForSquat = LandmarkSmoother(minCutoff = 2.0, beta = 0.08)
 
+    /**
+     * Suavizador para PRESS DE BANCA. Vista frontal-cabeza con persona en
+     * decubito supino: el eje del press coincide con el eje optico de la
+     * camara, asi que Z es la coordenada con mayor varianza de BlazePose.
+     * Necesitamos un cutoff base mas alto que el default para matar el
+     * jitter sin sacrificar la respuesta a la velocidad real del movimiento.
+     *   minCutoff = 1.2 Hz   — mas agresivo que default (1.0) para vista frontal
+     *   beta      = 0.015    — ligero margen sobre default para reps rapidas
+     */
+    private val landmarkSmootherForBench = LandmarkSmoother(minCutoff = 1.2, beta = 0.015)
+
     var currentResult: AlgorithmResult? = null
         private set
 
@@ -52,6 +63,8 @@ class Algorithms {
         }
         activeAlgorithm.reset()
         landmarkSmoother.reset()
+        landmarkSmootherForSquat.reset()
+        landmarkSmootherForBench.reset()
     }
 
     /** Versión legacy por string — mantenida para VideoAnalysisActivity. */
@@ -68,13 +81,14 @@ class Algorithms {
         activeAlgorithm.reset()
         landmarkSmoother.reset()
         landmarkSmootherForSquat.reset()
+        landmarkSmootherForBench.reset()
     }
 
     private fun getCurrentSmoother(): LandmarkSmoother {
-        return if (activeAlgorithm === squatBiomechanics) {
-            landmarkSmootherForSquat
-        } else {
-            landmarkSmoother
+        return when {
+            activeAlgorithm === squatBiomechanics -> landmarkSmootherForSquat
+            activeAlgorithm === benchPressBiomechanics -> landmarkSmootherForBench
+            else -> landmarkSmoother
         }
     }
 
@@ -103,6 +117,7 @@ class Algorithms {
         activeAlgorithm.reset()
         landmarkSmoother.reset()
         landmarkSmootherForSquat.reset()
+        landmarkSmootherForBench.reset()
         currentResult = null
     }
 }

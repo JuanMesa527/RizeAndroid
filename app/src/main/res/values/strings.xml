@@ -103,10 +103,10 @@
     <string name="camera_bench_alert_grip">Agarre excesivo: riesgo de hombro, acerca las manos.</string>
     <string name="camera_bench_alert_grip_narrow">Agarre demasiado estrecho: separa un poco las manos.</string>
     <string name="camera_bench_alert_grip_wide">Agarre ancho: ideal ~1.5-2.0x el ancho de hombros.</string>
-    <string name="camera_bench_alert_abduction_warning">Abduccion elevada (>45): acerca los codos al torso.</string>
+    <string name="camera_bench_alert_abduction_warning">Abduccion fuera de rango: manten los codos entre 45° y 80°.</string>
     <string name="camera_bench_alert_abduction_critical">Abduccion critica (>90): riesgo de lesion en hombro.</string>
     <string name="camera_bench_alert_asymmetry">Asimetria bilateral detectada: iguala ambos codos.</string>
-    <string name="camera_bench_alert_depth">Profundidad insuficiente: baja los codos por debajo del torso.</string>
+    <string name="camera_bench_alert_depth">Profundidad insuficiente: baja la barra hasta cerca del pecho (codo ≤ 95°).</string>
     <string name="camera_bench_alert_extension">Extension incompleta: extiende los codos completamente.</string>
     <string name="camera_bench_alert_sticking">Periodo de estancamiento detectado: considera asistencia.</string>
     <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>

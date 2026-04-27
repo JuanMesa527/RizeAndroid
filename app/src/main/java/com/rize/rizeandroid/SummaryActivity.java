@@ -56,15 +56,24 @@ public class SummaryActivity extends AppCompatActivity {
     }
 
     private void doSave() {
-        PendingSessionData data = PendingSessionHolder.INSTANCE.consume();
+        PendingSessionData data = PendingSessionHolder.INSTANCE.peek();
         if (data == null) {
             Toast.makeText(this, R.string.session_save_failed_toast, Toast.LENGTH_SHORT).show();
             navigateHome();
             return;
         }
-        RizeApplication.get().getSessionRepository().saveSessionAsync(data);
-        Toast.makeText(this, R.string.session_saved_toast, Toast.LENGTH_SHORT).show();
-        navigateHome();
+        RizeApplication.get().getSessionRepository().saveSessionAsync(data, id -> {
+            runOnUiThread(() -> {
+                if (id >= 0) {
+                    PendingSessionHolder.INSTANCE.consume();
+                    Toast.makeText(this, R.string.session_saved_toast, Toast.LENGTH_SHORT).show();
+                    navigateHome();
+                } else {
+                    Toast.makeText(this, R.string.session_save_failed_toast, Toast.LENGTH_SHORT).show();
+                }
+            });
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     private void confirmDiscard(Runnable afterDiscard) {

@@ -16,6 +16,11 @@ class OverlayView(context: Context?, attrs: AttributeSet? = null) :
     View(context, attrs) {
 
     private var results: PoseLandmarkerResult? = null
+    // Lista plana suavizada (132 = 33 landmarks * 4 componentes). Cuando
+    // esta presente, se prefiere sobre [results] para dibujar el esqueleto;
+    // permite renderizar con landmarks ya pasados por el filtro 1€ y que
+    // el esqueleto coincida visualmente con los valores que muestra la UI.
+    private var smoothedFlat: List<Double>? = null
     private var pointPaint = Paint()
     private var linePaint = Paint()
 
@@ -29,6 +34,7 @@ class OverlayView(context: Context?, attrs: AttributeSet? = null) :
 
     fun clear() {
         results = null
+        smoothedFlat = null
         pointPaint.reset()
         linePaint.reset()
         invalidate()
@@ -48,6 +54,18 @@ class OverlayView(context: Context?, attrs: AttributeSet? = null) :
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
+
+        // Si tenemos landmarks suavizados (lista plana), los preferimos
+        // para dibujar — el esqueleto se ve fluido y coincide con los
+        // valores numericos de la UI (que tambien se calculan sobre esta
+        // misma lista filtrada).
+        smoothedFlat?.let { flat ->
+            if (flat.size >= 132) {
+                drawSkeletonFromFlat(canvas, flat)
+                return
+            }
+        }
+
         results?.let { poseLandmarkerResult ->
             for (landmark in poseLandmarkerResult.landmarks()) {
                 PoseLandmarker.POSE_LANDMARKS.forEach {
@@ -71,6 +89,33 @@ class OverlayView(context: Context?, attrs: AttributeSet? = null) :
         }
     }
 
+    private fun drawSkeletonFromFlat(canvas: Canvas, flat: List<Double>) {
+        // Lineas de conexion entre landmarks.
+        PoseLandmarker.POSE_LANDMARKS.forEach { conn ->
+            if (conn == null) return@forEach
+            val s = conn.start() * 4
+            val e = conn.end() * 4
+            if (s + 1 >= flat.size || e + 1 >= flat.size) return@forEach
+            canvas.drawLine(
+                flat[s].toFloat() * imageWidth * scaleFactor,
+                flat[s + 1].toFloat() * imageHeight * scaleFactor,
+                flat[e].toFloat() * imageWidth * scaleFactor,
+                flat[e + 1].toFloat() * imageHeight * scaleFactor,
+                linePaint
+            )
+        }
+        // Puntos por cada landmark.
+        var i = 0
+        while (i < flat.size) {
+            canvas.drawPoint(
+                flat[i].toFloat() * imageWidth * scaleFactor,
+                flat[i + 1].toFloat() * imageHeight * scaleFactor,
+                pointPaint
+            )
+            i += 4
+        }
+    }
+
     fun setResults(
         poseLandmarkerResults: PoseLandmarkerResult,
         imageHeight: Int,
@@ -78,17 +123,39 @@ class OverlayView(context: Context?, attrs: AttributeSet? = null) :
         runningMode: RunningMode = RunningMode.LIVE_STREAM
     ) {
         results = poseLandmarkerResults
+        smoothedFlat = null
         this.imageHeight = imageHeight
         this.imageWidth = imageWidth
 
-        scaleFactor = when (runningMode) {
-            RunningMode.IMAGE, RunningMode.VIDEO -> {
-                min(width * 1f / imageWidth, height * 1f / imageHeight)
-            }
-            RunningMode.LIVE_STREAM -> {
-                max(width * 1f / imageWidth, height * 1f / imageHeight)
-            }
-        }
+        scaleFactor = computeScaleFactor(runningMode)
         invalidate()
+    }
+
+    /**
+     * Sobrecarga para alimentar el overlay con landmarks ya pasados por el
+     * filtro 1€. Recibe la lista plana de 132 valores (x, y, z, visibility
+     * por cada uno de los 33 landmarks) y dibuja el esqueleto coincidiendo
+     * con los valores que muestra la UI.
+     */
+    fun setResults(
+        smoothedFlatLandmarks: List<Double>,
+        imageHeight: Int,
+        imageWidth: Int,
+        runningMode: RunningMode = RunningMode.LIVE_STREAM
+    ) {
+        smoothedFlat = smoothedFlatLandmarks
+        results = null
+        this.imageHeight = imageHeight
+        this.imageWidth = imageWidth
+
+        scaleFactor = computeScaleFactor(runningMode)
+        invalidate()
+    }
+
+    private fun computeScaleFactor(runningMode: RunningMode): Float = when (runningMode) {
+        RunningMode.IMAGE, RunningMode.VIDEO ->
+            min(width * 1f / imageWidth, height * 1f / imageHeight)
+        RunningMode.LIVE_STREAM ->
+            max(width * 1f / imageWidth, height * 1f / imageHeight)
     }
 }
