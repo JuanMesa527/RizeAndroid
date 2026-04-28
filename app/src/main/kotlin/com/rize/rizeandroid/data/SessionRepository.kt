@@ -1,6 +1,9 @@
 package com.rize.rizeandroid.data
 
 import com.rize.rizeandroid.data.entity.WorkoutSession
+import com.rize.rizeandroid.data.entity.BenchSessionDetails
+import com.rize.rizeandroid.data.entity.CurlSessionDetails
+import com.rize.rizeandroid.data.entity.SquatSessionDetails
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -74,4 +77,59 @@ class SessionRepository(private val database: RizeDatabase) {
 
     fun getSessionsByTypeBlocking(type: String): List<WorkoutSession> =
         sessionDao.getByExerciseType(type)
+
+    fun getSquatDetailsBlocking(sessionId: Long): SquatSessionDetails? =
+        sessionDao.getSquatDetailsBySessionId(sessionId)
+
+    fun getCurlDetailsBlocking(sessionId: Long): CurlSessionDetails? =
+        sessionDao.getCurlDetailsBySessionId(sessionId)
+
+    fun getBenchDetailsBlocking(sessionId: Long): BenchSessionDetails? =
+        sessionDao.getBenchDetailsBySessionId(sessionId)
+
+    // ── Estadísticas Agregadas ───────────────────────────────────────────────────
+
+    data class ExerciseStats(
+        val type: String,
+        val displayName: String,
+        val sessionCount: Int,
+        val avgReps: Double?,
+        val avgDurationSec: Double?
+    )
+
+    fun getExerciseStatsBlocking(): List<ExerciseStats> {
+        val types = listOf(
+            "squat" to "Sentadilla",
+            "curl" to "Curl",
+            "bench" to "Banca"
+        )
+        return types.map { (type, displayName) ->
+            ExerciseStats(
+                type = type,
+                displayName = displayName,
+                sessionCount = sessionDao.countByType(type),
+                avgReps = sessionDao.avgRepsByType(type),
+                avgDurationSec = sessionDao.avgDurationByType(type)
+            )
+        }.filter { it.sessionCount > 0 }
+    }
+
+    fun getLocalSummaryBlocking(): LocalSummary {
+        val allSessions = getAllSessionsBlocking()
+        return LocalSummary(
+            totalSessions = allSessions.size,
+            totalReps = allSessions.sumOf { it.totalReps },
+            sessionsByType = mapOf(
+                "squat" to sessionDao.countByType("squat"),
+                "curl" to sessionDao.countByType("curl"),
+                "bench" to sessionDao.countByType("bench")
+            )
+        )
+    }
+
+    data class LocalSummary(
+        val totalSessions: Int,
+        val totalReps: Int,
+        val sessionsByType: Map<String, Int>
+    )
 }

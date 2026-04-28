@@ -31,6 +31,7 @@
         <activity android:name=".CameraActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".SummaryActivity" />
+        <activity android:name=".StatsHistoryActivity" />
         <activity android:name=".VideoAnalysisActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".AboutActivity" />

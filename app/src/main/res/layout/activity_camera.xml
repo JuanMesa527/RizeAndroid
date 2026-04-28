@@ -121,6 +121,60 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Cabecera de sentadilla: mensaje principal + reps (solo squat) -->
+            <LinearLayout
+                android:id="@+id/squat_live_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/squat_alert_banner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_alert_banner_neutral"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:text="@string/camera_squat_status_ready"
+                    android:textColor="@color/silver_2"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:minHeight="52dp" />
+
+                <LinearLayout
+                    android:layout_width="84dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card_dark"
+                    android:gravity="center"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/bench_reps_label"
+                        android:textColor="@color/silver_2"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:id="@+id/squat_rep_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/white"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
             <!-- Peak Angle + Stability row -->
             <LinearLayout
                 android:layout_width="match_parent"

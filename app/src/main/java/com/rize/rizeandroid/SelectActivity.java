@@ -116,7 +116,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         });
         findViewById(R.id.nav_fab).setOnClickListener(v -> { /* Already on select */ });
         findViewById(R.id.nav_stats).setOnClickListener(v -> {
-            startActivity(new Intent(this, VideoAnalysisActivity.class));
+            startActivity(new Intent(this, StatsHistoryActivity.class));
         });
     }
 

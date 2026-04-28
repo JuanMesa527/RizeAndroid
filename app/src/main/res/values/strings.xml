@@ -4,6 +4,28 @@
     <!-- Bottom Nav -->
     <string name="nav_home">Inicio</string>
     <string name="nav_stats">Estadísticas</string>
+    <string name="stats_toolbar_title">Estadísticas de sesiones</string>
+    <string name="stats_subtitle">Historial guardado desde la base de datos local</string>
+    <string name="stats_recent_sessions_title">Sesiones recientes</string>
+    <string name="stats_by_exercise_title">Estadísticas por ejercicio</string>
+    <string name="stats_empty">Aún no hay sesiones guardadas. Entrena y guarda tu primera sesión para verla aquí.</string>
+    <string name="stats_common_error_none">Error técnico dominante: Sin error dominante</string>
+    <string name="stats_common_error_legacy">Error técnico dominante: %1$s</string>
+    <string name="stats_common_error_format">Error técnico dominante: %1$s</string>
+    <string name="stats_error_level_none">Sin error</string>
+    <string name="stats_error_level_mild">Leve</string>
+    <string name="stats_error_level_moderate">Moderado</string>
+    <string name="stats_error_level_severe">Severo</string>
+    <string name="stats_error_hint_mild">Ajustes menores sugeridos.</string>
+    <string name="stats_error_hint_moderate">Errores repetidos durante la sesión.</string>
+    <string name="stats_error_hint_severe">Riesgo técnico alto.</string>
+    <string name="stats_error_with_hint">%1$s. %2$s</string>
+    <string name="stats_metrics_unavailable">Métricas por ejercicio no disponibles</string>
+    <string name="stats_item_error_title">Error principal</string>
+    <string name="stats_item_metrics_title">Indicadores específicos</string>
+    <string name="stats_squat_metrics_format">Reps con profundidad insuficiente: %1$d\nReps con riesgo de tronco inclinado: %2$d</string>
+    <string name="stats_bench_metrics_format">Reps con profundidad insuficiente: %1$d\nReps con extensión incompleta: %2$d\nReps con asimetría: %3$d</string>
+    <string name="stats_curl_metrics_format">ROM promedio: %1$s°\nCompensación de hombro promedio: %2$s°</string>
 
     <!-- Homepage -->
     <string name="home_hero_chip">CINEMÁTICA</string>
@@ -89,7 +111,11 @@
     <string name="camera_squat_status_ready">Alineate de lado para iniciar el analisis.</string>
     <string name="camera_squat_status_ok">Tecnica estable.</string>
     <string name="camera_squat_alert_depth">Profundidad insuficiente: baja un poco mas.</string>
+    <string name="camera_squat_alert_depth_partial">Profundidad parcial: baja mas (objetivo menor a 80°).</string>
+    <string name="camera_squat_alert_depth_medium">Profundidad media: buena, pero puedes bajar un poco mas.</string>
     <string name="camera_squat_alert_trunk">Tronco muy inclinado: eleva el pecho.</string>
+    <string name="camera_squat_alert_trunk_too_inclined">Tronco demasiado inclinado: enderezate un poco.</string>
+    <string name="camera_squat_alert_trunk_too_upright">Tronco muy vertical: inclinate ligeramente hacia delante.</string>
     <string name="camera_squat_alert_depth_and_trunk">Corrige profundidad y tronco en esta repeticion.</string>
     <string name="camera_squat_alert_instability">Inestabilidad tecnica: reduce variabilidad.</string>
     <string name="camera_squat_alert_variability">Variabilidad moderada: busca reps consistentes.</string>

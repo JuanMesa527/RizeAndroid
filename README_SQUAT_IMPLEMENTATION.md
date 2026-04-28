@@ -19,10 +19,10 @@ Se implementó análisis biomecánico completo de sentadilla en la app RIZE, sin
 
 **Fórmula**: Ángulo entre cadera-rodilla-tobillo
 
-**Rangos de profundidad**:
+**Rangos de profundidad (runtime)**:
 - **Parcial/Superficial**: θ_k ≥ 90° (flexión ligera)
 - **Media**: 70° ≤ θ_k < 90° (muslo paralelo)
-- **Profunda/Total**: θ_k < 45° (sentadilla ATG = ass-to-grass)
+- **Profunda/Total**: θ_k < 70° (objetivo técnico ideal ≈ 45° o menos)
 
 **Criterio de error**: `depthInsufficient = true` si θ_k > 45° en punto más bajo
 
@@ -34,7 +34,7 @@ Se implementó análisis biomecánico completo de sentadilla en la app RIZE, sin
 
 **Valores típicos en sentadilla profunda**: 80° - 50°
 
-**Criterio de riesgo**: `trunkLeanRisk = true` si θ_h < 80° (excesiva inclinación forward)
+**Criterio de riesgo (runtime)**: `trunkLeanRisk = true` si θ_h < 80° (excesiva inclinación forward)
 
 ### 3. Velocidad Angular de Rodilla (ω_k)
 
@@ -172,7 +172,7 @@ CameraActivity.onSquatResult() (para squat)
 ```
 ┌─────────────────────────────────────────────┐
 │ IDLE (reposo)                               │
-│ - Espera θ_k < 150° + velocidad negativa   │
+│ - Espera θ_k < 165° + velocidad negativa   │
 └─────────────────────────────────────────────┘
          ↓ (inicia descenso)
 ┌─────────────────────────────────────────────┐
@@ -184,7 +184,7 @@ CameraActivity.onSquatResult() (para squat)
 ┌─────────────────────────────────────────────┐
 │ ASCENT (subida/concéntrica)                 │
 │ - Rastrea θ_k y calcula ω_k positiva máxima │
-│ - Si θ_k ≥ 155° → REP COMPLETA              │
+│ - Cierre por top (θ_k ≥ 148°) o meseta      │
 └─────────────────────────────────────────────┘
          ↓ (vuelve a IDLE)
 ```
@@ -259,7 +259,7 @@ Basado en el documento especificación:
 1. **Posición de cámara**: Debe estar lateral (de lado). Ver `POSICION_SENTADILLA.md`
 2. **Iluminación**: Mejor con luz frontal o lateral
 3. **Ropa**: Preferir ajustada para mejor detección articular
-4. **MediaPipe**: Dependencia de visibilidad de landmarks (MIN_VISIBILITY = 0.5)
+4. **MediaPipe**: Dependencia de visibilidad de landmarks (MIN_VISIBILITY = 0.6)
 5. **Precisión angular**: ±2-3° de error natural en estimación de pose
 
 ---
@@ -276,7 +276,7 @@ private const val DEPTH_ERROR_THRESHOLD = 45.0  // grados
 private const val TRUNK_RISK_THRESHOLD = 80.0   // grados
 
 // Histeresis de velocidad (cambio de fase)
-private const val VELOCITY_HYSTERESIS = 8.0     // °/s
+private const val VELOCITY_HYSTERESIS = 6.5     // °/s
 
 // Umbral de fatiga
 private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0  // % VL20

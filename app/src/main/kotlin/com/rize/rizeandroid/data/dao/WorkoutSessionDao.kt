@@ -33,6 +33,15 @@ interface WorkoutSessionDao {
     @Query("SELECT * FROM workout_session WHERE id = :sessionId")
     fun getById(sessionId: Long): WorkoutSession?
 
+    @Query("SELECT * FROM squat_session_details WHERE session_id = :sessionId")
+    fun getSquatDetailsBySessionId(sessionId: Long): SquatSessionDetails?
+
+    @Query("SELECT * FROM curl_session_details WHERE session_id = :sessionId")
+    fun getCurlDetailsBySessionId(sessionId: Long): CurlSessionDetails?
+
+    @Query("SELECT * FROM bench_session_details WHERE session_id = :sessionId")
+    fun getBenchDetailsBySessionId(sessionId: Long): BenchSessionDetails?
+
     @Query("DELETE FROM workout_session WHERE id = :sessionId")
     fun deleteById(sessionId: Long)
 
@@ -41,4 +50,10 @@ interface WorkoutSessionDao {
 
     @Query("SELECT COUNT(*) FROM workout_session WHERE exercise_type = :type")
     fun countByType(type: String): Int
+
+    @Query("SELECT AVG(total_reps) FROM workout_session WHERE exercise_type = :type")
+    fun avgRepsByType(type: String): Double?
+
+    @Query("SELECT AVG(duration_seconds) FROM workout_session WHERE exercise_type = :type")
+    fun avgDurationByType(type: String): Double?
 }
