@@ -37,7 +37,7 @@ public class HomepageActivity extends AppCompatActivity {
         findViewById(R.id.nav_home).setOnClickListener(v -> { /* Already on home */ });
         findViewById(R.id.nav_fab).setOnClickListener(v -> navigateToSelect());
         findViewById(R.id.nav_stats).setOnClickListener(v -> {
-            startActivity(new Intent(this, VideoAnalysisActivity.class));
+            startActivity(new Intent(this, StatsHistoryActivity.class));
         });
     }
 

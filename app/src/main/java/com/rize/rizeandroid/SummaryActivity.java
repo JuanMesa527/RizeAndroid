@@ -141,7 +141,7 @@ public class SummaryActivity extends AppCompatActivity {
     }
 
     private void navigateStats() {
-        startActivity(new Intent(this, VideoAnalysisActivity.class));
+        startActivity(new Intent(this, StatsHistoryActivity.class));
         finish();
     }
 

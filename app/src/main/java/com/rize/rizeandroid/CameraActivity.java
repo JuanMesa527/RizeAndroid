@@ -54,6 +54,9 @@ public class CameraActivity extends AppCompatActivity {
     private TextView metricConsistencyLabel;
     private TextView metricConsistencyHint;
     private TextView squatAlertText;
+    private View squatLiveHeader;
+    private TextView squatAlertBanner;
+    private TextView squatRepCount;
     // Curl-specific: card de Velocity + Live Flex que sustituye al
     // progress_consistency cuando el ejercicio activo es curl. consistencyCard
     // es el contenedor del progress bar para poder ocultarlo en curl.
@@ -183,6 +186,9 @@ public class CameraActivity extends AppCompatActivity {
         metricConsistencyLabel = findViewById(R.id.metric_consistency_label);
         metricConsistencyHint  = findViewById(R.id.metric_consistency_hint);
         squatAlertText         = findViewById(R.id.squat_alert_text);
+        squatLiveHeader        = findViewById(R.id.squat_live_header);
+        squatAlertBanner       = findViewById(R.id.squat_alert_banner);
+        squatRepCount          = findViewById(R.id.squat_rep_count);
         // Curl-specific
         consistencyCard        = findViewById(R.id.consistency_card);
         curlMetricsRow         = findViewById(R.id.curl_metrics_row);
@@ -237,6 +243,9 @@ public class CameraActivity extends AppCompatActivity {
             if (squatAlertText != null) {
                 squatAlertText.setVisibility(View.GONE);
             }
+            if (squatLiveHeader != null) {
+                squatLiveHeader.setVisibility(View.GONE);
+            }
             if (metricsBenchPanel != null) {
                 metricsBenchPanel.setVisibility(View.GONE);
             }
@@ -246,6 +255,7 @@ public class CameraActivity extends AppCompatActivity {
         if (isSquatExercise) {
             metricsStandardPanel.setVisibility(View.VISIBLE);
             metricsBenchPanel.setVisibility(View.GONE);
+            squatLiveHeader.setVisibility(View.VISIBLE);
             // Squat usa el card clasico de progreso, NO los dos cards de curl.
             consistencyCard.setVisibility(View.VISIBLE);
             curlMetricsRow.setVisibility(View.GONE);
@@ -265,10 +275,15 @@ public class CameraActivity extends AppCompatActivity {
             squatAlertText.setVisibility(View.VISIBLE);
             squatAlertText.setText(R.string.camera_squat_status_ready);
             squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            squatAlertBanner.setText(R.string.camera_squat_status_ready);
+            squatAlertBanner.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
+            squatRepCount.setText("0");
         } else if (isBenchPressExercise) {
             // Press banca usa su propio panel con las 5 reglas visibles
             metricsStandardPanel.setVisibility(View.GONE);
             metricsBenchPanel.setVisibility(View.VISIBLE);
+            squatLiveHeader.setVisibility(View.GONE);
             resetBenchPanel();
         } else {
             // ── Curl de biceps ──────────────────────────────────────────
@@ -285,6 +300,7 @@ public class CameraActivity extends AppCompatActivity {
             //   * squat_alert_text   → mensaje contextual del curl
             metricsStandardPanel.setVisibility(View.VISIBLE);
             metricsBenchPanel.setVisibility(View.GONE);
+            squatLiveHeader.setVisibility(View.GONE);
             // Ocultamos el card del progress bar y mostramos las dos tarjetas
             // nuevas en su lugar.
             consistencyCard.setVisibility(View.GONE);
@@ -662,6 +678,9 @@ public class CameraActivity extends AppCompatActivity {
 
     private void onSquatResult(AlgorithmResult result) {
         int repCount = result.getRepCount();
+        if (squatRepCount != null) {
+            squatRepCount.setText(String.valueOf(repCount));
+        }
 
         Double kneeAngle = result.getKneeAngleDeg();
         if (kneeAngle != null) {
@@ -735,6 +754,7 @@ public class CameraActivity extends AppCompatActivity {
 
         int color = ContextCompat.getColor(this, R.color.improvement_green);
         int messageRes = R.string.camera_squat_status_ready;
+        int bgRes = R.drawable.bg_alert_banner_neutral;
 
         if (repCount <= 0) {
             if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
@@ -742,6 +762,11 @@ public class CameraActivity extends AppCompatActivity {
                 squatAlertText.setTextColor(color);
                 lastSquatAlertTextRes = messageRes;
                 lastSquatAlertColor = color;
+            }
+            if (squatAlertBanner != null) {
+                squatAlertBanner.setText(messageRes);
+                squatAlertBanner.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+                squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
             }
             squatAlertText.setVisibility(View.VISIBLE);
             return;
@@ -757,6 +782,11 @@ public class CameraActivity extends AppCompatActivity {
             if (!message.contentEquals(squatAlertText.getText())) {
                 squatAlertText.setText(message);
             }
+            if (squatAlertBanner != null) {
+                squatAlertBanner.setText(message);
+                squatAlertBanner.setTextColor(color);
+                squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
+            }
             lastSquatAlertTextRes = -1;
             squatAlertText.setVisibility(View.VISIBLE);
             return;
@@ -766,36 +796,43 @@ public class CameraActivity extends AppCompatActivity {
         if (result.getDepthInsufficient() && result.getTrunkLeanRisk()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_depth_and_trunk;
+            bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 2: Solo profundidad insuficiente
         else if (result.getDepthInsufficient()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_depth;
+            bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 3: Solo inclinación de tronco
         else if (result.getTrunkLeanRisk()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_trunk;
+            bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 4: Fatiga significativa (prioridad sobre inestabilidad)
         else if (result.getFatigueDetected() || (velocityLoss != null && velocityLoss >= 20.0)) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_fatigue;
+            bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 5: Inestabilidad severa (CVT > 10)
         else if (cvt != null && cvt > 10.0) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_squat_alert_instability;
+            bgRes = R.drawable.bg_alert_banner_red;
         }
         // Advertencia: Variabilidad moderada (5-10)
         else if (cvt != null && cvt >= 5.0) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_squat_alert_variability;
+            bgRes = R.drawable.bg_alert_banner_amber;
         }
         // OK: Todo bien
         else {
             color = ContextCompat.getColor(this, R.color.improvement_green);
             messageRes = R.string.camera_squat_status_ok;
+            bgRes = R.drawable.bg_alert_banner_green;
         }
 
         if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
@@ -803,6 +840,11 @@ public class CameraActivity extends AppCompatActivity {
             squatAlertText.setTextColor(color);
             lastSquatAlertTextRes = messageRes;
             lastSquatAlertColor = color;
+        }
+        if (squatAlertBanner != null) {
+            squatAlertBanner.setText(messageRes);
+            squatAlertBanner.setTextColor(color);
+            squatAlertBanner.setBackgroundResource(bgRes);
         }
         squatAlertText.setVisibility(View.VISIBLE);
     }

@@ -4,6 +4,13 @@
     <!-- Bottom Nav -->
     <string name="nav_home">Inicio</string>
     <string name="nav_stats">Estadísticas</string>
+    <string name="stats_toolbar_title">Estadísticas de sesiones</string>
+    <string name="stats_subtitle">Historial guardado desde la base de datos local</string>
+    <string name="stats_empty">Aún no hay sesiones guardadas. Entrena y guarda tu primera sesión para verla aquí.</string>
+    <string name="stats_common_error_none">Error más común: Sin error técnico dominante</string>
+    <string name="stats_common_error_legacy">Error más común: histórico sin clasificar (%1$s)</string>
+    <string name="stats_common_error_format">Error más común: %1$s</string>
+    <string name="stats_metrics_unavailable">Métricas por ejercicio no disponibles</string>
 
     <!-- Homepage -->
     <string name="home_hero_chip">CINEMÁTICA</string>
