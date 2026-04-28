@@ -20,13 +20,6 @@ import com.rize.rizeandroid.data.entity.WorkoutSession
  */
 object PendingSessionBuilder {
 
-    private data class ErrorMetric(
-        val label: String,
-        val count: Int,
-        val total: Int,
-        val percent: Int = if (total > 0) ((count * 100.0) / total).toInt() else 0
-    )
-
     @JvmStatic
     fun build(
         exerciseType: String,
@@ -38,7 +31,6 @@ object PendingSessionBuilder {
         finalResult: AlgorithmResult?,
         reps: List<PendingRep>
     ): PendingSessionData {
-        val commonErrorLabel = resolveCommonErrorLabel(exerciseType, reps, finalResult)
         val session = WorkoutSession(
             exerciseType = exerciseType,
             exerciseName = exerciseName,
@@ -49,8 +41,8 @@ object PendingSessionBuilder {
             autoSaved = autoSaved,
             concentricPeakVelocityDegS = finalResult?.concentricPeakVelocityDegS,
             velocityLossPercent = finalResult?.velocityLossPercent,
-            technicalErrorLevel = commonErrorLabel,
-            avgErrorMagnitude = null
+            technicalErrorLevel = (finalResult?.technicalError ?: ErrorLevel.NONE).name,
+            avgErrorMagnitude = finalResult?.errorMagnitude
         )
 
         return when (exerciseType) {
@@ -71,74 +63,6 @@ object PendingSessionBuilder {
             )
             else -> PendingSessionData(session = session, reps = reps)
         }
-    }
-
-    private fun resolveCommonErrorLabel(
-        exerciseType: String,
-        reps: List<PendingRep>,
-        finalResult: AlgorithmResult?
-    ): String {
-        if (reps.isEmpty()) return "Sin repeticiones"
-
-        val metric = when (exerciseType) {
-            WorkoutSession.TYPE_SQUAT -> resolveCommonSquatError(reps)
-            WorkoutSession.TYPE_BENCH -> resolveCommonBenchError(reps)
-            WorkoutSession.TYPE_CURL -> resolveCommonCurlError(reps)
-            else -> null
-        }
-
-        if (metric != null && metric.count > 0) {
-            return "${metric.label} (${metric.count} reps, ${metric.percent}%)"
-        }
-
-        return if ((finalResult?.technicalError ?: ErrorLevel.NONE) == ErrorLevel.NONE) {
-            "Sin error tecnico dominante"
-        } else {
-            "Error tecnico sin clasificacion"
-        }
-    }
-
-    private fun resolveCommonSquatError(reps: List<PendingRep>): ErrorMetric? {
-        val squatReps = reps.mapNotNull { it.squatDetails }
-        if (squatReps.isEmpty()) return null
-        val total = squatReps.size
-
-        val candidates = listOf(
-            ErrorMetric("Profundidad insuficiente", squatReps.count { it.depthInsufficient }, total),
-            ErrorMetric("Tronco muy inclinado", squatReps.count { it.trunkLeanRisk }, total)
-        )
-        return candidates.maxByOrNull { it.count }
-    }
-
-    private fun resolveCommonBenchError(reps: List<PendingRep>): ErrorMetric? {
-        val benchReps = reps.mapNotNull { it.benchDetails }
-        if (benchReps.isEmpty()) return null
-        val total = benchReps.size
-
-        val candidates = listOf(
-            ErrorMetric("Profundidad insuficiente", benchReps.count { it.depthInsufficient }, total),
-            ErrorMetric("Extension incompleta", benchReps.count { it.extensionIncomplete }, total),
-            ErrorMetric("Agarre demasiado ancho", benchReps.count { it.gripTooWide }, total),
-            ErrorMetric("Asimetria bilateral", benchReps.count { it.bilateralAsymmetry }, total),
-            ErrorMetric("Periodo de estancamiento", benchReps.count { it.stickingPeriodDetected }, total)
-        )
-        return candidates.maxByOrNull { it.count }
-    }
-
-    private fun resolveCommonCurlError(reps: List<PendingRep>): ErrorMetric? {
-        val total = reps.size
-        if (total == 0) return null
-
-        val lowRomCount = reps.count { (it.rep.romDeg ?: Double.MAX_VALUE) < 110.0 }
-        val shoulderCompCount = reps
-            .mapNotNull { it.curlDetails?.shoulderCompensationDeg }
-            .count { it > 15.0 }
-
-        val candidates = listOf(
-            ErrorMetric("Rango de movimiento incompleto", lowRomCount, total),
-            ErrorMetric("Compensacion de hombro", shoulderCompCount, total)
-        )
-        return candidates.maxByOrNull { it.count }
     }
 
     /**

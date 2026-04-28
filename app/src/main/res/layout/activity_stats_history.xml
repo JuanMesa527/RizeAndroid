@@ -63,9 +63,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
-                    android:text="Estadísticas por ejercicio"
+                    android:text="@string/stats_by_exercise_title"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -86,9 +86,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
-                    android:text="@string/stats_subtitle"
+                    android:text="@string/stats_recent_sessions_title"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:textStyle="bold" />

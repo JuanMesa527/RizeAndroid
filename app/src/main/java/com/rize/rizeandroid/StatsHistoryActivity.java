@@ -5,6 +5,7 @@ import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -50,7 +51,6 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
         sessionsListView.setLayoutManager(new LinearLayoutManager(this));
         sessionsListView.setAdapter(sessionAdapter);
-
         exerciseStatsListView.setLayoutManager(new LinearLayoutManager(this));
         exerciseStatsListView.setAdapter(exerciseStatsAdapter);
 
@@ -90,8 +90,6 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
             // Cargar resumen local
             LocalSummary summary = repository.getLocalSummaryBlocking();
-
-            // Cargar estadísticas por ejercicio
             List<ExerciseStats> exerciseStats = repository.getExerciseStatsBlocking();
 
             // Cargar sesiones
@@ -115,13 +113,11 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
     private void updateLocalSummary(LocalSummary summary) {
         TextView totalSessionsLabel = findViewById(R.id.total_sessions_label);
-        TextView totalSessionsCount = findViewById(R.id.total_sessions_count);
         TextView squatCount = findViewById(R.id.squat_count);
         TextView curlCount = findViewById(R.id.curl_count);
         TextView benchCount = findViewById(R.id.bench_count);
 
-        totalSessionsLabel.setText(String.format(Locale.getDefault(), "%d sesions guardadas", summary.getTotalSessions()));
-        totalSessionsCount.setText(String.format(Locale.getDefault(), "%d reps", summary.getTotalReps()));
+        totalSessionsLabel.setText(String.format(Locale.getDefault(), "%d sesiones guardadas", summary.getTotalSessions()));
 
         squatCount.setText(String.valueOf(summary.getSessionsByType().get("squat")));
         curlCount.setText(String.valueOf(summary.getSessionsByType().get("curl")));
@@ -148,76 +144,120 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
     private SessionCardModel buildCardModel(SessionRepository repository, WorkoutSession session) {
         String title = session.getExerciseName();
-        String meta = buildMeta(session);
-        String error = buildCommonErrorText(session.getTechnicalErrorLevel());
-        String metrics = buildExerciseMetrics(repository, session);
-        return new SessionCardModel(title, meta, error, metrics);
-    }
-
-    private String buildMeta(WorkoutSession session) {
-        Date date = new Date(session.getStartedAt());
-        String dateTxt = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(date);
-        return String.format(
+        String date = buildDate(session);
+        String commonError = buildCommonErrorText(repository, session);
+        String type = mapExerciseType(session.getExerciseType());
+        String repsDuration = String.format(
                 Locale.getDefault(),
-                "%s  |  %d reps  |  %ds",
-                dateTxt,
+                "%d reps • %s",
                 session.getTotalReps(),
-                session.getDurationSeconds()
+                formatDuration(session.getDurationSeconds())
         );
+        return new SessionCardModel(title, date, commonError, type, repsDuration, session.getAutoSaved());
     }
 
-    private String buildCommonErrorText(String raw) {
-        if (raw == null || raw.trim().isEmpty()) {
-            return getString(R.string.stats_common_error_none);
-        }
-        switch (raw) {
-            case "NONE":
-                return getString(R.string.stats_common_error_none);
-            case "MILD":
-            case "MODERATE":
-            case "SEVERE":
-                return getString(R.string.stats_common_error_legacy, raw);
-            default:
-                return getString(R.string.stats_common_error_format, raw);
-        }
+    private String buildDate(WorkoutSession session) {
+        Date date = new Date(session.getStartedAt());
+        return new SimpleDateFormat("dd MMM. yyyy HH:mm", Locale.getDefault()).format(date);
     }
 
-    private String buildExerciseMetrics(SessionRepository repository, WorkoutSession session) {
-        String type = session.getExerciseType();
+    private String mapExerciseType(String type) {
         if (WorkoutSession.TYPE_SQUAT.equals(type)) {
-            SquatSessionDetails details = repository.getSquatDetailsBlocking(session.getId());
-            if (details == null) return getString(R.string.stats_metrics_unavailable);
-            return String.format(
-                    Locale.getDefault(),
-                    "Profundidad insuficiente: %d reps  |  Tronco inclinado: %d reps",
-                    details.getDepthInsufficientCount(),
-                    details.getTrunkLeanRiskCount()
-            );
+            return "Sentadilla";
+        }
+        if (WorkoutSession.TYPE_CURL.equals(type)) {
+            return "Curl";
         }
         if (WorkoutSession.TYPE_BENCH.equals(type)) {
-            BenchSessionDetails details = repository.getBenchDetailsBlocking(session.getId());
-            if (details == null) return getString(R.string.stats_metrics_unavailable);
-            return String.format(
-                    Locale.getDefault(),
-                    "Profundidad: %d  |  Extension: %d  |  Asimetria: %d",
-                    details.getDepthInsufficientCount(),
-                    details.getExtensionIncompleteCount(),
-                    details.getBilateralAsymmetryCount()
-            );
+            return "Banca";
+        }
+        return "Otro";
+    }
+
+    private String buildCommonErrorText(SessionRepository repository, WorkoutSession session) {
+        String dominant = buildDominantExerciseError(repository, session);
+        String severity = mapSeverityLabel(session.getTechnicalErrorLevel());
+
+        if (dominant == null) {
+            return getString(R.string.stats_common_error_legacy, severity);
         }
 
-        CurlSessionDetails details = repository.getCurlDetailsBlocking(session.getId());
-        if (details == null) return getString(R.string.stats_metrics_unavailable);
-        Double avgRom = details.getAvgRomDeg();
-        Double avgShoulder = details.getAvgShoulderCompensationDeg();
-        String romTxt = avgRom != null ? String.format(Locale.getDefault(), "%.0f", avgRom) : "--";
-        String shoulderTxt = avgShoulder != null ? String.format(Locale.getDefault(), "%.0f", avgShoulder) : "--";
-        return String.format(
-                Locale.getDefault(),
-                "ROM promedio: %s deg  |  Compensacion hombro: %s deg",
-                romTxt,
-                shoulderTxt
-        );
+        if ("NONE".equals(session.getTechnicalErrorLevel()) || session.getTechnicalErrorLevel() == null) {
+            return getString(R.string.stats_common_error_legacy, dominant);
+        }
+        return getString(R.string.stats_common_error_legacy, dominant + " · Nivel " + severity);
+    }
+
+    private String mapSeverityLabel(String raw) {
+        if (raw == null || raw.trim().isEmpty() || "NONE".equals(raw)) {
+            return getString(R.string.stats_error_level_none);
+        }
+        switch (raw) {
+            case "MILD":
+                return getString(R.string.stats_error_level_mild);
+            case "MODERATE":
+                return getString(R.string.stats_error_level_moderate);
+            case "SEVERE":
+                return getString(R.string.stats_error_level_severe);
+            default:
+                return raw;
+        }
+    }
+
+    private String buildDominantExerciseError(SessionRepository repository, WorkoutSession session) {
+        int totalReps = Math.max(0, session.getTotalReps());
+        String type = session.getExerciseType();
+
+        if (WorkoutSession.TYPE_SQUAT.equals(type)) {
+            SquatSessionDetails d = repository.getSquatDetailsBlocking(session.getId());
+            if (d == null || totalReps == 0) return null;
+            int depth = d.getDepthInsufficientCount();
+            int trunk = d.getTrunkLeanRiskCount();
+            if (depth <= 0 && trunk <= 0) return null;
+            if (depth >= trunk) return formatDominant("Profundidad insuficiente", depth, totalReps);
+            return formatDominant("Tronco inclinado", trunk, totalReps);
+        }
+
+        if (WorkoutSession.TYPE_BENCH.equals(type)) {
+            BenchSessionDetails d = repository.getBenchDetailsBlocking(session.getId());
+            if (d == null || totalReps == 0) return null;
+            int depth = d.getDepthInsufficientCount();
+            int ext = d.getExtensionIncompleteCount();
+            int asym = d.getBilateralAsymmetryCount();
+            int grip = d.getGripTooWideCount();
+            int stick = d.getStickingPeriodCount();
+            int best = Math.max(depth, Math.max(ext, Math.max(asym, Math.max(grip, stick))));
+            if (best <= 0) return null;
+            if (best == depth) return formatDominant("Profundidad insuficiente", depth, totalReps);
+            if (best == ext) return formatDominant("Extensión incompleta", ext, totalReps);
+            if (best == asym) return formatDominant("Asimetría bilateral", asym, totalReps);
+            if (best == grip) return formatDominant("Agarre demasiado ancho", grip, totalReps);
+            return formatDominant("Sticking period", stick, totalReps);
+        }
+
+        if (WorkoutSession.TYPE_CURL.equals(type)) {
+            CurlSessionDetails d = repository.getCurlDetailsBlocking(session.getId());
+            if (d == null) return null;
+            Double avgRom = d.getAvgRomDeg();
+            Double shoulder = d.getAvgShoulderCompensationDeg();
+            if (avgRom != null && avgRom < 110.0) return "Rango de movimiento bajo (<110°)";
+            if (shoulder != null && shoulder > 15.0) return "Compensación de hombro elevada";
+        }
+        return null;
+    }
+
+    private String formatDominant(String label, int count, int totalReps) {
+        int pct = (int) Math.round((count * 100.0) / Math.max(1, totalReps));
+        return String.format(Locale.getDefault(), "%s (%d reps, %d%%)", label, count, pct);
+    }
+
+    private String formatDuration(int seconds) {
+        int min = seconds / 60;
+        int sec = seconds % 60;
+        if (min > 0) {
+            return String.format(Locale.getDefault(), "%d min %d s", min, sec);
+        }
+        return String.format(Locale.getDefault(), "%d s", sec);
     }
 
     @Override
@@ -230,15 +270,19 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
     private static class SessionCardModel {
         final String title;
-        final String meta;
+        final String date;
         final String commonError;
-        final String exerciseMetrics;
+        final String type;
+        final String repsDuration;
+        final boolean autoSaved;
 
-        SessionCardModel(String title, String meta, String commonError, String exerciseMetrics) {
+        SessionCardModel(String title, String date, String commonError, String type, String repsDuration, boolean autoSaved) {
             this.title = title;
-            this.meta = meta;
+            this.date = date;
             this.commonError = commonError;
-            this.exerciseMetrics = exerciseMetrics;
+            this.type = type;
+            this.repsDuration = repsDuration;
+            this.autoSaved = autoSaved;
         }
     }
 
@@ -264,9 +308,11 @@ public class StatsHistoryActivity extends AppCompatActivity {
         public void onBindViewHolder(Holder holder, int position) {
             SessionCardModel item = items.get(position);
             holder.title.setText(item.title);
-            holder.meta.setText(item.meta);
+            holder.date.setText(item.date);
             holder.error.setText(item.commonError);
-            holder.metrics.setText(item.exerciseMetrics);
+            holder.type.setText(item.type);
+            holder.repsDuration.setText(item.repsDuration);
+            holder.autoBadge.setVisibility(item.autoSaved ? View.VISIBLE : View.GONE);
         }
 
         @Override
@@ -276,22 +322,25 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
         static class Holder extends RecyclerView.ViewHolder {
             final TextView title;
-            final TextView meta;
+            final TextView date;
             final TextView error;
-            final TextView metrics;
+            final TextView type;
+            final TextView repsDuration;
+            final TextView autoBadge;
 
             Holder(android.view.View itemView) {
                 super(itemView);
                 title = itemView.findViewById(R.id.item_title);
-                meta = itemView.findViewById(R.id.item_meta);
+                date = itemView.findViewById(R.id.item_date);
                 error = itemView.findViewById(R.id.item_error);
-                metrics = itemView.findViewById(R.id.item_metrics);
+                type = itemView.findViewById(R.id.item_type);
+                repsDuration = itemView.findViewById(R.id.item_reps_duration);
+                autoBadge = itemView.findViewById(R.id.item_auto);
             }
         }
     }
 
     // ──── Adapter para estadísticas por ejercicio ────────────────────────────────
-
     private static class ExerciseStatsAdapter extends RecyclerView.Adapter<ExerciseStatsAdapter.Holder> {
         private final List<ExerciseStats> items = new ArrayList<>();
 
@@ -313,17 +362,15 @@ public class StatsHistoryActivity extends AppCompatActivity {
             ExerciseStats item = items.get(position);
             holder.exerciseName.setText(item.getDisplayName());
             holder.sessionCount.setText(String.valueOf(item.getSessionCount()));
-            
-            // Mostrar promedio de reps con un decimal
+
             if (item.getAvgReps() != null) {
                 holder.avgReps.setText(String.format(Locale.getDefault(), "%.1f", item.getAvgReps()));
             } else {
                 holder.avgReps.setText("--");
             }
-            
-            // Mostrar duración promedio en formato "Xxs"
+
             if (item.getAvgDurationSec() != null) {
-                holder.avgDuration.setText(String.format(Locale.getDefault(), "~%ds", 
+                holder.avgDuration.setText(String.format(Locale.getDefault(), "~%ds",
                         Math.round(item.getAvgDurationSec())));
             } else {
                 holder.avgDuration.setText("--");

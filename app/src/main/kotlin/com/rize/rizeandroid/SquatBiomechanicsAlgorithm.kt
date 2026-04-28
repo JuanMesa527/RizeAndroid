@@ -31,18 +31,23 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val TOP_POSITION_ANGLE = 148.0
         private const val MIN_ASCENT_RECOVERY_DEG = 20.0
 
-        private const val DEPTH_ERROR_THRESHOLD = 45.0
-        private const val TRUNK_RISK_THRESHOLD = 55.0
-        private const val TRUNK_SEVERE_THRESHOLD = 45.0
+        private const val DEPTH_ERROR_THRESHOLD = 80.0
+        private const val DEPTH_MEDIUM_UPPER_BOUND = 80.0
+        private const val DEPTH_MEDIUM_LOWER_BOUND = 70.0
+        private const val TRUNK_OPTIMAL_MIN = 50.0
+        private const val TRUNK_OPTIMAL_MAX = 80.0
 
         // Suavizado exponencial de la velocidad angular: estable sin bloquear
         // los cambios de signo que ocurren al pasar de descenso a ascenso.
         private const val OMEGA_EMA_ALPHA = 0.4
 
         private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0
+        private const val VELOCITY_STABLE_THRESHOLD = 10.0
         private const val MIN_VALID_ROM_DEG = 18.0
         private const val MAX_VALID_BOTTOM_ANGLE_DEG = 130.0
         private const val MIN_VALID_BOTTOM_ANGLE_DEG = 25.0
+        private const val CVT_MODERATE_THRESHOLD = 5.0
+        private const val CVT_INSTABILITY_THRESHOLD = 10.0
         private const val CVT_WINDOW_REPS = 6
 
         private const val MAX_X_VARIANCE_LATERAL = 0.15
@@ -80,6 +85,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private var lastDepthInsufficient = false
     private var lastTrunkLeanRisk = false
+    private var lastSquatDepthCategory: SquatDepthCategory? = null
+    private var lastSquatTrunkCategory: SquatTrunkCategory? = null
     private var lastVelocityLossPercent: Double? = null
     private var lastCvtPercent: Double? = null
     private var lastTechnicalError: ErrorLevel = ErrorLevel.NONE
@@ -99,6 +106,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var snapLastRepEccVel: Double? = null
     private var snapLastRepDepthInsufficient = false
     private var snapLastRepTrunkLeanRisk = false
+    private var snapLastRepSquatDepthCategory: SquatDepthCategory? = null
+    private var snapLastRepSquatTrunkCategory: SquatTrunkCategory? = null
     private var snapLastRepFormQuality: ErrorLevel? = null
 
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
@@ -171,6 +180,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             repCount = repCount,
             depthInsufficient = lastDepthInsufficient,
             trunkLeanRisk = lastTrunkLeanRisk,
+            squatDepthCategory = lastSquatDepthCategory,
+            squatTrunkCategory = lastSquatTrunkCategory,
             readinessReady = readinessReady,
             // Snapshots per-rep para persistencia.
             lastRepMinKneeAngleDeg = snapLastRepMinKnee,
@@ -180,6 +191,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             lastRepEccentricPeakVelocityDegS = snapLastRepEccVel,
             lastRepDepthInsufficient = snapLastRepDepthInsufficient,
             lastRepTrunkLeanRisk = snapLastRepTrunkLeanRisk,
+            lastRepSquatDepthCategory = snapLastRepSquatDepthCategory,
+            lastRepSquatTrunkCategory = snapLastRepSquatTrunkCategory,
             lastRepFormQuality = snapLastRepFormQuality
         )
     }
@@ -204,6 +217,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         lastDepthInsufficient = false
         lastTrunkLeanRisk = false
+        lastSquatDepthCategory = null
+        lastSquatTrunkCategory = null
         lastVelocityLossPercent = null
         lastCvtPercent = null
         lastTechnicalError = ErrorLevel.NONE
@@ -220,6 +235,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         snapLastRepEccVel = null
         snapLastRepDepthInsufficient = false
         snapLastRepTrunkLeanRisk = false
+        snapLastRepSquatDepthCategory = null
+        snapLastRepSquatTrunkCategory = null
         snapLastRepFormQuality = null
     }
 
@@ -343,21 +360,26 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // ocultar una inclinación marcada cuando el fondo de la rep es corto.
         val bottomHipAngleDeg = minOf(currentMinRawHipAngleDeg, currentMinHipAngleDeg)
         lastDepthInsufficient = currentMinKneeAngleDeg > DEPTH_ERROR_THRESHOLD
-        lastTrunkLeanRisk = bottomHipAngleDeg < TRUNK_RISK_THRESHOLD
-        val severeTrunkLeanRisk = bottomHipAngleDeg < TRUNK_SEVERE_THRESHOLD
+        lastSquatDepthCategory = classifyDepth(currentMinKneeAngleDeg)
+        lastSquatTrunkCategory = classifyTrunk(bottomHipAngleDeg)
+        lastTrunkLeanRisk = lastSquatTrunkCategory != SquatTrunkCategory.OPTIMAL
 
         val cvt = lastCvtPercent ?: 0.0
-        val hasInstability = cvt > 10.0
+        val hasInstability = cvt > CVT_INSTABILITY_THRESHOLD
 
         lastTechnicalError = when {
-            hasInstability || (lastDepthInsufficient && severeTrunkLeanRisk) -> ErrorLevel.SEVERE
-            lastDepthInsufficient || lastTrunkLeanRisk || cvt >= 5.0 -> ErrorLevel.MODERATE
+            hasInstability -> ErrorLevel.SEVERE
+            lastDepthInsufficient || lastTrunkLeanRisk || cvt >= CVT_MODERATE_THRESHOLD -> ErrorLevel.MODERATE
             else -> ErrorLevel.NONE
         }
 
         val depthMagnitude = if (lastDepthInsufficient) currentMinKneeAngleDeg - DEPTH_ERROR_THRESHOLD else 0.0
-        val trunkMagnitude = if (lastTrunkLeanRisk) TRUNK_RISK_THRESHOLD - bottomHipAngleDeg else 0.0
-        val instabilityMagnitude = if (hasInstability) cvt - 10.0 else 0.0
+        val trunkMagnitude = when (lastSquatTrunkCategory) {
+            SquatTrunkCategory.TOO_INCLINED -> TRUNK_OPTIMAL_MIN - bottomHipAngleDeg
+            SquatTrunkCategory.TOO_UPRIGHT -> bottomHipAngleDeg - TRUNK_OPTIMAL_MAX
+            else -> 0.0
+        }
+        val instabilityMagnitude = if (hasInstability) cvt - CVT_INSTABILITY_THRESHOLD else 0.0
         lastErrorMagnitude = listOf(depthMagnitude, trunkMagnitude, instabilityMagnitude).maxOrNull()?.takeIf { it > 0.0 }
 
         // Snapshots de la rep recien cerrada — usados por CameraActivity para
@@ -369,6 +391,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         snapLastRepEccVel = currentPeakEccentricVelocityDegS.takeIf { it > 0.0 }
         snapLastRepDepthInsufficient = lastDepthInsufficient
         snapLastRepTrunkLeanRisk = lastTrunkLeanRisk
+        snapLastRepSquatDepthCategory = lastSquatDepthCategory
+        snapLastRepSquatTrunkCategory = lastSquatTrunkCategory
         snapLastRepFormQuality = lastTechnicalError
     }
 
@@ -381,9 +405,25 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private fun buildFatigueReason(): String? {
         val loss = lastVelocityLossPercent ?: return null
         return when {
-            loss < 10.0 -> "Velocidad estable"
-            loss < 20.0 -> "Inicio de fatiga (${format(loss)}% de perdida)"
+            loss < VELOCITY_STABLE_THRESHOLD -> "Velocidad estable"
+            loss < CONCENTRIC_FATIGUE_THRESHOLD -> "Inicio de fatiga (${format(loss)}% de perdida)"
             else -> "Fatiga tecnica significativa (${format(loss)}% de perdida)"
+        }
+    }
+
+    private fun classifyDepth(bottomKneeAngleDeg: Double): SquatDepthCategory {
+        return when {
+            bottomKneeAngleDeg >= DEPTH_MEDIUM_UPPER_BOUND -> SquatDepthCategory.PARTIAL
+            bottomKneeAngleDeg >= DEPTH_MEDIUM_LOWER_BOUND -> SquatDepthCategory.MEDIUM
+            else -> SquatDepthCategory.DEEP
+        }
+    }
+
+    private fun classifyTrunk(bottomHipAngleDeg: Double): SquatTrunkCategory {
+        return when {
+            bottomHipAngleDeg < TRUNK_OPTIMAL_MIN -> SquatTrunkCategory.TOO_INCLINED
+            bottomHipAngleDeg > TRUNK_OPTIMAL_MAX -> SquatTrunkCategory.TOO_UPRIGHT
+            else -> SquatTrunkCategory.OPTIMAL
         }
     }
 

@@ -148,6 +148,8 @@ data class AlgorithmResult(
     val repCount: Int                = 0,
     val depthInsufficient: Boolean   = false,
     val trunkLeanRisk: Boolean       = false,
+    val squatDepthCategory: SquatDepthCategory? = null,
+    val squatTrunkCategory: SquatTrunkCategory? = null,
     // Bench press specific
     val elbowAngleDeg: Double?            = null,
     val leftElbowAngleDeg: Double?        = null,
@@ -201,6 +203,8 @@ data class AlgorithmResult(
     val lastRepMinHipAngleDeg: Double?             = null,
     val lastRepDepthInsufficient: Boolean          = false,
     val lastRepTrunkLeanRisk: Boolean              = false,
+    val lastRepSquatDepthCategory: SquatDepthCategory? = null,
+    val lastRepSquatTrunkCategory: SquatTrunkCategory? = null,
     val lastRepSquatRomDeg: Double?                = null,
     val lastRepEccentricPeakVelocityDegS: Double?  = null,
     // Curl extra
@@ -220,3 +224,15 @@ data class AlgorithmResult(
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }
+
+enum class SquatDepthCategory {
+    PARTIAL,
+    MEDIUM,
+    DEEP
+}
+
+enum class SquatTrunkCategory {
+    TOO_INCLINED,
+    OPTIMAL,
+    TOO_UPRIGHT
+}

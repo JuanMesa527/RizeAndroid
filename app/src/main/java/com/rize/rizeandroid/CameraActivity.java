@@ -801,13 +801,27 @@ public class CameraActivity extends AppCompatActivity {
         // Severidad 2: Solo profundidad insuficiente
         else if (result.getDepthInsufficient()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
-            messageRes = R.string.camera_squat_alert_depth;
+            SquatDepthCategory depthCategory = result.getSquatDepthCategory();
+            if (depthCategory == SquatDepthCategory.PARTIAL) {
+                messageRes = R.string.camera_squat_alert_depth_partial;
+            } else if (depthCategory == SquatDepthCategory.MEDIUM) {
+                messageRes = R.string.camera_squat_alert_depth_medium;
+            } else {
+                messageRes = R.string.camera_squat_alert_depth;
+            }
             bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 3: Solo inclinación de tronco
         else if (result.getTrunkLeanRisk()) {
             color = ContextCompat.getColor(this, R.color.risk_red);
-            messageRes = R.string.camera_squat_alert_trunk;
+            SquatTrunkCategory trunkCategory = result.getSquatTrunkCategory();
+            if (trunkCategory == SquatTrunkCategory.TOO_INCLINED) {
+                messageRes = R.string.camera_squat_alert_trunk_too_inclined;
+            } else if (trunkCategory == SquatTrunkCategory.TOO_UPRIGHT) {
+                messageRes = R.string.camera_squat_alert_trunk_too_upright;
+            } else {
+                messageRes = R.string.camera_squat_alert_trunk;
+            }
             bgRes = R.drawable.bg_alert_banner_red;
         }
         // Severidad 4: Fatiga significativa (prioridad sobre inestabilidad)
