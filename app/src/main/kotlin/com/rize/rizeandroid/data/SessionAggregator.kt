@@ -54,7 +54,8 @@ object PendingSessionBuilder {
             WorkoutSession.TYPE_CURL -> PendingSessionData(
                 session = session,
                 curlDetails = buildCurlSessionDetails(reps),
-                reps = reps
+                reps = reps,
+                attemptedRepCount = finalResult?.attemptedRepCount ?: reps.size
             )
             WorkoutSession.TYPE_BENCH -> PendingSessionData(
                 session = session,

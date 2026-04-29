@@ -148,9 +148,9 @@
     <!-- Velocidad concentrica + Flexion en vivo -->
     <string name="camera_curl_velocity_label">VELOCIDAD</string>
     <string name="camera_curl_velocity_unit">°/s</string>
-    <string name="camera_curl_flex_label">FLEXIÓN</string>
-    <string name="camera_curl_flex_unit">%</string>
+    <string name="camera_curl_reps_label">FLEXIONES</string>
     <string name="camera_curl_status_ready">Levanta el peso para iniciar el análisis.</string>
+    <string name="camera_curl_no_pose">Sin pose detectada. Colócate de perfil con el brazo visible.</string>
     <string name="camera_curl_status_ok">Curl técnicamente estable.</string>
     <string name="camera_curl_calibrando">Calibrando referencias… rep %1$d/3</string>
     <!-- Alertas reescritas para apuntar al panel afectado -->
@@ -197,19 +197,74 @@
 
     <!-- Summary -->
     <string name="summary_toolbar_title">Resumen del Entrenamiento</string>
-    <string name="summary_session_chip">SESIÓN DE POTENCIA</string>
-    <string name="summary_performance_title">¡Rendimiento Élite!</string>
-    <string name="summary_performance_subtitle">Superaste el 85% de tus sesiones anteriores.</string>
-    <string name="summary_form_accuracy">Precisión de Forma</string>
-    <string name="summary_rep_count">Conteo de Repeticiones</string>
-    <string name="summary_ai_insights">Análisis con IA</string>
-    <string name="summary_movement_efficiency">Eficiencia de Movimiento</string>
-    <string name="summary_movement_efficiency_desc">Mantén la espalda más recta durante las últimas 3 repeticiones de tus series de peso muerto para maximizar el torque.</string>
-    <string name="summary_tempo_balance">Balance de Tempo</string>
-    <string name="summary_tempo_balance_desc">Tu fase concéntrica es perfecta, pero intenta ralentizar el movimiento excéntrico para una mejor hipertrofia.</string>
+    <string name="summary_session_chip">SESIÓN DE ENTRENAMIENTO</string>
+    <string name="summary_performance_title_low">¡A Mejorar!</string>
+    <string name="summary_performance_subtitle_low">Tu técnica tiene bastante margen de mejora en esta sesión.</string>
+    <string name="summary_performance_title_mid">¡Por Buen Camino!</string>
+    <string name="summary_performance_subtitle_mid">Tu técnica va mejorando, sigue trabajando en ella.</string>
+    <string name="summary_performance_title_high">¡Sigue Así!</string>
+    <string name="summary_performance_subtitle_high">Técnica excelente en esta sesión. ¡Bien hecho!</string>
+    <string name="summary_rep_count">Repeticiones bien hechas</string>
+    <string name="summary_quality_title">Calidad de Ejecución</string>
+    <string name="summary_good_reps_label">BIEN HECHAS</string>
+    <string name="summary_bad_reps_label">MAL HECHAS</string>
+    <string name="summary_attempts_format">%1$d de %2$d intentos contabilizados</string>
+    <string name="summary_avg_velocity">Velocidad Promedio bien hechas</string>
+    <string name="summary_key_corrections_title">Correcciones Clave</string>
+    <string name="summary_correction_priority_1">Corrección Prioritaria</string>
+    <string name="summary_correction_priority_2">También Trabaja</string>
+    <!-- Correcciones squat -->
+    <string name="summary_corr_squat_depth">%1$d rep(s) con profundidad insuficiente. Objetivo: ángulo de rodilla ≤90°. Baja más despacio y controla el descenso.</string>
+    <string name="summary_corr_squat_trunk">%1$d rep(s) con tronco inclinado. Eleva el pecho y activa el core durante toda la subida.</string>
+    <string name="summary_corr_squat_fatigue">Fatiga técnica detectada (%1$s pérdida de velocidad). Reduce volumen o aumenta el descanso entre series.</string>
+    <string name="summary_corr_squat_mobility">Trabaja la movilidad de tobillo y cadera para lograr mayor profundidad con tronco erecto.</string>
+    <string name="summary_corr_squat_ok">Técnica sólida. Para progresar, añade 2.5–5 kg en el próximo entrenamiento.</string>
+    <!-- Correcciones curl -->
+    <string name="summary_corr_curl_quality">%1$d%% de intentos con forma deficiente. Reduce el peso y prioriza el recorrido completo.</string>
+    <string name="summary_corr_curl_shoulder">Compensación de hombro detectada. Mantén el codo pegado al costado durante todo el movimiento.</string>
+    <string name="summary_corr_curl_rom">Rango de movimiento promedio bajo (%1$d°). Extiende completamente el brazo al bajar y sube hasta el pecho.</string>
+    <string name="summary_corr_curl_eccentric">Trabaja la fase excéntrica controlada: baja el peso en 3 segundos para mayor hipertrofia.</string>
+    <string name="summary_corr_curl_ok">Técnica correcta. Enfócate en la fase excéntrica controlada: 3 segundos al bajar el peso.</string>
+    <!-- Correcciones bench -->
+    <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja la barra hasta rozar el pecho (codo ≤95°).</string>
+    <string name="summary_corr_bench_asymmetry">Asimetría bilateral en %1$d rep(s). Practica press con mancuernas para equilibrar la fuerza.</string>
+    <string name="summary_corr_bench_extension">%1$d rep(s) con extensión incompleta. Extiende completamente los codos en la parte alta.</string>
+    <string name="summary_corr_bench_grip">Agarre excesivo en %1$d rep(s). Acerca las manos a ~1.5× el ancho de hombros.</string>
+    <string name="summary_corr_bench_lat">Activa el dorsal ancho al bajar la barra para mayor estabilidad del hombro y más fuerza.</string>
+    <string name="summary_corr_bench_ok">Técnica correcta. Considera el press inclinado para un desarrollo completo del pecho.</string>
+    <!-- Genérico -->
+    <string name="summary_corr_nodata">Sin datos suficientes. Completa al menos 3 repeticiones para un análisis completo.</string>
+    <string name="summary_rom_consistency">Consistencia de ROM</string>
+    <string name="summary_insight_rom_consistent">ROM promedio: %1$d° (±%2$d°). Excelente consistencia — cada repetición casi idéntica.</string>
+    <string name="summary_insight_rom_moderate">ROM promedio: %1$d° (±%2$d°). Consistencia aceptable. Trabaja en repetir el mismo rango en cada repetición.</string>
+    <string name="summary_insight_rom_variable">ROM promedio: %1$d° (±%2$d°). Alta variabilidad de ROM. Enfócate en mantener el mismo recorrido en cada repetición.</string>
+    <string name="summary_insight_rom_nodata">Sin datos de ROM suficientes para analizar la consistencia.</string>
     <string name="summary_risk_warning">Advertencia de Riesgo</string>
     <string name="summary_joint_stress_title">Estrés Articular Elevado Detectado</string>
     <string name="summary_joint_stress_desc">La IA de RIZE detectó valgo de rodilla significativo durante tus sentadillas. Para prevenir tensión en el LCA, enfócate en empujar las rodillas hacia afuera. Considera reducir el peso un 10%% hasta que la técnica se estabilice.</string>
     <string name="summary_go_home">Ir al Inicio</string>
     <string name="summary_save_workout">Guardar Entrenamiento</string>
+    <string name="summary_peak_velocity">Velocidad Pico</string>
+    <string name="summary_velocity_loss">Pérdida de Velocidad</string>
+    <string name="summary_velocity_unit">°/s</string>
+    <string name="summary_insight_velocity_high">Potencia explosiva excelente: %1$d°/s en la fase concéntrica. Mantén esa velocidad de ejecución.</string>
+    <string name="summary_insight_velocity_mid">Velocidad concéntrica correcta: %1$d°/s. Trabaja la explosividad para superar los 200°/s.</string>
+    <string name="summary_insight_velocity_low">Velocidad concéntrica baja: %1$d°/s. Enfócate en ejecutar la fase concéntrica de forma explosiva con cargas submáximas.</string>
+    <string name="summary_insight_velocity_nodata">Sin datos de velocidad suficientes para esta sesión.</string>
+    <string name="summary_insight_loss_low">Pérdida de velocidad %1$s — fatiga mínima. Puedes agregar más volumen o carga en la próxima sesión.</string>
+    <string name="summary_insight_loss_mid">Pérdida de velocidad %1$s — fatiga moderada. El volumen de esta sesión fue adecuado.</string>
+    <string name="summary_insight_loss_high">Pérdida de velocidad %1$s — fatiga significativa. Considera reducir el volumen o aumentar el descanso entre series.</string>
+    <string name="summary_insight_loss_nodata">Sin datos de fatiga suficientes para esta sesión.</string>
+    <!-- Extreme alert overlay — camera screen -->
+    <string name="alert_no_pose_title">Sin Detección</string>
+    <string name="alert_no_pose_message">No se detecta tu cuerpo. Reposiciónate frente a la cámara y asegúrate de que tu silueta sea completamente visible.</string>
+    <string name="alert_bad_form_title">Técnica Deficiente</string>
+    <string name="alert_bad_form_message">Se detectan errores graves de forma repetida. Considera reducir el peso o tomar un descanso breve.</string>
+    <string name="alert_injury_risk_title">Riesgo de Lesión</string>
+    <string name="alert_injury_risk_message">Patrón de riesgo detectado en múltiples repeticiones consecutivas. Detente y corrige la técnica antes de continuar.</string>
+
+    <string name="summary_risk_moderate_title">Errores Técnicos Detectados</string>
+    <string name="summary_risk_moderate_desc">RIZE detectó errores técnicos moderados durante la sesión. Revisa tu técnica antes de incrementar la carga.</string>
+    <string name="summary_risk_severe_title">Errores Técnicos Graves Detectados</string>
+    <string name="summary_risk_severe_desc">RIZE detectó errores técnicos graves durante la sesión. Reduce la carga y corrige la técnica para evitar lesiones.</string>
 </resources>

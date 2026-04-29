@@ -33,5 +33,6 @@ data class PendingSessionData(
     val squatDetails: SquatSessionDetails? = null,
     val curlDetails: CurlSessionDetails? = null,
     val benchDetails: BenchSessionDetails? = null,
-    val reps: List<PendingRep>
+    val reps: List<PendingRep>,
+    val attemptedRepCount: Int = 0
 )

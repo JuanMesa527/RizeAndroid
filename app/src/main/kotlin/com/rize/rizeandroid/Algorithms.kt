@@ -146,6 +146,7 @@ data class AlgorithmResult(
     val velocityLossPercent: Double? = null,
     val cvtPercent: Double?          = null,
     val repCount: Int                = 0,
+    val attemptedRepCount: Int       = 0,
     val depthInsufficient: Boolean   = false,
     val trunkLeanRisk: Boolean       = false,
     val squatDepthCategory: SquatDepthCategory? = null,

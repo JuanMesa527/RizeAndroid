@@ -79,6 +79,14 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val FLEXION_PEAK_THRESHOLD     = 80.0
         private const val EXTENSION_VALLEY_THRESHOLD = 140.0
 
+        // Umbrales laxos para contar INTENTOS (incluye reps con mala forma).
+        // Cualquier ciclo flexión-extensión parcial se registra como intento.
+        private const val ATTEMPT_FLEXION_THRESHOLD   = 115.0  // arm raises noticeably
+        private const val ATTEMPT_EXTENSION_THRESHOLD = 120.0  // arm partially lowers
+        // Umbral de reset: el brazo debe superar esto antes de aceptar un nuevo intento.
+        // Previene doble-conteo por oscilación en la zona 115-120°.
+        private const val ATTEMPT_RESET_THRESHOLD     = 135.0
+
         private const val MIN_VISIBILITY = 0.5f
     }
 
@@ -112,6 +120,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private val shoulderRestBuffer = ArrayDeque<Double>(REST_SAMPLES)
     private var thetaShoulderRest: Double? = null
     private var restVarianceBuffer = ArrayDeque<Double>(VARIANCE_WINDOW)
+
+    // Máquina de estados para INTENTOS (umbrales laxos, independiente de repPeakAngles)
+    private var inAttemptFlexion    = false
+    private var attemptReadyForNext = true   // requiere extensión clara antes del próximo intento
+    private var attemptCount        = 0
 
     // Snapshots de la ultima rep cerrada — exportados para persistencia per-rep.
     // Se actualizan cuando repPeakAngles.size cambia (nueva rep completada).
@@ -228,9 +241,10 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             fatigueReason       = reasonCombined,
             technicalError      = errorResult.level,
             errorMagnitude      = errorResult.magnitude,
-            velocityLossPercent = fatigue.velocityLossPct,   // ← nuevo
+            velocityLossPercent = fatigue.velocityLossPct,
             alert               = alert,
             repCount            = repPeakAngles.size,
+            attemptedRepCount   = attemptCount,
             algorithmName       = "CurlBiomechanics",
             // Live telemetry — usados por CameraActivity para los 3 paneles.
             currentRepPeakFlexionDeg     = livePeak,
@@ -258,6 +272,9 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeak        = Double.POSITIVE_INFINITY
         currentValley      = Double.NEGATIVE_INFINITY
         currentRepMaxOmega = 0.0
+        inAttemptFlexion    = false
+        attemptReadyForNext = true
+        attemptCount        = 0
         thetaRefPeak       = null
         thetaRefValley     = null
         deltaSigma         = null
@@ -311,6 +328,22 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     // Al completar una rep se almacenan: pico de flexión (mínimo), valle de
     // extensión (máximo) y ω_peak de esa rep.
     private fun detectRepetition(angleDeg: Double) {
+        // ── Contador de INTENTOS (umbrales laxos) ────────────────────────────
+        if (!inAttemptFlexion) {
+            if (angleDeg >= ATTEMPT_RESET_THRESHOLD) attemptReadyForNext = true
+            if (attemptReadyForNext && angleDeg < ATTEMPT_FLEXION_THRESHOLD) {
+                inAttemptFlexion    = true
+                attemptReadyForNext = false
+            }
+        } else {
+            if (angleDeg > ATTEMPT_EXTENSION_THRESHOLD) {
+                attemptCount++
+                inAttemptFlexion = false
+                // attemptReadyForNext permanece false hasta que el brazo alcance ATTEMPT_RESET_THRESHOLD
+            }
+        }
+
+        // ── Contador de CALIDAD (umbrales estrictos para análisis) ───────────
         if (!inFlexion) {
             // Rastrear el valle de extensión antes de bajar
             if (angleDeg > currentValley) currentValley = angleDeg

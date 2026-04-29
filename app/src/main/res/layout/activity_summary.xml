@@ -68,6 +68,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp">
 
@@ -102,25 +103,127 @@
                         android:letterSpacing="0.1" />
 
                     <TextView
+                        android:id="@+id/tv_performance_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_performance_title"
+                        android:text="@string/summary_performance_title_high"
                         android:textColor="@color/white"
                         android:textSize="24sp"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp" />
 
                     <TextView
+                        android:id="@+id/tv_performance_subtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_performance_subtitle"
+                        android:text="@string/summary_performance_subtitle_high"
                         android:textColor="@color/silver_2"
                         android:textSize="13sp"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
             </FrameLayout>
 
-            <!-- Metrics Row -->
+            <!-- Quality Card (ancho completo = 2 casillas) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_dark"
+                android:padding="14dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_form_analysis"
+                        android:contentDescription="Quality" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/summary_quality_title"
+                        android:textColor="@color/silver_2"
+                        android:textSize="12sp"
+                        android:layout_marginStart="6dp" />
+                </LinearLayout>
+
+                <!-- Bien / Mal en dos columnas -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/summary_good_reps_label"
+                            android:textColor="@color/improvement_green"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tv_good_reps_pct"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/improvement_green"
+                            android:textSize="36sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/summary_bad_reps_label"
+                            android:textColor="@color/risk_red"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tv_bad_reps_pct"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/risk_red"
+                            android:textSize="36sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_attempts_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textColor="@color/silver_2"
+                    android:textSize="12sp"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+
+            <!-- Rep Count + Avg Velocity Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -129,79 +232,15 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
 
-                <!-- Form Accuracy -->
+                <!-- Rep Count -->
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="104dp"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:background="@drawable/bg_card_dark"
                     android:padding="14dp"
                     android:layout_marginEnd="8dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_form_analysis"
-                            android:contentDescription="Accuracy" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/summary_form_accuracy"
-                            android:textColor="@color/silver_2"
-                            android:textSize="12sp"
-                            android:layout_marginStart="6dp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:layout_marginTop="6dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="92%"
-                            android:textColor="@color/white"
-                            android:textSize="32sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="  ~+5%"
-                            android:textColor="@color/improvement_green"
-                            android:textSize="12sp"
-                            android:layout_marginBottom="6dp" />
-                    </LinearLayout>
-
-                    <ProgressBar
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:progressDrawable="@drawable/bg_progress_bar"
-                        android:progress="92"
-                        android:max="100" />
-                </LinearLayout>
-
-                <!-- Rep Count -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card_dark"
-                    android:padding="14dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -224,42 +263,61 @@
                             android:layout_marginStart="6dp" />
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/tv_rep_count_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="—"
+                        android:textColor="@color/white"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="6dp" />
+                </LinearLayout>
+
+                <!-- Avg Velocity -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="104dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card_dark"
+                    android:padding="14dp">
+
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:layout_marginTop="6dp">
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_speed"
+                            android:contentDescription="Velocity" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="124"
-                            android:textColor="@color/white"
-                            android:textSize="32sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="  ~+12%"
-                            android:textColor="@color/improvement_green"
+                            android:text="@string/summary_avg_velocity"
+                            android:textColor="@color/silver_2"
                             android:textSize="12sp"
-                            android:layout_marginBottom="6dp" />
+                            android:layout_marginStart="6dp" />
                     </LinearLayout>
 
-                    <ProgressBar
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:progressDrawable="@drawable/bg_progress_bar"
-                        android:progress="80"
-                        android:max="100" />
+                    <TextView
+                        android:id="@+id/tv_avg_velocity_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="—"
+                        android:textColor="@color/white"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="6dp" />
+
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- AI Insights -->
+            <!-- Correcciones Clave -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -271,20 +329,20 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_lightbulb"
-                    android:contentDescription="AI" />
+                    android:src="@drawable/ic_form_analysis"
+                    android:contentDescription="Correcciones" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/summary_ai_insights"
+                    android:text="@string/summary_key_corrections_title"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginStart="8dp" />
             </LinearLayout>
 
-            <!-- Movement Efficiency Insight -->
+            <!-- Corrección 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -298,9 +356,9 @@
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/ic_lightbulb"
+                    android:src="@drawable/ic_form_analysis"
                     android:layout_marginEnd="12dp"
-                    android:contentDescription="Insight" />
+                    android:contentDescription="Corrección 1" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -311,15 +369,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_movement_efficiency"
+                        android:text="@string/summary_correction_priority_1"
                         android:textColor="@color/white"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tv_insight_efficiency_desc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_movement_efficiency_desc"
+                        android:text="@string/summary_corr_nodata"
                         android:textColor="@color/silver_2"
                         android:textSize="13sp"
                         android:layout_marginTop="4dp"
@@ -327,7 +386,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Tempo Balance Insight -->
+            <!-- Corrección 2 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -341,9 +400,9 @@
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/ic_speed"
+                    android:src="@drawable/ic_form_analysis"
                     android:layout_marginEnd="12dp"
-                    android:contentDescription="Insight" />
+                    android:contentDescription="Corrección 2" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -354,15 +413,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_tempo_balance"
+                        android:text="@string/summary_correction_priority_2"
                         android:textColor="@color/white"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tv_insight_tempo_desc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_tempo_balance_desc"
+                        android:text="@string/summary_corr_nodata"
                         android:textColor="@color/silver_2"
                         android:textSize="13sp"
                         android:layout_marginTop="4dp"
@@ -370,72 +430,83 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Risk Warning -->
+            <!-- Risk Section (hidden when no errors) -->
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="24dp"
-                android:paddingStart="16dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_warning"
-                    android:contentDescription="Warning" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/summary_risk_warning"
-                    android:textColor="@color/risk_red"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="8dp" />
-            </LinearLayout>
-
-            <!-- Risk Card -->
-            <LinearLayout
+                android:id="@+id/section_risk"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/bg_risk_card"
-                android:padding="16dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp">
+                android:visibility="gone">
 
+                <!-- Risk Warning header -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="24dp"
+                    android:paddingStart="16dp">
 
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_warning"
-                        android:contentDescription="Alert" />
+                        android:contentDescription="Warning" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/summary_joint_stress_title"
+                        android:text="@string/summary_risk_warning"
                         android:textColor="@color/risk_red"
-                        android:textSize="15sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:layout_marginStart="8dp" />
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Risk Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/summary_joint_stress_desc"
-                    android:textColor="@color/silver_2"
-                    android:textSize="13sp"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="2dp" />
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_risk_card"
+                    android:padding="16dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_warning"
+                            android:contentDescription="Alert" />
+
+                        <TextView
+                            android:id="@+id/tv_risk_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/summary_risk_moderate_title"
+                            android:textColor="@color/risk_red"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="8dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_risk_desc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/summary_risk_moderate_desc"
+                        android:textColor="@color/silver_2"
+                        android:textSize="13sp"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Action Buttons -->

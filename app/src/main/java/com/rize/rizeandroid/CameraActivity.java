@@ -106,12 +106,32 @@ public class CameraActivity extends AppCompatActivity {
     private static final double CURL_VEL_ALPHA     = 0.45;
     private double emaStability    = 100.0; // arranca en 100%
     private Double emaCurlAngle    = null;  // null hasta el primer frame con pose
-    private Double emaCurlFlex     = null;
+    private Double emaCurlFlex     = null; // unused after flex→reps change, kept for reset guard
     private Double emaCurlVelocity = null;
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private int elapsedSeconds = 0;
     private boolean timerRunning = false;
+
+    // ── Extreme alert overlay ─────────────────────────────────────────────────
+    private View extremeAlertOverlay;
+    private TextView tvAlertOverlayTitle;
+    private TextView tvAlertOverlayMessage;
+    private final Handler alertHandler = new Handler(Looper.getMainLooper());
+    private Runnable alertDismissTask;
+
+    private long lastValidPoseMs = 0;
+    private boolean noPoseAlertActive = false;
+    private long severeErrorStartMs = 0;
+    private boolean severeFormAlertShown = false;
+    private int consecutiveInjuryReps = 0;
+    private int lastRepCountForInjury = 0;
+    private boolean injuryAlertShown = false;
+
+    private static final long NO_POSE_THRESHOLD_MS  = 15_000;
+    private static final long SEVERE_FORM_THRESHOLD_MS = 5_000;
+    private static final int  INJURY_RISK_REPS      = 3;
+    private static final long ALERT_AUTO_DISMISS_MS = 5_000;
     // Guard de idempotencia para finishSession(). El back fisico, el gesto
     // de borde y el boton del top bar comparten el mismo flujo, por lo que
     // necesitamos asegurar que SummaryActivity solo se abre una vez por sesion.
@@ -211,6 +231,13 @@ public class CameraActivity extends AppCompatActivity {
         benchRuleDepthValue         = findViewById(R.id.bench_rule_depth_value);
         benchRuleExtensionDot       = findViewById(R.id.bench_rule_extension_dot);
         benchRuleExtensionValue     = findViewById(R.id.bench_rule_extension_value);
+
+        extremeAlertOverlay   = findViewById(R.id.extreme_alert_overlay);
+        tvAlertOverlayTitle   = findViewById(R.id.tv_alert_overlay_title);
+        tvAlertOverlayMessage = findViewById(R.id.tv_alert_overlay_message);
+        if (extremeAlertOverlay != null) {
+            extremeAlertOverlay.setOnClickListener(v -> dismissExtremeAlert());
+        }
 
         // Detectar tipo de ejercicio desde el extra tipado (inmune al idioma).
         // Fallback a detección por string para compatibilidad con VideoAnalysisActivity.
@@ -313,12 +340,10 @@ public class CameraActivity extends AppCompatActivity {
             metricPeakAngle.setText("--");
             metricStability.setText("--");
             metricCurlVelocity.setText("--");
-            metricCurlFlex.setText("--");
+            metricCurlFlex.setText("0");
             squatAlertText.setVisibility(View.VISIBLE);
             squatAlertText.setText(R.string.camera_curl_status_ready);
             squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
-            // Reset de los EMAs del curl: queremos arrancar limpios sin
-            // arrastre del ejercicio anterior.
             emaStability    = 100.0;
             emaCurlAngle    = null;
             emaCurlFlex     = null;
@@ -339,6 +364,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onAlgorithmResult(AlgorithmResult result) {
+        checkExtremeAlerts(result);
         captureRepIfClosed(result);
         if (isSquatExercise) {
             onSquatResult(result);
@@ -551,42 +577,18 @@ public class CameraActivity extends AppCompatActivity {
                     ContextCompat.getColor(this, R.color.silver_2));
         }
 
-        // ── Panel 4: FLEXIÓN (%) — theta(t) en % del rango anatomico ────────
-        // Brazo extendido (~170°) = 0%, pico anatomico (~30°) = 100%. Cada
-        // frame el porcentaje sigue al antebrazo. ROM objetivo >=110° = ~78%.
-        // Aplicamos el mismo EMA que al angulo (de hecho derivamos el % a
-        // partir del angulo ya suavizado para coherencia 1:1 entre paneles).
-        if (curAngle != null) {
-            final double EXTENDED_DEG  = 170.0;
-            final double FULL_FLEX_DEG = 30.0;
-            double range = EXTENDED_DEG - FULL_FLEX_DEG; // 140°
-            double rawFlexPct = ((EXTENDED_DEG - curAngle) / range) * 100.0;
-            rawFlexPct = Math.max(0.0, Math.min(100.0, rawFlexPct));
-            if (emaCurlFlex == null) emaCurlFlex = rawFlexPct;
-            else emaCurlFlex = emaCurlFlex
-                    + CURL_ANGLE_ALPHA * (rawFlexPct - emaCurlFlex);
+        // ── Panel 4: FLEXIONES — todos los intentos, incluso con mala forma ──
+        int displayRepCount = result.getAttemptedRepCount();
+        metricCurlFlex.setText(String.valueOf(displayRepCount));
+        metricCurlFlex.setTextColor(displayRepCount > 0
+                ? ContextCompat.getColor(this, R.color.improvement_green)
+                : ContextCompat.getColor(this, R.color.white));
 
-            metricCurlFlex.setText(String.format(Locale.US, "%.0f", emaCurlFlex));
-            int flexColor;
-            if (emaCurlFlex < 30.0) {
-                flexColor = ContextCompat.getColor(this, R.color.silver_2);
-            } else {
-                flexColor = ContextCompat.getColor(this, R.color.improvement_green);
-            }
-            metricCurlFlex.setTextColor(flexColor);
-        } else {
-            metricCurlFlex.setText("--");
-            metricCurlFlex.setTextColor(
-                    ContextCompat.getColor(this, R.color.silver_2));
-        }
-
-        // Para la alerta seguimos pasando el ROM de la ultima rep cerrada
-        // — la regla "(3) ROM incompleto" sigue siendo Pinto 2012 / Goto 2019.
         Double displayRom = result.getCurrentRepRomDeg();
         if (displayRom == null) displayRom = result.getLastRepRomDeg();
 
         // ── Panel 5: alerta contextual ───────────────────────────────────────
-        updateCurlAlert(result, shoulderShift, displayRom, livePeak);
+        updateCurlAlert(result, shoulderShift, displayRom, livePeak, curAngle != null);
     }
 
     /**
@@ -607,14 +609,22 @@ public class CameraActivity extends AppCompatActivity {
     private void updateCurlAlert(AlgorithmResult result,
                                  Double shoulderShift,
                                  Double displayRom,
-                                 Double livePeak) {
+                                 Double livePeak,
+                                 boolean hasPose) {
         if (squatAlertText == null) return;
         squatAlertText.setVisibility(View.VISIBLE);
 
         int repCount = result.getRepCount();
         Double vl = result.getVelocityLossPercent();
 
-        // Pre-arranque: aun no se ha iniciado el primer curl.
+        // Sin pose: instrucción de corrección de encuadre.
+        if (!hasPose) {
+            squatAlertText.setText(R.string.camera_curl_no_pose);
+            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.toasted_almond));
+            return;
+        }
+
+        // Pre-arranque: pose detectada pero sin movimiento.
         if (repCount == 0 && livePeak == null && (shoulderShift == null || shoulderShift < 2.0)) {
             squatAlertText.setText(R.string.camera_curl_status_ready);
             squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
@@ -648,32 +658,8 @@ public class CameraActivity extends AppCompatActivity {
             return;
         }
 
-        // (4) Calibrando — referencias se congelan a las 3 reps.
-        if (repCount < 3) {
-            squatAlertText.setText(getString(R.string.camera_curl_calibrando, repCount));
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
-            return;
-        }
-
-        // (5) Estado OK → resumen vivo. Tomamos el pico y la velocidad pico de
-        // la ULTIMA rep cerrada (no la rep activa, para que no parpadee mientras
-        // bajas el peso). Si por algun motivo falta uno, degradamos a un formato
-        // mas corto en vez de poner placeholders.
-        Double summaryPeak     = result.getLastRepPeakFlexionDeg();
-        Double summaryPeakVel  = result.getConcentricPeakVelocityDegS();
-        if (summaryPeak != null && summaryPeakVel != null) {
-            squatAlertText.setText(getString(
-                    R.string.camera_curl_summary_full_format,
-                    repCount, summaryPeak, summaryPeakVel));
-        } else if (summaryPeak != null) {
-            squatAlertText.setText(getString(
-                    R.string.camera_curl_summary_partial_format,
-                    repCount, summaryPeak));
-        } else {
-            squatAlertText.setText(getString(
-                    R.string.camera_curl_summary_repcount_format, repCount));
-        }
-        squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.improvement_green));
+        // (4) Estado OK — ocultar mensaje positivo.
+        squatAlertText.setVisibility(View.GONE);
     }
 
     private void onSquatResult(AlgorithmResult result) {
@@ -860,7 +846,7 @@ public class CameraActivity extends AppCompatActivity {
             squatAlertBanner.setTextColor(color);
             squatAlertBanner.setBackgroundResource(bgRes);
         }
-        squatAlertText.setVisibility(View.VISIBLE);
+        squatAlertText.setVisibility(messageRes == R.string.camera_squat_status_ok ? View.GONE : View.VISIBLE);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -1250,12 +1236,14 @@ public class CameraActivity extends AppCompatActivity {
         if (finalResult != null) {
             captureRepIfClosed(finalResult);
         }
-        int totalReps = pendingReps.size();
+        int totalReps    = pendingReps.size();
+        int attemptedReps = finalResult != null ? finalResult.getAttemptedRepCount() : 0;
         boolean analyzed = isAnalyzedExercise;
 
-        // Caso 0 reps (o ejercicio sin analisis): no hay nada que guardar ni
-        // que mostrar en summary — vamos directo a home con un toast.
-        if (!analyzed || totalReps == 0) {
+        // Sin ejercicio analizado → home.
+        // Con ejercicio analizado: mostrar summary si al menos 1 intento detectado,
+        // aunque ninguno cumpla los criterios de calidad.
+        if (!analyzed || (totalReps == 0 && attemptedReps == 0)) {
             if (analyzed) {
                 Toast.makeText(this, R.string.session_no_reps_toast, Toast.LENGTH_SHORT).show();
             }
@@ -1281,9 +1269,11 @@ public class CameraActivity extends AppCompatActivity {
         intent.putExtra(EXTRA_EXERCISE_TYPE, exerciseType);
         intent.putExtra(EXTRA_EXERCISE_NAME, exerciseDisplayName);
 
+        // Siempre poblamos el holder para que SummaryActivity pueda mostrar metricas.
+        // SummaryActivity lo limpia en onDestroy.
+        PendingSessionHolder.INSTANCE.set(data);
+
         if (autoSaveEnabled) {
-            // Persistimos en background. La nueva pantalla solo refleja que la
-            // sesion ya quedo guardada — el usuario no decide nada.
             RizeApplication.get().getSessionRepository().saveSessionAsync(data, id -> {
                 if (id < 0) {
                     new Handler(Looper.getMainLooper()).post(() ->
@@ -1298,8 +1288,6 @@ public class CameraActivity extends AppCompatActivity {
             });
             intent.putExtra(EXTRA_ALREADY_SAVED, true);
         } else {
-            // Pasamos los datos via singleton in-memory. SummaryActivity decide.
-            PendingSessionHolder.INSTANCE.set(data);
             intent.putExtra(EXTRA_ALREADY_SAVED, false);
         }
 
@@ -1320,9 +1308,84 @@ public class CameraActivity extends AppCompatActivity {
         finish();
     }
 
+    // ── Extreme alerts ────────────────────────────────────────────────────────
+
+    private void checkExtremeAlerts(AlgorithmResult result) {
+        long now = System.currentTimeMillis();
+        boolean hasValidPose = result.getAngleDeg() != null
+                || result.getKneeAngleDeg() != null
+                || result.getElbowAngleDeg() != null;
+
+        // Trigger 1: no pose for 15 s
+        if (hasValidPose) {
+            lastValidPoseMs = now;
+            noPoseAlertActive = false;
+        } else {
+            if (lastValidPoseMs > 0 && !noPoseAlertActive
+                    && (now - lastValidPoseMs) > NO_POSE_THRESHOLD_MS) {
+                noPoseAlertActive = true;
+                showExtremeAlert(getString(R.string.alert_no_pose_title),
+                        getString(R.string.alert_no_pose_message));
+                return;
+            }
+        }
+        if (!hasValidPose) return;
+
+        // Trigger 2: SEVERE form for 5+ consecutive seconds
+        ErrorLevel techError = result.getTechnicalError();
+        if (techError == ErrorLevel.SEVERE) {
+            if (severeErrorStartMs == 0) severeErrorStartMs = now;
+            if (!severeFormAlertShown && (now - severeErrorStartMs) >= SEVERE_FORM_THRESHOLD_MS) {
+                severeFormAlertShown = true;
+                showExtremeAlert(getString(R.string.alert_bad_form_title),
+                        getString(R.string.alert_bad_form_message));
+            }
+        } else {
+            severeErrorStartMs = 0;
+            severeFormAlertShown = false;
+        }
+
+        // Trigger 3: injury risk in 3+ consecutive reps (SEVERE quality)
+        int repCount = result.getRepCount();
+        if (repCount > lastRepCountForInjury) {
+            lastRepCountForInjury = repCount;
+            ErrorLevel lastQuality = result.getLastRepFormQuality();
+            if (lastQuality == ErrorLevel.SEVERE) {
+                consecutiveInjuryReps++;
+            } else {
+                consecutiveInjuryReps = 0;
+                injuryAlertShown = false;
+            }
+            if (!injuryAlertShown && consecutiveInjuryReps >= INJURY_RISK_REPS) {
+                injuryAlertShown = true;
+                showExtremeAlert(getString(R.string.alert_injury_risk_title),
+                        getString(R.string.alert_injury_risk_message));
+            }
+        }
+    }
+
+    private void showExtremeAlert(String title, String message) {
+        if (extremeAlertOverlay == null) return;
+        if (alertDismissTask != null) alertHandler.removeCallbacks(alertDismissTask);
+        tvAlertOverlayTitle.setText(title);
+        tvAlertOverlayMessage.setText(message);
+        extremeAlertOverlay.setVisibility(View.VISIBLE);
+        alertDismissTask = this::dismissExtremeAlert;
+        alertHandler.postDelayed(alertDismissTask, ALERT_AUTO_DISMISS_MS);
+    }
+
+    private void dismissExtremeAlert() {
+        if (extremeAlertOverlay != null) extremeAlertOverlay.setVisibility(View.GONE);
+        if (alertDismissTask != null) {
+            alertHandler.removeCallbacks(alertDismissTask);
+            alertDismissTask = null;
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        alertHandler.removeCallbacksAndMessages(null);
         stopTimer();
         if (isAnalyzedExercise) {
             PoseDataManager.INSTANCE.setPoseDataListener(null);

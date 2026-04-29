@@ -410,7 +410,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Live Flex Card (theta(t) en % del rango — Pinto 2012) -->
+                <!-- Rep Count Card (número de flexiones registradas) -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -422,37 +422,20 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/camera_curl_flex_label"
+                        android:text="@string/camera_curl_reps_label"
                         android:textColor="@color/silver_2"
                         android:textSize="11sp"
                         android:letterSpacing="0.05" />
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/metric_curl_flex"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:layout_marginTop="4dp">
-
-                        <TextView
-                            android:id="@+id/metric_curl_flex"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="--"
-                            android:textColor="@color/white"
-                            android:textSize="32sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/metric_curl_flex_unit"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/camera_curl_flex_unit"
-                            android:textColor="@color/silver_2"
-                            android:textSize="12sp"
-                            android:layout_marginBottom="6dp"
-                            android:layout_marginStart="4dp" />
-                    </LinearLayout>
+                        android:text="0"
+                        android:textColor="@color/white"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -821,6 +804,57 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <!-- Extreme alert overlay — visible only for critical conditions -->
+    <FrameLayout
+        android:id="@+id/extreme_alert_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:background="@drawable/bg_risk_card"
+            android:padding="24dp"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_warning"
+                android:layout_marginBottom="12dp"
+                android:contentDescription="Alerta" />
+
+            <TextView
+                android:id="@+id/tv_alert_overlay_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Alerta"
+                android:textColor="@color/risk_red"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/tv_alert_overlay_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@color/silver_2"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp" />
+        </LinearLayout>
+    </FrameLayout>
 
     <include
         android:id="@+id/bottom_nav"
