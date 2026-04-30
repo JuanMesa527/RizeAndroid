@@ -28,7 +28,7 @@ import com.rize.rizeandroid.data.entity.WorkoutSession
         RepCurlDetails::class,
         RepBenchDetails::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class RizeDatabase : RoomDatabase() {
@@ -49,7 +49,7 @@ abstract class RizeDatabase : RoomDatabase() {
                     RizeDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }
@@ -59,6 +59,14 @@ abstract class RizeDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // No-op: version 2 reemplazo una recreacion destructiva temporal
                 // sin cambios de esquema persistentes.
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE curl_session_details ADD COLUMN attempted_rep_count INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE squat_session_details ADD COLUMN attempted_rep_count INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE bench_session_details ADD COLUMN attempted_rep_count INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

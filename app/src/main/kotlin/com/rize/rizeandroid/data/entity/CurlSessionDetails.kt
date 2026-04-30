@@ -31,5 +31,8 @@ data class CurlSessionDetails(
     val maxShoulderCompensationDeg: Double?,
 
     @ColumnInfo(name = "avg_shoulder_compensation_deg")
-    val avgShoulderCompensationDeg: Double?
+    val avgShoulderCompensationDeg: Double?,
+
+    @ColumnInfo(name = "attempted_rep_count")
+    val attemptedRepCount: Int = 0
 )

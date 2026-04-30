@@ -43,5 +43,8 @@ data class BenchSessionDetails(
     val bilateralAsymmetryCount: Int,
 
     @ColumnInfo(name = "depth_insufficient_count")
-    val depthInsufficientCount: Int
+    val depthInsufficientCount: Int,
+
+    @ColumnInfo(name = "attempted_rep_count")
+    val attemptedRepCount: Int = 0
 )

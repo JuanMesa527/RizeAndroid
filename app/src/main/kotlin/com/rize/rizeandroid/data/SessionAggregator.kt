@@ -46,22 +46,33 @@ object PendingSessionBuilder {
         )
 
         return when (exerciseType) {
-            WorkoutSession.TYPE_SQUAT -> PendingSessionData(
-                session = session,
-                squatDetails = buildSquatSessionDetails(finalResult, reps),
-                reps = reps
-            )
-            WorkoutSession.TYPE_CURL -> PendingSessionData(
-                session = session,
-                curlDetails = buildCurlSessionDetails(reps),
-                reps = reps,
-                attemptedRepCount = finalResult?.attemptedRepCount ?: reps.size
-            )
-            WorkoutSession.TYPE_BENCH -> PendingSessionData(
-                session = session,
-                benchDetails = buildBenchSessionDetails(reps),
-                reps = reps
-            )
+            WorkoutSession.TYPE_SQUAT -> {
+                val attempted = finalResult?.attemptedRepCount ?: reps.size
+                PendingSessionData(
+                    session = session,
+                    squatDetails = buildSquatSessionDetails(finalResult, reps, attempted),
+                    reps = reps,
+                    attemptedRepCount = attempted
+                )
+            }
+            WorkoutSession.TYPE_CURL -> {
+                val attempted = finalResult?.attemptedRepCount ?: reps.size
+                PendingSessionData(
+                    session = session,
+                    curlDetails = buildCurlSessionDetails(reps, attempted),
+                    reps = reps,
+                    attemptedRepCount = attempted
+                )
+            }
+            WorkoutSession.TYPE_BENCH -> {
+                val attempted = finalResult?.attemptedRepCount ?: reps.size
+                PendingSessionData(
+                    session = session,
+                    benchDetails = buildBenchSessionDetails(reps, attempted),
+                    reps = reps,
+                    attemptedRepCount = attempted
+                )
+            }
             else -> PendingSessionData(session = session, reps = reps)
         }
     }
@@ -160,7 +171,8 @@ object PendingSessionBuilder {
 
     private fun buildSquatSessionDetails(
         finalResult: AlgorithmResult?,
-        reps: List<PendingRep>
+        reps: List<PendingRep>,
+        attemptedRepCount: Int
     ): SquatSessionDetails {
         val squatReps = reps.mapNotNull { it.squatDetails }
         return SquatSessionDetails(
@@ -170,11 +182,12 @@ object PendingSessionBuilder {
             minKneeAngleDeg = squatReps.mapNotNull { it.minKneeAngleDeg }.minOrNull(),
             minHipAngleDeg = squatReps.mapNotNull { it.minHipAngleDeg }.minOrNull(),
             depthInsufficientCount = squatReps.count { it.depthInsufficient },
-            trunkLeanRiskCount = squatReps.count { it.trunkLeanRisk }
+            trunkLeanRiskCount = squatReps.count { it.trunkLeanRisk },
+            attemptedRepCount = attemptedRepCount
         )
     }
 
-    private fun buildCurlSessionDetails(reps: List<PendingRep>): CurlSessionDetails {
+    private fun buildCurlSessionDetails(reps: List<PendingRep>, attemptedRepCount: Int): CurlSessionDetails {
         val curlReps = reps.mapNotNull { it.curlDetails }
         val romValues = reps.mapNotNull { it.rep.romDeg }
         return CurlSessionDetails(
@@ -182,11 +195,12 @@ object PendingSessionBuilder {
             avgPeakFlexionDeg = avgOfNotNull(curlReps.map { it.peakFlexionDeg }),
             avgRomDeg = if (romValues.isEmpty()) null else romValues.average(),
             maxShoulderCompensationDeg = curlReps.mapNotNull { it.shoulderCompensationDeg }.maxOrNull(),
-            avgShoulderCompensationDeg = avgOfNotNull(curlReps.map { it.shoulderCompensationDeg })
+            avgShoulderCompensationDeg = avgOfNotNull(curlReps.map { it.shoulderCompensationDeg }),
+            attemptedRepCount = attemptedRepCount
         )
     }
 
-    private fun buildBenchSessionDetails(reps: List<PendingRep>): BenchSessionDetails {
+    private fun buildBenchSessionDetails(reps: List<PendingRep>, attemptedRepCount: Int): BenchSessionDetails {
         val benchReps = reps.mapNotNull { it.benchDetails }
         return BenchSessionDetails(
             sessionId = 0,
@@ -197,7 +211,8 @@ object PendingSessionBuilder {
             stickingPeriodCount = benchReps.count { it.stickingPeriodDetected },
             gripTooWideCount = benchReps.count { it.gripTooWide },
             bilateralAsymmetryCount = benchReps.count { it.bilateralAsymmetry },
-            depthInsufficientCount = benchReps.count { it.depthInsufficient }
+            depthInsufficientCount = benchReps.count { it.depthInsufficient },
+            attemptedRepCount = attemptedRepCount
         )
     }
 

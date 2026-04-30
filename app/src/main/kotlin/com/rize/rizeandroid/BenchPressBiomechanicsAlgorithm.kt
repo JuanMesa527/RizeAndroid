@@ -229,6 +229,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var lastTechnicalError: ErrorLevel = ErrorLevel.NONE
     private var lastErrorMagnitude: Double? = null
     private var repCount = 0
+    private var attemptCount = 0
 
     // ── Historial de velocidad ───────────────────────────────────────────────
     private val concentricVelocityByRep = mutableListOf<Double>()
@@ -443,6 +444,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             eccentricPeakVelocityDegS = if (currentPeakEccentricVelocityDegS > 0.0) currentPeakEccentricVelocityDegS else null,
             velocityLossPercent = lastVelocityLossPercent,
             repCount = repCount,
+            attemptedRepCount = attemptCount,
             // Bench press specific
             elbowAngleDeg = primaryElbowAngle,
             leftElbowAngleDeg = leftElbowAngle,
@@ -522,6 +524,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         lastTechnicalError = ErrorLevel.NONE
         lastErrorMagnitude = null
         repCount = 0
+        attemptCount = 0
 
         concentricVelocityByRep.clear()
 
@@ -657,6 +660,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             RepPhase.IDLE -> {
                 if (elbowAngleDeg < START_DESCENT_ANGLE && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
                     phase = RepPhase.DESCENT
+                    attemptCount++
                     startNewRepTracking(elbowAngleDeg)
                     currentPeakEccentricVelocityDegS = maxOf(currentPeakEccentricVelocityDegS, -angularVelocityDegS)
                 }

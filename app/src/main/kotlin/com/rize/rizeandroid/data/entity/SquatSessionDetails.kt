@@ -37,5 +37,8 @@ data class SquatSessionDetails(
     val depthInsufficientCount: Int,
 
     @ColumnInfo(name = "trunk_lean_risk_count")
-    val trunkLeanRiskCount: Int
+    val trunkLeanRiskCount: Int,
+
+    @ColumnInfo(name = "attempted_rep_count")
+    val attemptedRepCount: Int = 0
 )

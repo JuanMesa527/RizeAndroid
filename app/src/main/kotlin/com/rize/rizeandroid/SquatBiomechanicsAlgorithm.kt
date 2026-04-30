@@ -92,6 +92,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var lastTechnicalError: ErrorLevel = ErrorLevel.NONE
     private var lastErrorMagnitude: Double? = null
     private var repCount = 0
+    private var attemptCount = 0
 
     private val concentricVelocityByRep = mutableListOf<Double>()
     private val validBottomKneeAnglesByRep = mutableListOf<Double>()
@@ -178,6 +179,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             velocityLossPercent = lastVelocityLossPercent,
             cvtPercent = lastCvtPercent,
             repCount = repCount,
+            attemptedRepCount = attemptCount,
             depthInsufficient = lastDepthInsufficient,
             trunkLeanRisk = lastTrunkLeanRisk,
             squatDepthCategory = lastSquatDepthCategory,
@@ -225,6 +227,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         lastErrorMagnitude = null
 
         repCount = 0
+        attemptCount = 0
         concentricVelocityByRep.clear()
         validBottomKneeAnglesByRep.clear()
 
@@ -258,6 +261,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             RepPhase.IDLE -> {
                 if (kneeAngleDeg < START_DESCENT_ANGLE && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
                     phase = RepPhase.DESCENT
+                    attemptCount++
                     startNewRepTracking(kneeAngleDeg, hipAngleDeg, rawHipAngleDeg)
                     currentPeakEccentricVelocityDegS = maxOf(currentPeakEccentricVelocityDegS, -angularVelocityDegS)
                 }
