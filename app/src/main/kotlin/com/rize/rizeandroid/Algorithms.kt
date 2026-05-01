@@ -170,6 +170,7 @@ data class AlgorithmResult(
     val currentRepMinElbowAngleDeg: Double? = null,
     val currentRepMaxElbowAngleDeg: Double? = null,
     val elbowBelowTorsoLive: Boolean?       = null,
+    val extensionCompleteLive: Boolean?     = null,
     // Readiness expuesto para que la UI muestre un indicador independiente
     // del torrente de alertas.
     val readinessReady: Boolean             = false,

@@ -14,10 +14,11 @@ import kotlin.math.sqrt
  * Reglas de correccion postural:
  *   1. Ancho de agarre: distancia entre munecas vs. ancho biacromial.
  *   2. Abduccion de hombro: angulo cadera-hombro-codo en la parte baja.
- *      Solo se evalua cuando el angulo del codo es <90°. Verde 45-80°, critico >90°
+ *      Solo se evalua cuando el angulo del codo es <90°. Verde 45-85°,
+ *      pero con codo <80° queda verde si hombro <=55°. Critico >90°.
  *   3. Simetria bilateral: diferencia vertical de munecas normalizada por hombros.
- *   4. Profundidad de descenso: angulo minimo de codo debe alcanzar <= 95
- *   5. Extension completa: angulo de codo debe alcanzar >= 176 en la cima
+ *   4. Profundidad de descenso: codo alcanza el umbral inferior valido
+ *   5. Extension completa: codo alcanza el umbral superior de conteo
  *
  * Prediccion de fatiga/fallo:
  *   6. Periodo de estancamiento: velocidad ~0 durante >870ms en fase concentrica
@@ -100,7 +101,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // ── Regla 2: Abduccion de hombro ────────────────────────────────────
         private const val ABDUCTION_EVALUATION_ELBOW_DEG = 90.0
         private const val ABDUCTION_MIN_OK_DEG = 45.0
-        private const val ABDUCTION_MAX_OK_DEG = 80.0
+        private const val ABDUCTION_MAX_OK_DEG = 85.0
+        private const val ABDUCTION_DEEP_ELBOW_DEG = 80.0
+        private const val ABDUCTION_DEEP_MAX_OK_DEG = 55.0
         private const val ABDUCTION_CRITICAL_DEG = 90.0
 
         // ── Regla 3: Simetria bilateral ─────────────────────────────────────
@@ -114,20 +117,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val SYMMETRY_THRESHOLD_PERCENT = 8.0
         private const val SYMMETRY_ALERT_THRESHOLD_PERCENT = 15.0
 
-        // ── Regla 4: Profundidad de descenso ────────────────────────────────
-        // Criterio adaptado a vista frontal-cabeza: en lugar de "codo debajo
-        // del torso" (no observable en este encuadre porque la linea hombro-
-        // cadera es ~vertical en imagen y el codo no cruza Y de forma
-        // significativa), evaluamos el ANGULO MINIMO de codo alcanzado en
-        // la rep. La tesis describe la profundidad como "barra finalizar
-        // 4-6 cm sobre el pecho" — para un brazo medio adulto eso traduce
-        // a un angulo de codo en la fase inferior cercano a 90-100°.
-        // 95° toma el punto medio como umbral operacional: si el codo no
-        // baja de 95°, la rep es de profundidad insuficiente.
-        private const val BENCH_DEPTH_MIN_ELBOW_DEG = 95.0
-
         // ── Regla 5: Extension completa ─────────────────────────────────────
-        private const val FULL_EXTENSION_MIN_DEG = 176.0
+        private const val FULL_EXTENSION_MIN_DEG = TOP_POSITION_ANGLE
+
+        // ── UI live: reset visual del check al cambiar 10° en direccion opuesta
+        private const val LIVE_CHECK_RESET_DELTA_DEG = 10.0
 
         // ── Regla 6: Periodo de estancamiento ───────────────────────────────
         // 5 deg/s era el umbral teorico; con el ruido medido elevamos el
@@ -141,8 +135,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         // ── Validacion de rep ────────────────────────────────────────────────
         private const val MIN_VALID_ROM_DEG = 30.0
-        private const val MAX_VALID_BOTTOM_ANGLE_DEG = 120.0
-        private const val MIN_VALID_BOTTOM_ANGLE_DEG = 20.0
+        private const val MAX_VALID_BOTTOM_ANGLE_DEG = 85.0
+        private const val MIN_VALID_BOTTOM_ANGLE_DEG = 60.0
 
         // ── Suavizado de velocidad angular (EMA) ────────────────────────────
         // 0.4 = peso al valor nuevo. Latencia ~2-3 frames, suficiente para no
@@ -207,6 +201,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var currentPeakEccentricVelocityDegS = 0.0
     private var currentRepElbowWentBelowTorso = false
     private var currentRepTopElbowAngleDeg = 0.0
+    private var currentDepthCheckVisible = false
+    private var currentExtensionCheckVisible = false
     private var currentRepWorstShoulderAbductionDeg: Double? = null
     private var currentRepShoulderAbductionRisk = false
     private var currentRepShoulderAbductionCritical = false
@@ -340,14 +336,14 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             else -> abductionValues.maxOrNull()
         }
         lastShoulderAbductionDeg = worstAbduction
-        lastShoulderAbductionRisk = updateAbductionRiskDebounced(worstAbduction)
+        lastShoulderAbductionRisk = updateAbductionRiskDebounced(worstAbduction, primaryElbowAngle)
         if (worstAbduction != null && phase != RepPhase.IDLE) {
             currentRepWorstShoulderAbductionDeg = maxOf(
                 currentRepWorstShoulderAbductionDeg ?: worstAbduction,
                 worstAbduction
             )
             currentRepShoulderAbductionRisk =
-                currentRepShoulderAbductionRisk || isAbductionOutsideOkRange(worstAbduction)
+                currentRepShoulderAbductionRisk || isAbductionOutsideOkRange(worstAbduction, primaryElbowAngle)
             currentRepShoulderAbductionCritical =
                 currentRepShoulderAbductionCritical || worstAbduction > ABDUCTION_CRITICAL_DEG
         }
@@ -370,17 +366,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             }
         }
 
-        // Regla 4: Profundidad — evaluacion por frame con angulo de codo.
-        // En vista frontal-cabeza no se puede observar "codo bajo el torso"
-        // (la linea hombro-cadera es ~vertical en imagen y el codo no cruza
-        // Y de manera significativa). Usamos el angulo de codo comparado
-        // contra BENCH_DEPTH_MIN_ELBOW_DEG: si la rep alcanza un minimo
-        // por debajo del umbral, la profundidad es suficiente.
-        val elbowAtDepthNow = phase != RepPhase.IDLE
-                && primaryElbowAngle <= BENCH_DEPTH_MIN_ELBOW_DEG
-        if (phase == RepPhase.DESCENT && elbowAtDepthNow) {
-            currentRepElbowWentBelowTorso = true
-        }
+        updateLiveRuleIndicators(primaryElbowAngle)
 
         // Regla 6: Sticking period (durante ascenso)
         if (phase == RepPhase.ASCENT && angularVelocityDegS != null) {
@@ -461,7 +447,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             extensionIncomplete = lastExtensionIncomplete,
             currentRepMinElbowAngleDeg = liveMinElbow,
             currentRepMaxElbowAngleDeg = liveMaxElbow,
-            elbowBelowTorsoLive = elbowAtDepthNow,
+            elbowBelowTorsoLive = currentDepthCheckVisible,
+            extensionCompleteLive = currentExtensionCheckVisible,
             readinessReady = readinessState == ReadinessState.READY,
             // Snapshots per-rep para persistencia.
             lastRepMinElbowAngleDeg = snapLastRepMinElbow,
@@ -505,6 +492,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeakEccentricVelocityDegS = 0.0
         currentRepElbowWentBelowTorso = false
         currentRepTopElbowAngleDeg = 0.0
+        currentDepthCheckVisible = false
+        currentExtensionCheckVisible = false
         currentRepWorstShoulderAbductionDeg = null
         currentRepShoulderAbductionRisk = false
         currentRepShoulderAbductionCritical = false
@@ -630,12 +619,12 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     /**
      * Abduccion. Dos niveles: warning y critical. Ambos con debounce.
      */
-    private fun updateAbductionRiskDebounced(worstAbduction: Double?): Boolean {
+    private fun updateAbductionRiskDebounced(worstAbduction: Double?, elbowAngleDeg: Double): Boolean {
         val angle = worstAbduction ?: 0.0
         if (angle > ABDUCTION_CRITICAL_DEG) {
             abductionCriticalConsecutiveFrames += 1
             abductionWarningConsecutiveFrames += 1
-        } else if (isAbductionOutsideOkRange(angle)) {
+        } else if (isAbductionOutsideOkRange(angle, elbowAngleDeg)) {
             abductionCriticalConsecutiveFrames = 0
             abductionWarningConsecutiveFrames += 1
         } else {
@@ -648,8 +637,33 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private fun isAbductionCriticalDebounced(): Boolean =
         abductionCriticalConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
 
-    private fun isAbductionOutsideOkRange(angle: Double): Boolean =
-        angle < ABDUCTION_MIN_OK_DEG || angle > ABDUCTION_MAX_OK_DEG
+    private fun isAbductionOutsideOkRange(angle: Double, elbowAngleDeg: Double): Boolean =
+        if (elbowAngleDeg < ABDUCTION_DEEP_ELBOW_DEG) {
+            angle > ABDUCTION_DEEP_MAX_OK_DEG
+        } else {
+            angle < ABDUCTION_MIN_OK_DEG || angle > ABDUCTION_MAX_OK_DEG
+        }
+
+    private fun updateLiveRuleIndicators(elbowAngleDeg: Double) {
+        if (phase != RepPhase.IDLE && elbowAngleDeg <= MAX_VALID_BOTTOM_ANGLE_DEG) {
+            currentRepElbowWentBelowTorso = true
+            currentDepthCheckVisible = true
+        }
+        if (currentDepthCheckVisible &&
+            elbowAngleDeg >= MAX_VALID_BOTTOM_ANGLE_DEG + LIVE_CHECK_RESET_DELTA_DEG
+        ) {
+            currentDepthCheckVisible = false
+        }
+
+        if (phase != RepPhase.IDLE && elbowAngleDeg >= TOP_POSITION_ANGLE) {
+            currentExtensionCheckVisible = true
+        }
+        if (currentExtensionCheckVisible &&
+            elbowAngleDeg <= TOP_POSITION_ANGLE - LIVE_CHECK_RESET_DELTA_DEG
+        ) {
+            currentExtensionCheckVisible = false
+        }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Maquina de estados de repeticion
@@ -707,6 +721,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeakEccentricVelocityDegS = 0.0
         currentRepElbowWentBelowTorso = false
         currentRepTopElbowAngleDeg = 0.0
+        currentDepthCheckVisible = false
         currentRepWorstShoulderAbductionDeg = null
         currentRepShoulderAbductionRisk = false
         currentRepShoulderAbductionCritical = false
@@ -730,14 +745,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         repCount += 1
 
-        // Regla 4: Profundidad de descenso — el codo debe haber bajado de
-        // BENCH_DEPTH_MIN_ELBOW_DEG en algun momento de la rep (flag
-        // currentRepElbowWentBelowTorso, reaprovechado con nueva semantica).
-        // Tambien validamos contra el min observado por seguridad si el flag
-        // no se levanto pero el min final cumple (proteccion contra perdida
-        // momentanea de la pose).
+        // Regla 4: Profundidad de descenso — completada si el codo llego al
+        // umbral de fondo requerido para contar una rep valida.
         lastDepthInsufficientBench = !currentRepElbowWentBelowTorso
-                && currentMinElbowAngleDeg > BENCH_DEPTH_MIN_ELBOW_DEG
 
         // Regla 5: Extension completa
         lastExtensionIncomplete = currentRepTopElbowAngleDeg < FULL_EXTENSION_MIN_DEG
@@ -779,6 +789,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val abductionMagnitude = when {
             abduction > ABDUCTION_MAX_OK_DEG -> abduction - ABDUCTION_MAX_OK_DEG
             abduction < ABDUCTION_MIN_OK_DEG -> ABDUCTION_MIN_OK_DEG - abduction
+            currentRepShoulderAbductionRisk && abduction > ABDUCTION_DEEP_MAX_OK_DEG ->
+                abduction - ABDUCTION_DEEP_MAX_OK_DEG
             else -> 0.0
         }
         val asymmetryMagnitude = if (lastBilateralAsymmetry) (lastBilateralAsymmetryDeg ?: 0.0) - SYMMETRY_THRESHOLD_PERCENT else 0.0

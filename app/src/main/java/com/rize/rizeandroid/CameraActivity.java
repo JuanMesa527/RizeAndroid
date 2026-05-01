@@ -860,13 +860,15 @@ public class CameraActivity extends AppCompatActivity {
     private static final int STATUS_WARN    = 2; // ambar
     private static final int STATUS_RISK    = 3; // rojo
 
-    private static final double BENCH_GRIP_RATIO_MIN = 1.4;
-    private static final double BENCH_GRIP_RATIO_MAX = 1.6;
-    private static final double BENCH_GRIP_RATIO_CRITICAL = 1.8;
+    private static final double BENCH_GRIP_RATIO_MIN = 1.25;
+    private static final double BENCH_GRIP_RATIO_MAX = 1.75;
+    private static final double BENCH_GRIP_RATIO_CRITICAL = 2.0;
     private static final double BENCH_SYMMETRY_WARN_PERCENT = 8.0;
     private static final double BENCH_SYMMETRY_RISK_PERCENT = 15.0;
     private static final double BENCH_ABDUCTION_MIN_OK_DEG = 45.0;
-    private static final double BENCH_ABDUCTION_MAX_OK_DEG = 80.0;
+    private static final double BENCH_ABDUCTION_MAX_OK_DEG = 85.0;
+    private static final double BENCH_ABDUCTION_DEEP_ELBOW_DEG = 80.0;
+    private static final double BENCH_ABDUCTION_DEEP_MAX_OK_DEG = 55.0;
     private static final double BENCH_ABDUCTION_CRITICAL_DEG = 90.0;
 
     private void resetBenchPanel() {
@@ -926,8 +928,7 @@ public class CameraActivity extends AppCompatActivity {
             int status;
             if (abduction > BENCH_ABDUCTION_CRITICAL_DEG) {
                 status = STATUS_RISK;
-            } else if (abduction < BENCH_ABDUCTION_MIN_OK_DEG
-                    || abduction > BENCH_ABDUCTION_MAX_OK_DEG) {
+            } else if (isBenchAbductionWarning(abduction, elbowAngle)) {
                 status = STATUS_WARN;
             } else {
                 status = STATUS_OK;
@@ -955,57 +956,25 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         // ── Regla 4: Profundidad ────────────────────────────────────────
-        // Criterio adaptado a vista frontal-cabeza: el codo debe alcanzar
-        // un angulo minimo <= 95° (umbral biomecanico tesis traducido a
-        // angulo de codo). El flag elbowBelowTorsoLive ahora reporta
-        // "codo en la zona de profundidad suficiente" — mantiene el nombre
-        // del campo por compatibilidad del data class pero la semantica es
-        // distinta. La UI muestra el angulo minimo en curso.
-        Double minElbow = result.getCurrentRepMinElbowAngleDeg();
+        // Se mantiene neutro y muestra check solo al alcanzar el fondo valido.
         Boolean elbowAtDepth = result.getElbowBelowTorsoLive();
-        String depthTxt;
-        int depthStatus;
-        if (result.getDepthInsufficientBench() && minElbow == null) {
-            // No hay rep activa y la ultima fue insuficiente
-            depthTxt = getString(R.string.camera_value_missing);
-            depthStatus = STATUS_RISK;
-        } else if (minElbow != null) {
-            depthTxt = String.format(Locale.US, "%.0f° min", minElbow);
-            if (Boolean.TRUE.equals(elbowAtDepth)) {
-                depthStatus = STATUS_OK;
-            } else {
-                depthStatus = STATUS_WARN;
-            }
-        } else {
-            depthTxt = "--";
-            depthStatus = STATUS_NEUTRAL;
+        String depthTxt = "--";
+        int depthStatus = STATUS_NEUTRAL;
+        if (Boolean.TRUE.equals(elbowAtDepth)) {
+            depthTxt = "✓";
+            depthStatus = STATUS_OK;
         }
         setRuleStatus(benchRuleDepthDot, benchRuleDepthValue, depthTxt, depthStatus);
 
         // ── Regla 5: Extension ──────────────────────────────────────────
-        Double maxElbow = result.getCurrentRepMaxElbowAngleDeg();
-        String extTxt;
-        int extStatus;
-        if (result.getExtensionIncomplete() && maxElbow == null) {
-            Double extMissDeg = result.getExtensionIncompleteDeg();
-            if (extMissDeg != null) {
-                extTxt = String.format(Locale.US, "-%.0f°", extMissDeg);
-            } else {
-                extTxt = getString(R.string.camera_value_missing);
-            }
-            extStatus = STATUS_RISK;
-        } else if (maxElbow != null) {
-            extTxt = String.format(Locale.US, "%.0f° pico", maxElbow);
-            if (maxElbow >= 176.0) {
-                extStatus = STATUS_OK;
-            } else if (maxElbow >= 165.0) {
-                extStatus = STATUS_WARN;
-            } else {
-                extStatus = STATUS_NEUTRAL;
-            }
-        } else {
-            extTxt = "--";
-            extStatus = STATUS_NEUTRAL;
+        // Misma logica que profundidad: check al llegar arriba y reset visual
+        // cuando el codo vuelve 10° en la direccion opuesta.
+        Boolean extensionComplete = result.getExtensionCompleteLive();
+        String extTxt = "--";
+        int extStatus = STATUS_NEUTRAL;
+        if (Boolean.TRUE.equals(extensionComplete)) {
+            extTxt = "✓";
+            extStatus = STATUS_OK;
         }
         setRuleStatus(benchRuleExtensionDot, benchRuleExtensionValue, extTxt, extStatus);
 
@@ -1031,6 +1000,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private void updateBenchAlertBanner(AlgorithmResult result) {
         Double abduction = result.getShoulderAbductionDeg();
+        Double elbowAngle = result.getElbowAngleDeg();
         Double velocityLoss = result.getVelocityLossPercent();
         Double grip = result.getGripWidthRatio();
         Double symmetry = result.getBilateralAsymmetryDeg();
@@ -1048,7 +1018,7 @@ public class CameraActivity extends AppCompatActivity {
         // pose, el usuario recibe las alertas aunque el pipeline aun este
         // estabilizando el filtro. La pildora de readiness sigue siendo la
         // indicacion honesta de calidad de senal.
-        boolean hasPose = result.getElbowAngleDeg() != null;
+        boolean hasPose = elbowAngle != null;
 
         if (!hasPose) {
             color = ContextCompat.getColor(this, R.color.silver_2);
@@ -1076,16 +1046,15 @@ public class CameraActivity extends AppCompatActivity {
             messageRes = R.string.camera_bench_alert_depth_and_extension;
             bgRes = R.drawable.bg_alert_banner_red;
         } else if (result.getDepthInsufficientBench()) {
-            color = ContextCompat.getColor(this, R.color.risk_red);
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_bench_alert_depth;
-            bgRes = R.drawable.bg_alert_banner_red;
+            bgRes = R.drawable.bg_alert_banner_amber;
         } else if (result.getExtensionIncomplete()) {
-            color = ContextCompat.getColor(this, R.color.risk_red);
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_bench_alert_extension;
-            bgRes = R.drawable.bg_alert_banner_red;
+            bgRes = R.drawable.bg_alert_banner_amber;
         } else if (abduction != null
-                && (abduction < BENCH_ABDUCTION_MIN_OK_DEG
-                || abduction > BENCH_ABDUCTION_MAX_OK_DEG)) {
+                && isBenchAbductionWarning(abduction, elbowAngle)) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_bench_alert_abduction_warning;
             bgRes = R.drawable.bg_alert_banner_amber;
@@ -1114,6 +1083,14 @@ public class CameraActivity extends AppCompatActivity {
         benchAlertBanner.setText(messageRes);
         benchAlertBanner.setTextColor(color);
         benchAlertBanner.setBackgroundResource(bgRes);
+    }
+
+    private boolean isBenchAbductionWarning(double abductionDeg, Double elbowAngleDeg) {
+        if (elbowAngleDeg != null && elbowAngleDeg < BENCH_ABDUCTION_DEEP_ELBOW_DEG) {
+            return abductionDeg > BENCH_ABDUCTION_DEEP_MAX_OK_DEG;
+        }
+        return abductionDeg < BENCH_ABDUCTION_MIN_OK_DEG
+                || abductionDeg > BENCH_ABDUCTION_MAX_OK_DEG;
     }
 
     /**

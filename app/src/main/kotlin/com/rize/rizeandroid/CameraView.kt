@@ -31,7 +31,7 @@ class CameraView(
     private var imageAnalyzer: ImageAnalysis? = null
     private var preview: Preview? = null
 
-    private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
+    private var lensFacing: Int = CameraSelector.LENS_FACING_FRONT
 
     private lateinit var poseLandmarkerHelper: PoseLandmarkerHelper
     private val backgroundExecutor = Executors.newSingleThreadExecutor()

@@ -41,6 +41,8 @@
     <string name="home_elevate_desc">Únete a más de 50k atletas que usan RIZE para alcanzar el máximo rendimiento mediante metodologías de entrenamiento basadas en datos.</string>
     <string name="home_get_started">Comenzar</string>
     <string name="home_about">Conoce la app</string>
+    <string name="home_health_warning_title">Aviso importante</string>
+    <string name="home_health_warning_desc">RIZE es una herramienta de apoyo para analizar y mejorar la ejecución de tus ejercicios. No reemplaza la evaluación, el criterio ni el acompañamiento de profesionales de la salud. Si sientes dolor, molestias musculares o articulares, suspende el ejercicio y consulta a un profesional.</string>
 
     <!-- About / Tutorial -->
     <string name="about_toolbar_title">Conoce RIZE</string>
@@ -128,12 +130,12 @@
     <string name="camera_bench_status_ok">Tecnica estable.</string>
     <string name="camera_bench_alert_grip">Agarre excesivo: riesgo de hombro, acerca las manos.</string>
     <string name="camera_bench_alert_grip_narrow">Agarre demasiado estrecho: separa un poco las manos.</string>
-    <string name="camera_bench_alert_grip_wide">Agarre ancho: ideal ~1.5-2.0x el ancho de hombros.</string>
-    <string name="camera_bench_alert_abduction_warning">Abduccion fuera de rango: manten los codos entre 45° y 80°.</string>
+    <string name="camera_bench_alert_grip_wide">Agarre ancho: ideal cerca de 1.5x el ancho de hombros.</string>
+    <string name="camera_bench_alert_abduction_warning">Abduccion fuera de rango: manten 45°-85°; bajo 80° de codo, hombro ≤55°.</string>
     <string name="camera_bench_alert_abduction_critical">Abduccion critica (>90): riesgo de lesion en hombro.</string>
     <string name="camera_bench_alert_asymmetry">Asimetria bilateral detectada: iguala ambos codos.</string>
-    <string name="camera_bench_alert_depth">Profundidad insuficiente: baja la barra hasta cerca del pecho (codo ≤ 95°).</string>
-    <string name="camera_bench_alert_extension">Extension incompleta: extiende los codos completamente.</string>
+    <string name="camera_bench_alert_depth">Profundidad insuficiente: baja hasta el umbral de conteo (codo ≤85°).</string>
+    <string name="camera_bench_alert_extension">Extension incompleta: sube hasta el umbral de conteo (codo ≥160°).</string>
     <string name="camera_bench_alert_sticking">Periodo de estancamiento detectado: considera asistencia.</string>
     <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>
     <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL25): considera cerrar la serie.</string>
@@ -226,9 +228,9 @@
     <string name="summary_corr_curl_eccentric">Trabaja la fase excéntrica controlada: baja el peso en 3 segundos para mayor hipertrofia.</string>
     <string name="summary_corr_curl_ok">Técnica correcta. Enfócate en la fase excéntrica controlada: 3 segundos al bajar el peso.</string>
     <!-- Correcciones bench -->
-    <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja la barra hasta rozar el pecho (codo ≤95°).</string>
+    <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja hasta el umbral de conteo de codo (≤85°).</string>
     <string name="summary_corr_bench_asymmetry">Asimetría bilateral en %1$d rep(s). Practica press con mancuernas para equilibrar la fuerza.</string>
-    <string name="summary_corr_bench_extension">%1$d rep(s) con extensión incompleta. Extiende completamente los codos en la parte alta.</string>
+    <string name="summary_corr_bench_extension">%1$d rep(s) con extensión incompleta. Sube hasta el umbral de conteo de codo (≥160°).</string>
     <string name="summary_corr_bench_grip">Agarre excesivo en %1$d rep(s). Acerca las manos a ~1.5× el ancho de hombros.</string>
     <string name="summary_corr_bench_lat">Activa el dorsal ancho al bajar la barra para mayor estabilidad del hombro y más fuerza.</string>
     <string name="summary_corr_bench_ok">Técnica correcta. Considera el press inclinado para un desarrollo completo del pecho.</string>
