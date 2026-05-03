@@ -21,15 +21,6 @@ class Algorithms {
      */
     private val landmarkSmoother = LandmarkSmoother()
 
-    /**
-     * Suavizador AGRESIVAMENTE OPTIMIZADO para SENTADILLA.
-     * MÁXIMA responsividad para seguir movimientos rápidos:
-     *   minCutoff = 2.0 Hz   — mucho más agresivo, responde al movimiento rápido
-     *   beta      = 0.08     — ALTO, se adapta bien a aceleraciones
-     *
-     * Esto es necesario para reps rápidas. Los landmarks siguen casi sin delay
-     * la velocidad real del movimiento.
-     */
     private val landmarkSmootherForSquat = LandmarkSmoother(minCutoff = 2.0, beta = 0.08)
 
     /**
@@ -200,7 +191,6 @@ data class AlgorithmResult(
     // repCount y captura estos campos.
     val lastRepConcentricPeakVelocityDegS: Double? = null,
     val lastRepFormQuality: ErrorLevel?            = null,
-    // Squat
     val lastRepMinKneeAngleDeg: Double?            = null,
     val lastRepMinHipAngleDeg: Double?             = null,
     val lastRepDepthInsufficient: Boolean          = false,

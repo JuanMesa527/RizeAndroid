@@ -26,4 +26,13 @@ interface RepDao {
 
     @Query("SELECT * FROM session_rep WHERE session_id = :sessionId ORDER BY rep_number ASC")
     fun getRepsForSession(sessionId: Long): List<SessionRep>
+
+    @Query("SELECT * FROM rep_squat_details WHERE rep_id = :repId")
+    fun getSquatDetailsByRepId(repId: Long): RepSquatDetails?
+
+    @Query("SELECT * FROM rep_curl_details WHERE rep_id = :repId")
+    fun getCurlDetailsByRepId(repId: Long): RepCurlDetails?
+
+    @Query("SELECT * FROM rep_bench_details WHERE rep_id = :repId")
+    fun getBenchDetailsByRepId(repId: Long): RepBenchDetails?
 }

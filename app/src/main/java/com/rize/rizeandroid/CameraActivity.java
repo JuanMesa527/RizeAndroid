@@ -704,37 +704,24 @@ public class CameraActivity extends AppCompatActivity {
         metricStability.setTextColor(stabilityColor);
 
         Double velocityLoss = result.getVelocityLossPercent();
-        String velocityLossText = "--";
         if (velocityLoss != null) {
             double retention = Math.max(0.0, 100.0 - velocityLoss);
             lastSquatRetentionDisplay = retention;
             progressConsistency.setProgress((int) Math.round(retention));
-            velocityLossText = String.format(Locale.US, "%.1f%%", velocityLoss);
         } else if (lastSquatRetentionDisplay != null) {
             progressConsistency.setProgress((int) Math.round(lastSquatRetentionDisplay));
         } else if (repCount > 0) {
             progressConsistency.setProgress(100);
         }
 
-        // En release mantenemos el hint funcional; en debug mostramos trazas de validacion.
-        boolean isDebuggable = (getApplicationInfo().flags
-                & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        if (isDebuggable) {
-            String cvtDebugText = cvt != null
-                    ? String.format(Locale.US, "%.1f%%", cvt)
-                    : (lastSquatCvtDisplay != null
-                    ? String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay)
-                    : "--");
-            metricConsistencyHint.setText(String.format(Locale.US, "Reps:%d | VL:%s | CVT:%s", repCount, velocityLossText, cvtDebugText));
-        } else {
-            metricConsistencyHint.setText(R.string.camera_vl20_hint);
-        }
+        // Solo hint de retención (VL); reps y CVT ya están en sus paneles.
+        metricConsistencyHint.setText(R.string.camera_vl20_hint);
 
         updateSquatAlert(result, cvt, velocityLoss, repCount);
     }
 
     private void updateSquatAlert(AlgorithmResult result, Double cvt, Double velocityLoss, int repCount) {
-        if (squatAlertText == null) {
+        if (squatAlertBanner == null) {
             return;
         }
 
@@ -744,37 +731,31 @@ public class CameraActivity extends AppCompatActivity {
 
         if (repCount <= 0) {
             if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
-                squatAlertText.setText(messageRes);
-                squatAlertText.setTextColor(color);
                 lastSquatAlertTextRes = messageRes;
                 lastSquatAlertColor = color;
             }
-            if (squatAlertBanner != null) {
-                squatAlertBanner.setText(messageRes);
-                squatAlertBanner.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
-                squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
+            squatAlertBanner.setText(messageRes);
+            squatAlertBanner.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
+            if (squatAlertText != null) {
+                squatAlertText.setVisibility(View.GONE);
             }
-            squatAlertText.setVisibility(View.VISIBLE);
             return;
         }
 
         if (repCount < 2 && cvt == null && velocityLoss == null) {
             color = ContextCompat.getColor(this, R.color.silver_2);
             if (color != lastSquatAlertColor) {
-                squatAlertText.setTextColor(color);
                 lastSquatAlertColor = color;
             }
             String message = getString(R.string.camera_squat_status_calibrando, repCount);
-            if (!message.contentEquals(squatAlertText.getText())) {
-                squatAlertText.setText(message);
-            }
-            if (squatAlertBanner != null) {
-                squatAlertBanner.setText(message);
-                squatAlertBanner.setTextColor(color);
-                squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
-            }
+            squatAlertBanner.setText(message);
+            squatAlertBanner.setTextColor(color);
+            squatAlertBanner.setBackgroundResource(R.drawable.bg_alert_banner_neutral);
             lastSquatAlertTextRes = -1;
-            squatAlertText.setVisibility(View.VISIBLE);
+            if (squatAlertText != null) {
+                squatAlertText.setVisibility(View.GONE);
+            }
             return;
         }
 
@@ -836,17 +817,15 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         if (messageRes != lastSquatAlertTextRes || color != lastSquatAlertColor) {
-            squatAlertText.setText(messageRes);
-            squatAlertText.setTextColor(color);
             lastSquatAlertTextRes = messageRes;
             lastSquatAlertColor = color;
         }
-        if (squatAlertBanner != null) {
-            squatAlertBanner.setText(messageRes);
-            squatAlertBanner.setTextColor(color);
-            squatAlertBanner.setBackgroundResource(bgRes);
+        squatAlertBanner.setText(messageRes);
+        squatAlertBanner.setTextColor(color);
+        squatAlertBanner.setBackgroundResource(bgRes);
+        if (squatAlertText != null) {
+            squatAlertText.setVisibility(View.GONE);
         }
-        squatAlertText.setVisibility(messageRes == R.string.camera_squat_status_ok ? View.GONE : View.VISIBLE);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -1214,7 +1193,9 @@ public class CameraActivity extends AppCompatActivity {
             captureRepIfClosed(finalResult);
         }
         int totalReps    = pendingReps.size();
-        int attemptedReps = finalResult != null ? finalResult.getAttemptedRepCount() : 0;
+        // Mismo fallback que PendingSessionBuilder: si no hay resultado final,
+        // usar reps.size para no descartar sesiones con datos guardados.
+        int attemptedReps = finalResult != null ? finalResult.getAttemptedRepCount() : totalReps;
         boolean analyzed = isAnalyzedExercise;
 
         // Sin ejercicio analizado → home.

@@ -21,8 +21,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val DT = 1.0 / SAMPLE_RATE_HZ
 
         private const val MIN_VISIBILITY = 0.6f
-        // Aumentado levemente de 5.5 a 6.5 deg/s para compensar ruido del smoother
-        // menos suave. Ahora los landmarks siguen de cerca el movimiento.
         private const val VELOCITY_HYSTERESIS = 6.5
         private const val REP_END_VELOCITY_EPS = 6.5
         private const val REP_END_LOW_VELOCITY_FRAMES = 1
@@ -37,8 +35,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val TRUNK_OPTIMAL_MIN = 50.0
         private const val TRUNK_OPTIMAL_MAX = 80.0
 
-        // Suavizado exponencial de la velocidad angular: estable sin bloquear
-        // los cambios de signo que ocurren al pasar de descenso a ascenso.
+        
         private const val OMEGA_EMA_ALPHA = 0.4
 
         private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0
@@ -53,19 +50,11 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val MAX_X_VARIANCE_LATERAL = 0.15
         private const val MIN_X_VARIANCE_FRONTAL = 0.30
 
-        // Requiere algunos frames continuos con pose valida antes de habilitar
-        // deteccion de repeticiones; reduce falsos positivos al encuadrar.
+        
         private const val READY_VISIBLE_FRAMES = 6
     }
 
     private enum class RepPhase { IDLE, DESCENT, ASCENT }
-
-    // ELIMINADO: VelocitySmoothing no es necesario.
-    // Los landmarks ya llegan estabilizados por LandmarkSmoother (filtro 1€),
-    // por lo que la velocidad derivada es relativamente limpia.
-    // Mantener doble suavizado añade ~2-3 frames de latencia innecesarios
-    // que retrasan la detección de cambios de fase (DESCENT→ASCENT).
-    // private val velocitySmoothing = VelocitySmoothing(windowSize = 3, outlierThreshold = 70.0)
 
     private var prevRawKneeAngleDeg: Double? = null
     private var prevKneeAngleDeg: Double? = null
@@ -99,7 +88,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private var visiblePoseFrames = 0
 
-    // Snapshots de la ultima rep cerrada — exportados para persistencia per-rep.
     private var snapLastRepMinKnee: Double? = null
     private var snapLastRepMinHip: Double? = null
     private var snapLastRepRom: Double? = null
@@ -125,18 +113,11 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rawKneeAngleDeg = computeAngle(leg.hip.vec, leg.knee.vec, leg.ankle.vec)
         val rawHipAngleDeg = computeAngle(leg.shoulder.vec, leg.hip.vec, leg.knee.vec)
 
-        // La derivada para repeticiones/fatiga se calcula sobre el ángulo crudo,
-        // mientras que el valor filtrado se usa para mostrar la métrica estable.
         val rawAngularVelocityDegS = prevRawKneeAngleDeg?.let { (rawKneeAngleDeg - it) / DT }
 
-        // No aplicamos un segundo filtro de angulo aqui para evitar sobre-suavizado
-        // que puede retrasar/cancelar cierres de rep. Se usa el angulo directo del
-        // landmark ya filtrado temporalmente en el pipeline comun.
         val kneeAngleDeg = rawKneeAngleDeg
         val hipAngleDeg = rawHipAngleDeg
 
-        // La velocidad angular ya está relativamente limpia porque los landmarks
-        // vienen filtrados por LandmarkSmoother. Usar directamente sin suavizado adicional.
         val angularVelocityDegS = rawAngularVelocityDegS?.let { raw ->
             smoothedAngularVelocityDegS = raw
             raw
@@ -185,7 +166,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             squatDepthCategory = lastSquatDepthCategory,
             squatTrunkCategory = lastSquatTrunkCategory,
             readinessReady = readinessReady,
-            // Snapshots per-rep para persistencia.
             lastRepMinKneeAngleDeg = snapLastRepMinKnee,
             lastRepMinHipAngleDeg = snapLastRepMinHip,
             lastRepSquatRomDeg = snapLastRepRom,
@@ -276,7 +256,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
                     currentPeakEccentricVelocityDegS = maxOf(currentPeakEccentricVelocityDegS, -angularVelocityDegS)
                 }
 
-                // Cambio de fase alrededor del mínimo local de rodilla.
                 if (angularVelocityDegS > VELOCITY_HYSTERESIS) {
                     phase = RepPhase.ASCENT
                     lowVelocityFramesInAscent = 0
@@ -301,14 +280,9 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
                     lowVelocityFramesInAscent = 0
                 }
 
-                // Fallback para cámara real: si ya recuperó ROM suficiente y la
-                // velocidad se estabiliza cerca de 0, cerramos la repetición aun
-                // sin llegar al lockout ideal.
                 val reachedAscentPlateau = ascentRecoveredDeg >= MIN_ASCENT_RECOVERY_DEG
                         && lowVelocityFramesInAscent >= REP_END_LOW_VELOCITY_FRAMES
 
-                // Si ya recuperó ROM y comienza un nuevo descenso, cerramos la
-                // repetición anterior para no perder conteo por falta de lockout.
                 val startedNextDescent = ascentRecoveredDeg >= MIN_ASCENT_RECOVERY_DEG
                         && angularVelocityDegS < -VELOCITY_HYSTERESIS
 
@@ -360,8 +334,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val cvtSample = validBottomKneeAnglesByRep.takeLast(CVT_WINDOW_REPS)
         lastCvtPercent = computeCvt(cvtSample)
 
-        // Usamos el mínimo real de la cadera como referencia principal para no
-        // ocultar una inclinación marcada cuando el fondo de la rep es corto.
         val bottomHipAngleDeg = minOf(currentMinRawHipAngleDeg, currentMinHipAngleDeg)
         lastDepthInsufficient = currentMinKneeAngleDeg > DEPTH_ERROR_THRESHOLD
         lastSquatDepthCategory = classifyDepth(currentMinKneeAngleDeg)
@@ -386,8 +358,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val instabilityMagnitude = if (hasInstability) cvt - CVT_INSTABILITY_THRESHOLD else 0.0
         lastErrorMagnitude = listOf(depthMagnitude, trunkMagnitude, instabilityMagnitude).maxOrNull()?.takeIf { it > 0.0 }
 
-        // Snapshots de la rep recien cerrada — usados por CameraActivity para
-        // crear el registro per-rep en la DB.
         snapLastRepMinKnee = currentMinKneeAngleDeg
         snapLastRepMinHip = bottomHipAngleDeg
         snapLastRepRom = repRomDeg
@@ -417,7 +387,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private fun classifyDepth(bottomKneeAngleDeg: Double): SquatDepthCategory {
         return when {
-            bottomKneeAngleDeg >= DEPTH_MEDIUM_UPPER_BOUND -> SquatDepthCategory.PARTIAL
+            bottomKneeAngleDeg > DEPTH_MEDIUM_UPPER_BOUND -> SquatDepthCategory.PARTIAL
             bottomKneeAngleDeg >= DEPTH_MEDIUM_LOWER_BOUND -> SquatDepthCategory.MEDIUM
             else -> SquatDepthCategory.DEEP
         }
@@ -460,7 +430,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rightOk = rightVisibility.all { it >= MIN_VISIBILITY }
         val leftOk = leftVisibility.all { it >= MIN_VISIBILITY }
 
-        // Optimización: calcular promedios solo si ambas piernas son válidas
         return when {
             rightOk && leftOk -> {
                 val rightAvg = rightVisibility.average()
@@ -516,5 +485,3 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         )
     }
 }
-
-

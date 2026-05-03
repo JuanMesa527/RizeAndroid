@@ -21,12 +21,7 @@ class VelocitySmoothing(
     fun smooth(rawVelocity: Double): Double {
         val previous = lastSmoothedVelocity
 
-        // Solo tratamos como outlier los saltos grandes que ocurren sin cambio
-        // de dirección. Un cambio de signo es esperado en sentadilla (descenso
-        // -> ascenso), así que no debe quedar bloqueado por este filtro.
         if (previous != null) {
-            // Evita clasificar como outlier el primer cambio real desde reposo
-            // (p. ej. 0 -> -180 deg/s al iniciar descenso).
             val sameDirection = rawVelocity * previous > 0.0
             val previousIsStable = abs(previous) >= 1.0
             if (previousIsStable && sameDirection && abs(rawVelocity - previous) > outlierThreshold) {

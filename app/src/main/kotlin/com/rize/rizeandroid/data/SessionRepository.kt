@@ -4,6 +4,7 @@ import com.rize.rizeandroid.data.entity.WorkoutSession
 import com.rize.rizeandroid.data.entity.BenchSessionDetails
 import com.rize.rizeandroid.data.entity.CurlSessionDetails
 import com.rize.rizeandroid.data.entity.SquatSessionDetails
+import com.rize.rizeandroid.data.entity.SessionRep
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -87,6 +88,93 @@ class SessionRepository(private val database: RizeDatabase) {
     fun getBenchDetailsBlocking(sessionId: Long): BenchSessionDetails? =
         sessionDao.getBenchDetailsBySessionId(sessionId)
 
+    /**
+     * Intentos registrados en la sesión (desde detalles o, si no hay dato, número de reps válidas).
+     * Misma lógica que al reconstruir el resumen.
+     */
+    fun getAttemptedRepCountBlocking(session: WorkoutSession): Int {
+        val id = session.id
+        val type = session.exerciseType
+        val validCount = repDao.getRepsForSession(id).size
+        val squat = if (type == WorkoutSession.TYPE_SQUAT) sessionDao.getSquatDetailsBySessionId(id) else null
+        val curl = if (type == WorkoutSession.TYPE_CURL) sessionDao.getCurlDetailsBySessionId(id) else null
+        val bench = if (type == WorkoutSession.TYPE_BENCH) sessionDao.getBenchDetailsBySessionId(id) else null
+        return attemptedRepCountFromDetails(type, squat, curl, bench, validCount)
+    }
+
+    /**
+     * Reconstruye [PendingSessionData] desde la base (sesión + detalles + reps)
+     * para mostrar un resumen idéntico al de [com.rize.rizeandroid.SummaryActivity].
+     * Llamar solo desde un hilo de fondo.
+     */
+    fun loadPendingSessionDataBlocking(sessionId: Long): PendingSessionData? {
+        val session = sessionDao.getById(sessionId) ?: return null
+        val type = session.exerciseType
+
+        val squatDetails =
+            if (type == WorkoutSession.TYPE_SQUAT) sessionDao.getSquatDetailsBySessionId(sessionId)
+            else null
+        val curlDetails =
+            if (type == WorkoutSession.TYPE_CURL) sessionDao.getCurlDetailsBySessionId(sessionId)
+            else null
+        val benchDetails =
+            if (type == WorkoutSession.TYPE_BENCH) sessionDao.getBenchDetailsBySessionId(sessionId)
+            else null
+
+        val reps = repDao.getRepsForSession(sessionId).map { rep ->
+            mapRepToPending(rep, type)
+        }
+
+        val attempted = attemptedRepCountFromDetails(type, squatDetails, curlDetails, benchDetails, reps.size)
+
+        return PendingSessionData(
+            session = session,
+            squatDetails = squatDetails,
+            curlDetails = curlDetails,
+            benchDetails = benchDetails,
+            reps = reps,
+            attemptedRepCount = attempted
+        )
+    }
+
+    private fun mapRepToPending(rep: SessionRep, exerciseType: String): PendingRep {
+        return when (exerciseType) {
+            WorkoutSession.TYPE_SQUAT -> {
+                val d = repDao.getSquatDetailsByRepId(rep.id)
+                PendingRep(rep = rep, squatDetails = d)
+            }
+            WorkoutSession.TYPE_CURL -> {
+                val d = repDao.getCurlDetailsByRepId(rep.id)
+                PendingRep(rep = rep, curlDetails = d)
+            }
+            WorkoutSession.TYPE_BENCH -> {
+                val d = repDao.getBenchDetailsByRepId(rep.id)
+                PendingRep(rep = rep, benchDetails = d)
+            }
+            else -> PendingRep(rep = rep)
+        }
+    }
+
+    /**
+     * Igual que el fallback del builder: si no hay contador persistido (0 en sesiones viejas),
+     * usar número de reps válidas guardadas.
+     */
+    private fun attemptedRepCountFromDetails(
+        type: String,
+        squat: SquatSessionDetails?,
+        curl: CurlSessionDetails?,
+        bench: BenchSessionDetails?,
+        validRepCount: Int
+    ): Int {
+        val stored = when (type) {
+            WorkoutSession.TYPE_SQUAT -> squat?.attemptedRepCount
+            WorkoutSession.TYPE_CURL -> curl?.attemptedRepCount
+            WorkoutSession.TYPE_BENCH -> bench?.attemptedRepCount
+            else -> null
+        }
+        return if (stored != null && stored > 0) stored else validRepCount
+    }
+
     // ── Estadísticas Agregadas ───────────────────────────────────────────────────
 
     data class ExerciseStats(
@@ -111,7 +199,7 @@ class SessionRepository(private val database: RizeDatabase) {
                 avgReps = sessionDao.avgRepsByType(type),
                 avgDurationSec = sessionDao.avgDurationByType(type)
             )
-        }.filter { it.sessionCount > 0 }
+        }
     }
 
     fun getLocalSummaryBlocking(): LocalSummary {

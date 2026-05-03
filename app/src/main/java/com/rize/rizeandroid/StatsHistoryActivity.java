@@ -1,8 +1,10 @@
 package com.rize.rizeandroid;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.view.View;
@@ -15,13 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.rize.rizeandroid.data.SessionRepository;
 import com.rize.rizeandroid.data.SessionRepository.ExerciseStats;
 import com.rize.rizeandroid.data.SessionRepository.LocalSummary;
-import com.rize.rizeandroid.data.entity.BenchSessionDetails;
-import com.rize.rizeandroid.data.entity.CurlSessionDetails;
-import com.rize.rizeandroid.data.entity.SquatSessionDetails;
 import com.rize.rizeandroid.data.entity.WorkoutSession;
+import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +37,14 @@ public class StatsHistoryActivity extends AppCompatActivity {
     private RecyclerView sessionsListView;
     private RecyclerView exerciseStatsListView;
     private TextView emptyView;
+    private View filterRow;
+    private MaterialButton filterSquat;
+    private MaterialButton filterCurl;
+    private MaterialButton filterBench;
+
+    private final List<SessionCardModel> allSessionCards = new ArrayList<>();
+    private final List<ExerciseStats> allExerciseStats = new ArrayList<>();
+    private String selectedExerciseType = WorkoutSession.TYPE_SQUAT;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +55,11 @@ public class StatsHistoryActivity extends AppCompatActivity {
         exerciseStatsListView = findViewById(R.id.exercise_stats_list);
         emptyView = findViewById(R.id.stats_empty);
 
-        sessionAdapter = new SessionAdapter();
+        sessionAdapter = new SessionAdapter(sessionId -> {
+            Intent i = new Intent(StatsHistoryActivity.this, SessionHistoryDetailActivity.class);
+            i.putExtra(SessionHistoryDetailActivity.EXTRA_SESSION_ID, sessionId);
+            startActivity(i);
+        });
         exerciseStatsAdapter = new ExerciseStatsAdapter();
 
         sessionsListView.setLayoutManager(new LinearLayoutManager(this));
@@ -54,9 +67,57 @@ public class StatsHistoryActivity extends AppCompatActivity {
         exerciseStatsListView.setLayoutManager(new LinearLayoutManager(this));
         exerciseStatsListView.setAdapter(exerciseStatsAdapter);
 
+        filterRow = findViewById(R.id.stats_filter_row);
+        filterSquat = findViewById(R.id.filter_squat);
+        filterCurl = findViewById(R.id.filter_curl);
+        filterBench = findViewById(R.id.filter_bench);
+        setupExerciseFilters();
+
         setupToolbar();
         setupBottomNav();
         loadStatistics();
+    }
+
+    private void setupExerciseFilters() {
+        filterSquat.setOnClickListener(v -> setSelectedExerciseFilter(WorkoutSession.TYPE_SQUAT));
+        filterCurl.setOnClickListener(v -> setSelectedExerciseFilter(WorkoutSession.TYPE_CURL));
+        filterBench.setOnClickListener(v -> setSelectedExerciseFilter(WorkoutSession.TYPE_BENCH));
+    }
+
+    private void setSelectedExerciseFilter(String type) {
+        if (type.equals(selectedExerciseType)) {
+            return;
+        }
+        selectedExerciseType = type;
+        refreshFilterButtonStyles();
+        applyExerciseFilter();
+    }
+
+    private void refreshFilterButtonStyles() {
+        styleFilterButton(filterSquat, WorkoutSession.TYPE_SQUAT.equals(selectedExerciseType));
+        styleFilterButton(filterCurl, WorkoutSession.TYPE_CURL.equals(selectedExerciseType));
+        styleFilterButton(filterBench, WorkoutSession.TYPE_BENCH.equals(selectedExerciseType));
+    }
+
+    private void styleFilterButton(MaterialButton b, boolean selected) {
+        int almond = ContextCompat.getColor(this, R.color.toasted_almond);
+        int panel = ContextCompat.getColor(this, R.color.shadow_grey_light);
+        int border = ContextCompat.getColor(this, R.color.card_border);
+        int white = ContextCompat.getColor(this, R.color.white);
+        int black = ContextCompat.getColor(this, R.color.black);
+        int strokePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1f, getResources().getDisplayMetrics()));
+        if (selected) {
+            b.setBackgroundTintList(ColorStateList.valueOf(almond));
+            b.setTextColor(black);
+            b.setStrokeWidth(0);
+            b.setStrokeColor(ColorStateList.valueOf(almond));
+        } else {
+            b.setBackgroundTintList(ColorStateList.valueOf(panel));
+            b.setTextColor(white);
+            b.setStrokeWidth(strokePx);
+            b.setStrokeColor(ColorStateList.valueOf(border));
+        }
     }
 
     private void setupToolbar() {
@@ -88,11 +149,9 @@ public class StatsHistoryActivity extends AppCompatActivity {
         ioExecutor.execute(() -> {
             SessionRepository repository = RizeApplication.get().getSessionRepository();
 
-            // Cargar resumen local
             LocalSummary summary = repository.getLocalSummaryBlocking();
             List<ExerciseStats> exerciseStats = repository.getExerciseStatsBlocking();
 
-            // Cargar sesiones
             List<WorkoutSession> sessions = repository.getAllSessionsBlocking();
             List<SessionCardModel> rows = new ArrayList<>();
             for (WorkoutSession session : sessions) {
@@ -101,14 +160,82 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 updateLocalSummary(summary);
-                exerciseStatsAdapter.submit(exerciseStats);
-                sessionAdapter.submit(rows);
+                allExerciseStats.clear();
+                allExerciseStats.addAll(exerciseStats);
+                allSessionCards.clear();
+                allSessionCards.addAll(rows);
 
-                boolean isEmpty = rows.isEmpty();
-                emptyView.setVisibility(isEmpty ? TextView.VISIBLE : TextView.GONE);
-                sessionsListView.setVisibility(isEmpty ? RecyclerView.GONE : RecyclerView.VISIBLE);
+                boolean globalEmpty = allSessionCards.isEmpty();
+                filterRow.setVisibility(globalEmpty ? View.GONE : View.VISIBLE);
+
+                if (!globalEmpty) {
+                    pickDefaultExerciseFilter();
+                    refreshFilterButtonStyles();
+                }
+
+                applyExerciseFilter();
             });
         });
+    }
+
+    /** Primera pestaña que tenga al menos una sesión; si no, sentadilla. */
+    private void pickDefaultExerciseFilter() {
+        String[] order = {
+                WorkoutSession.TYPE_SQUAT,
+                WorkoutSession.TYPE_CURL,
+                WorkoutSession.TYPE_BENCH
+        };
+        for (String type : order) {
+            for (SessionCardModel m : allSessionCards) {
+                if (type.equals(m.exerciseTypeKey)) {
+                    selectedExerciseType = type;
+                    return;
+                }
+            }
+        }
+        selectedExerciseType = WorkoutSession.TYPE_SQUAT;
+    }
+
+    private void applyExerciseFilter() {
+        List<SessionCardModel> filtered = new ArrayList<>();
+        for (SessionCardModel m : allSessionCards) {
+            if (selectedExerciseType.equals(m.exerciseTypeKey)) {
+                filtered.add(m);
+            }
+        }
+        sessionAdapter.submit(filtered);
+
+        ExerciseStats match = null;
+        for (ExerciseStats e : allExerciseStats) {
+            if (selectedExerciseType.equals(e.getType())) {
+                match = e;
+                break;
+            }
+        }
+        if (match != null) {
+            exerciseStatsAdapter.submit(Collections.singletonList(match));
+        } else {
+            exerciseStatsAdapter.submit(Collections.emptyList());
+        }
+
+        boolean globalEmpty = allSessionCards.isEmpty();
+        boolean filteredEmpty = filtered.isEmpty();
+
+        if (globalEmpty) {
+            emptyView.setText(R.string.stats_empty);
+            emptyView.setVisibility(View.VISIBLE);
+            sessionsListView.setVisibility(View.GONE);
+            exerciseStatsListView.setVisibility(View.GONE);
+        } else if (filteredEmpty) {
+            emptyView.setText(getString(R.string.stats_empty_filtered, mapExerciseType(selectedExerciseType)));
+            emptyView.setVisibility(View.VISIBLE);
+            sessionsListView.setVisibility(View.GONE);
+            exerciseStatsListView.setVisibility(View.VISIBLE);
+        } else {
+            emptyView.setVisibility(View.GONE);
+            sessionsListView.setVisibility(View.VISIBLE);
+            exerciseStatsListView.setVisibility(View.VISIBLE);
+        }
     }
 
     private void updateLocalSummary(LocalSummary summary) {
@@ -124,28 +251,10 @@ public class StatsHistoryActivity extends AppCompatActivity {
         benchCount.setText(String.valueOf(summary.getSessionsByType().get("bench")));
     }
 
-    private void loadSessions() {
-        ioExecutor.execute(() -> {
-            SessionRepository repository = RizeApplication.get().getSessionRepository();
-            List<WorkoutSession> sessions = repository.getAllSessionsBlocking();
-            List<SessionCardModel> rows = new ArrayList<>();
-            for (WorkoutSession session : sessions) {
-                rows.add(buildCardModel(repository, session));
-            }
-
-            runOnUiThread(() -> {
-                sessionAdapter.submit(rows);
-                boolean isEmpty = rows.isEmpty();
-                emptyView.setVisibility(isEmpty ? TextView.VISIBLE : TextView.GONE);
-                sessionsListView.setVisibility(isEmpty ? RecyclerView.GONE : RecyclerView.VISIBLE);
-            });
-        });
-    }
-
     private SessionCardModel buildCardModel(SessionRepository repository, WorkoutSession session) {
         String title = session.getExerciseName();
         String date = buildDate(session);
-        String commonError = buildCommonErrorText(repository, session);
+        String repQualityLine = buildRepQualityLine(repository, session);
         String type = mapExerciseType(session.getExerciseType());
         String repsDuration = String.format(
                 Locale.getDefault(),
@@ -153,7 +262,28 @@ public class StatsHistoryActivity extends AppCompatActivity {
                 session.getTotalReps(),
                 formatDuration(session.getDurationSeconds())
         );
-        return new SessionCardModel(title, date, commonError, type, repsDuration, session.getAutoSaved());
+        return new SessionCardModel(
+                session.getId(),
+                session.getExerciseType(),
+                title,
+                date,
+                repQualityLine,
+                type,
+                repsDuration,
+                session.getAutoSaved());
+    }
+
+    /** Misma lógica que el resumen: % reps válidas vs intentos con mala técnica. */
+    private String buildRepQualityLine(SessionRepository repository, WorkoutSession session) {
+        int qualityReps = Math.max(0, session.getTotalReps());
+        int attempted = repository.getAttemptedRepCountBlocking(session);
+        if (attempted < qualityReps) {
+            attempted = qualityReps;
+        }
+        int badReps = Math.max(0, attempted - qualityReps);
+        int goodPct = attempted > 0 ? Math.round(qualityReps * 100f / attempted) : 100;
+        int badPct = attempted > 0 ? Math.round(badReps * 100f / attempted) : 0;
+        return getString(R.string.stats_session_rep_quality_line, goodPct, badPct);
     }
 
     private String buildDate(WorkoutSession session) {
@@ -174,83 +304,6 @@ public class StatsHistoryActivity extends AppCompatActivity {
         return "Otro";
     }
 
-    private String buildCommonErrorText(SessionRepository repository, WorkoutSession session) {
-        String dominant = buildDominantExerciseError(repository, session);
-        String severity = mapSeverityLabel(session.getTechnicalErrorLevel());
-
-        if (dominant == null) {
-            return getString(R.string.stats_common_error_legacy, severity);
-        }
-
-        if ("NONE".equals(session.getTechnicalErrorLevel()) || session.getTechnicalErrorLevel() == null) {
-            return getString(R.string.stats_common_error_legacy, dominant);
-        }
-        return getString(R.string.stats_common_error_legacy, dominant + " · Nivel " + severity);
-    }
-
-    private String mapSeverityLabel(String raw) {
-        if (raw == null || raw.trim().isEmpty() || "NONE".equals(raw)) {
-            return getString(R.string.stats_error_level_none);
-        }
-        switch (raw) {
-            case "MILD":
-                return getString(R.string.stats_error_level_mild);
-            case "MODERATE":
-                return getString(R.string.stats_error_level_moderate);
-            case "SEVERE":
-                return getString(R.string.stats_error_level_severe);
-            default:
-                return raw;
-        }
-    }
-
-    private String buildDominantExerciseError(SessionRepository repository, WorkoutSession session) {
-        int totalReps = Math.max(0, session.getTotalReps());
-        String type = session.getExerciseType();
-
-        if (WorkoutSession.TYPE_SQUAT.equals(type)) {
-            SquatSessionDetails d = repository.getSquatDetailsBlocking(session.getId());
-            if (d == null || totalReps == 0) return null;
-            int depth = d.getDepthInsufficientCount();
-            int trunk = d.getTrunkLeanRiskCount();
-            if (depth <= 0 && trunk <= 0) return null;
-            if (depth >= trunk) return formatDominant("Profundidad insuficiente", depth, totalReps);
-            return formatDominant("Tronco inclinado", trunk, totalReps);
-        }
-
-        if (WorkoutSession.TYPE_BENCH.equals(type)) {
-            BenchSessionDetails d = repository.getBenchDetailsBlocking(session.getId());
-            if (d == null || totalReps == 0) return null;
-            int depth = d.getDepthInsufficientCount();
-            int ext = d.getExtensionIncompleteCount();
-            int asym = d.getBilateralAsymmetryCount();
-            int grip = d.getGripTooWideCount();
-            int stick = d.getStickingPeriodCount();
-            int best = Math.max(depth, Math.max(ext, Math.max(asym, Math.max(grip, stick))));
-            if (best <= 0) return null;
-            if (best == depth) return formatDominant("Profundidad insuficiente", depth, totalReps);
-            if (best == ext) return formatDominant("Extensión incompleta", ext, totalReps);
-            if (best == asym) return formatDominant("Asimetría bilateral", asym, totalReps);
-            if (best == grip) return formatDominant("Agarre demasiado ancho", grip, totalReps);
-            return formatDominant("Sticking period", stick, totalReps);
-        }
-
-        if (WorkoutSession.TYPE_CURL.equals(type)) {
-            CurlSessionDetails d = repository.getCurlDetailsBlocking(session.getId());
-            if (d == null) return null;
-            Double avgRom = d.getAvgRomDeg();
-            Double shoulder = d.getAvgShoulderCompensationDeg();
-            if (avgRom != null && avgRom < 110.0) return "Rango de movimiento bajo (<110°)";
-            if (shoulder != null && shoulder > 15.0) return "Compensación de hombro elevada";
-        }
-        return null;
-    }
-
-    private String formatDominant(String label, int count, int totalReps) {
-        int pct = (int) Math.round((count * 100.0) / Math.max(1, totalReps));
-        return String.format(Locale.getDefault(), "%s (%d reps, %d%%)", label, count, pct);
-    }
-
     private String formatDuration(int seconds) {
         int min = seconds / 60;
         int sec = seconds % 60;
@@ -269,17 +322,29 @@ public class StatsHistoryActivity extends AppCompatActivity {
     // ──── Models & Adapters ────────────────────────────────────────────────────
 
     private static class SessionCardModel {
+        final long sessionId;
+        final String exerciseTypeKey;
         final String title;
         final String date;
-        final String commonError;
+        final String repQualityLine;
         final String type;
         final String repsDuration;
         final boolean autoSaved;
 
-        SessionCardModel(String title, String date, String commonError, String type, String repsDuration, boolean autoSaved) {
+        SessionCardModel(
+                long sessionId,
+                String exerciseTypeKey,
+                String title,
+                String date,
+                String repQualityLine,
+                String type,
+                String repsDuration,
+                boolean autoSaved) {
+            this.sessionId = sessionId;
+            this.exerciseTypeKey = exerciseTypeKey;
             this.title = title;
             this.date = date;
-            this.commonError = commonError;
+            this.repQualityLine = repQualityLine;
             this.type = type;
             this.repsDuration = repsDuration;
             this.autoSaved = autoSaved;
@@ -289,7 +354,16 @@ public class StatsHistoryActivity extends AppCompatActivity {
     // ──── Adapter para sesiones recientes ───────────────────────────────────────
 
     private static class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.Holder> {
+        interface OnSessionClickListener {
+            void onSessionClick(long sessionId);
+        }
+
         private final List<SessionCardModel> items = new ArrayList<>();
+        private final OnSessionClickListener clickListener;
+
+        SessionAdapter(OnSessionClickListener clickListener) {
+            this.clickListener = clickListener;
+        }
 
         void submit(List<SessionCardModel> values) {
             items.clear();
@@ -309,10 +383,15 @@ public class StatsHistoryActivity extends AppCompatActivity {
             SessionCardModel item = items.get(position);
             holder.title.setText(item.title);
             holder.date.setText(item.date);
-            holder.error.setText(item.commonError);
+            holder.error.setText(item.repQualityLine);
             holder.type.setText(item.type);
             holder.repsDuration.setText(item.repsDuration);
             holder.autoBadge.setVisibility(item.autoSaved ? View.VISIBLE : View.GONE);
+            holder.itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onSessionClick(item.sessionId);
+                }
+            });
         }
 
         @Override

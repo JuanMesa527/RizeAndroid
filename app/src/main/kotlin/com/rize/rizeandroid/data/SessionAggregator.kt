@@ -92,7 +92,7 @@ object PendingSessionBuilder {
             repNumber = repNumber,
             timestampOffsetMs = timestampOffsetMs,
             peakAngleDeg = result.lastRepMinKneeAngleDeg,
-            valleyAngleDeg = null, // squat: la "valley" es el angulo inicial (top), no se rastrea por rep
+            valleyAngleDeg = null,
             romDeg = result.lastRepSquatRomDeg,
             peakVelocityDegS = result.lastRepConcentricPeakVelocityDegS,
             formQuality = (result.lastRepFormQuality ?: ErrorLevel.NONE).name
