@@ -897,7 +897,17 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
     }
 
-    private fun emptyResult() = AlgorithmResult(algorithmName = "BenchPressBiomechanics")
+    /**
+     * Cuando no hay pose o landmarks insuficientes, aun asi debemos exponer
+     * [repCount] y [attemptedRepCount] acumulados. Si no, el ultimo frame
+     * vacio sobrescribe [Algorithms.currentResult] con ceros y al cerrar la
+     * sesion se pierden intentos fallidos (attemptCount ya incrementado).
+     */
+    private fun emptyResult() = AlgorithmResult(
+        algorithmName = "BenchPressBiomechanics",
+        repCount = repCount,
+        attemptedRepCount = attemptCount
+    )
 
     private fun format(value: Double): String = String.format(java.util.Locale.US, "%.1f", value)
 
