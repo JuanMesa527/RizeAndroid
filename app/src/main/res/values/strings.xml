@@ -96,13 +96,13 @@
     <string name="camera_session_consistency">Consistencia de Sesión</string>
     <string name="camera_target_depth">65% Profundidad Objetivo</string>
     <string name="camera_knee_angle">ÁNGULO DE RODILLA</string>
+    <string name="camera_hip_angle_title">ÁNGULO DE CADERA</string>
     <string name="camera_cvt">CVT TÉCNICO</string>
     <string name="camera_velocity_retention">Retención de Velocidad</string>
     <string name="camera_vl20_hint">Umbral de Fatiga VL20</string>
     <string name="camera_title_analysis_format">ANÁLISIS DE %1$s</string>
     <string name="camera_hip_placeholder">Hip --</string>
     <string name="camera_value_missing">Falta</string>
-    <string name="camera_squat_cvt_calibrando">CVT calibrando (rep %1$d)</string>
     <string name="camera_squat_status_calibrando">Calibrando metrica... rep %1$d</string>
     <string name="camera_squat_status_ready">Alineate de lado para iniciar el analisis.</string>
     <string name="camera_squat_status_ok">Tecnica estable.</string>

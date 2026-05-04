@@ -138,14 +138,14 @@
                     android:background="@drawable/bg_alert_banner_neutral"
                     android:paddingStart="12dp"
                     android:paddingEnd="12dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
                     android:text="@string/camera_squat_status_ready"
                     android:textColor="@color/silver_2"
-                    android:textSize="14sp"
+                    android:textSize="17sp"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:minHeight="52dp" />
+                    android:minHeight="56dp" />
 
                 <LinearLayout
                     android:layout_width="84dp"
@@ -227,48 +227,73 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Stability Card -->
+                <!-- Squat only: hip angle in its own column (curl keeps metric_hip_angle inline above). -->
+                <LinearLayout
+                    android:id="@+id/squat_hip_metrics_column"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_card_dark"
+                    android:padding="14dp"
+                    android:layout_marginEnd="8dp">
+
+                    <TextView
+                        android:id="@+id/metric_squat_hip_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/camera_hip_angle_title"
+                        android:textColor="@color/silver_2"
+                        android:textSize="11sp"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:id="@+id/metric_squat_hip_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="--"
+                        android:textColor="@color/white"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Stability / CVT card (squat: CVT%; curl: stability %) -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
+                    android:gravity="center_horizontal"
                     android:background="@drawable/bg_card_dark"
-                    android:padding="14dp">
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp">
 
                     <TextView
                         android:id="@+id/metric_stability_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
                         android:text="@string/camera_stability"
                         android:textColor="@color/silver_2"
-                        android:textSize="11sp"
+                        android:textSize="10sp"
                         android:letterSpacing="0.05" />
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/metric_stability"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:layout_marginTop="4dp">
-
-                        <TextView
-                            android:id="@+id/metric_stability"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="92%"
-                            android:textColor="@color/white"
-                            android:textSize="32sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="  ~-2%"
-                            android:textColor="@color/risk_red"
-                            android:textSize="12sp"
-                            android:layout_marginBottom="6dp" />
-                    </LinearLayout>
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="92%"
+                        android:textColor="@color/white"
+                        android:textSize="26sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="none" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -280,8 +305,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/bg_card_dark"
-                android:padding="14dp"
-                android:layout_marginTop="8dp">
+                android:padding="10dp"
+                android:layout_marginTop="6dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -294,7 +319,7 @@
                         android:layout_alignParentStart="true"
                         android:text="@string/camera_session_consistency"
                         android:textColor="@color/white"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -304,15 +329,15 @@
                         android:layout_alignParentEnd="true"
                         android:text="@string/camera_target_depth"
                         android:textColor="@color/silver_2"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
                 </RelativeLayout>
 
                 <ProgressBar
                     android:id="@+id/progress_consistency"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="8dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_height="6dp"
+                    android:layout_marginTop="8dp"
                     android:progressDrawable="@drawable/bg_progress_bar"
                     android:progress="65"
                     android:max="100" />
@@ -321,7 +346,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
+                    android:layout_marginTop="4dp">
 
                     <TextView
                         android:layout_width="0dp"
@@ -329,7 +354,7 @@
                         android:layout_weight="1"
                         android:text="@string/camera_min"
                         android:textColor="@color/silver_2"
-                        android:textSize="10sp"
+                        android:textSize="9sp"
                         android:gravity="start" />
 
                     <TextView
@@ -338,7 +363,7 @@
                         android:layout_weight="1"
                         android:text="@string/camera_avg"
                         android:textColor="@color/silver_2"
-                        android:textSize="10sp"
+                        android:textSize="9sp"
                         android:gravity="center" />
 
                     <TextView
@@ -347,7 +372,7 @@
                         android:layout_weight="1"
                         android:text="@string/camera_optimal"
                         android:textColor="@color/silver_2"
-                        android:textSize="10sp"
+                        android:textSize="9sp"
                         android:gravity="end" />
                 </LinearLayout>
             </LinearLayout>

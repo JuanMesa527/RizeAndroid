@@ -11,6 +11,7 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -66,6 +67,10 @@ public class StatsHistoryActivity extends AppCompatActivity {
         sessionsListView.setAdapter(sessionAdapter);
         exerciseStatsListView.setLayoutManager(new LinearLayoutManager(this));
         exerciseStatsListView.setAdapter(exerciseStatsAdapter);
+        // RecyclerViews dentro del NestedScrollView: sin scroll propio para que el padre pueda
+        // medir todo el contenido y desplazarse por la lista completa de sesiones.
+        ViewCompat.setNestedScrollingEnabled(sessionsListView, false);
+        ViewCompat.setNestedScrollingEnabled(exerciseStatsListView, false);
 
         filterRow = findViewById(R.id.stats_filter_row);
         filterSquat = findViewById(R.id.filter_squat);

@@ -87,6 +87,8 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private val validBottomKneeAnglesByRep = mutableListOf<Double>()
 
     private var visiblePoseFrames = 0
+    /** NanoTime del último frame procesado: deriva ω con Δt real (la cámara no es 30 Hz fijos). */
+    private var lastProcessMonoNs: Long = 0L
 
     private var snapLastRepMinKnee: Double? = null
     private var snapLastRepMinHip: Double? = null
@@ -102,9 +104,14 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
         if (landmarkFlatList.size < 132) return emptyResult()
 
+        val frameDtSec = resolveFrameDtSec()
+
         val leg = selectLeg(landmarkFlatList) ?: run {
             visiblePoseFrames = 0
             resetTransientRepState()
+            prevRawKneeAngleDeg = null
+            prevAngularVelocityDegS = null
+            smoothedAngularVelocityDegS = null
             return emptyResult()
         }
         visiblePoseFrames += 1
@@ -113,7 +120,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rawKneeAngleDeg = computeAngle(leg.hip.vec, leg.knee.vec, leg.ankle.vec)
         val rawHipAngleDeg = computeAngle(leg.shoulder.vec, leg.hip.vec, leg.knee.vec)
 
-        val rawAngularVelocityDegS = prevRawKneeAngleDeg?.let { (rawKneeAngleDeg - it) / DT }
+        val rawAngularVelocityDegS = prevRawKneeAngleDeg?.let { (rawKneeAngleDeg - it) / frameDtSec }
 
         val kneeAngleDeg = rawKneeAngleDeg
         val hipAngleDeg = rawHipAngleDeg
@@ -124,7 +131,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
 
         val angularAccelerationDegS2 = if (angularVelocityDegS != null && prevAngularVelocityDegS != null) {
-            (angularVelocityDegS - prevAngularVelocityDegS!!) / DT
+            (angularVelocityDegS - prevAngularVelocityDegS!!) / frameDtSec
         } else {
             null
         }
@@ -210,6 +217,7 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         attemptCount = 0
         concentricVelocityByRep.clear()
         validBottomKneeAnglesByRep.clear()
+        lastProcessMonoNs = 0L
 
         snapLastRepMinKnee = null
         snapLastRepMinHip = null
@@ -233,6 +241,26 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentRepStartKneeAngleDeg = Double.MAX_VALUE
         lowVelocityFramesInAscent = 0
         currentRepHipAnglesDeg.clear()
+    }
+
+    /**
+     * Intervalo efectivo entre frames: en vivo el landmarker no garantiza 30 Hz;
+     * usar Δt real evita ω artificial y phase/reps/CVT desalineados.
+     * En tests muchos frames llegan en ráfaga (<5 ms): se usa [DT] nominal para no romper escenarios sintéticos.
+     */
+    private fun resolveFrameDtSec(): Double {
+        val now = System.nanoTime()
+        val dtSec = if (lastProcessMonoNs != 0L) {
+            val deltaMs = (now - lastProcessMonoNs) / 1_000_000.0
+            when {
+                deltaMs < 5.0 -> DT
+                else -> (deltaMs / 1000.0).coerceIn(1.0 / 144.0, 1.0 / 7.0)
+            }
+        } else {
+            DT
+        }
+        lastProcessMonoNs = now
+        return dtSec
     }
 
     private fun updateRepState(kneeAngleDeg: Double, hipAngleDeg: Double, rawHipAngleDeg: Double, angularVelocityDegS: Double) {

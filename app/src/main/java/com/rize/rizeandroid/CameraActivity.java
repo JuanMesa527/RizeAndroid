@@ -50,6 +50,9 @@ public class CameraActivity extends AppCompatActivity {
     private ProgressBar progressConsistency;
     private TextView metricAngleLabel;
     private TextView metricHipAngle;
+    /** Squat-only: large hip angle in squat_hip_metrics_column; curl keeps metric_hip_angle inline. */
+    private View squatHipMetricsColumn;
+    private TextView metricSquatHipValue;
     private TextView metricStabilityLabel;
     private TextView metricConsistencyLabel;
     private TextView metricConsistencyHint;
@@ -202,6 +205,8 @@ public class CameraActivity extends AppCompatActivity {
         metricsStandardPanel   = findViewById(R.id.metrics_standard);
         metricAngleLabel       = findViewById(R.id.metric_angle_label);
         metricHipAngle         = findViewById(R.id.metric_hip_angle);
+        squatHipMetricsColumn  = findViewById(R.id.squat_hip_metrics_column);
+        metricSquatHipValue    = findViewById(R.id.metric_squat_hip_value);
         metricStabilityLabel   = findViewById(R.id.metric_stability_label);
         metricConsistencyLabel = findViewById(R.id.metric_consistency_label);
         metricConsistencyHint  = findViewById(R.id.metric_consistency_hint);
@@ -267,6 +272,9 @@ public class CameraActivity extends AppCompatActivity {
             if (metricHipAngle != null) {
                 metricHipAngle.setVisibility(View.GONE);
             }
+            if (squatHipMetricsColumn != null) {
+                squatHipMetricsColumn.setVisibility(View.GONE);
+            }
             if (squatAlertText != null) {
                 squatAlertText.setVisibility(View.GONE);
             }
@@ -295,8 +303,16 @@ public class CameraActivity extends AppCompatActivity {
             lastSquatAlertTextRes = -1;
             lastSquatAlertColor = -1;
             metricPeakAngle.setText("--");
-            metricHipAngle.setText(R.string.camera_hip_placeholder);
-            metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            if (squatHipMetricsColumn != null) {
+                squatHipMetricsColumn.setVisibility(View.VISIBLE);
+            }
+            if (metricHipAngle != null) {
+                metricHipAngle.setVisibility(View.GONE);
+            }
+            if (metricSquatHipValue != null) {
+                metricSquatHipValue.setText("--");
+                metricSquatHipValue.setTextColor(ContextCompat.getColor(this, R.color.white));
+            }
             metricStability.setText("--");
             progressConsistency.setProgress(0);
             squatAlertText.setVisibility(View.VISIBLE);
@@ -333,6 +349,9 @@ public class CameraActivity extends AppCompatActivity {
             consistencyCard.setVisibility(View.GONE);
             curlMetricsRow.setVisibility(View.VISIBLE);
             metricAngleLabel.setText(R.string.camera_curl_peak_label);
+            if (squatHipMetricsColumn != null) {
+                squatHipMetricsColumn.setVisibility(View.GONE);
+            }
             metricHipAngle.setVisibility(View.VISIBLE);
             metricHipAngle.setText(R.string.bench_status_placeholder);
             metricHipAngle.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
@@ -673,12 +692,15 @@ public class CameraActivity extends AppCompatActivity {
             metricPeakAngle.setText(String.format(Locale.US, "%.0f°", kneeAngle));
         }
 
-        metricHipAngle.setVisibility(View.VISIBLE);
         Double hipAngle = result.getHipAngleDeg();
-        if (hipAngle != null) {
-            metricHipAngle.setText(getString(R.string.camera_hip_angle_format, hipAngle));
-        } else {
-            metricHipAngle.setText(R.string.camera_hip_placeholder);
+        if (metricSquatHipValue != null) {
+            if (hipAngle != null) {
+                metricSquatHipValue.setText(String.format(Locale.US, "%.0f°", hipAngle));
+                metricSquatHipValue.setTextColor(ContextCompat.getColor(this, R.color.white));
+            } else {
+                metricSquatHipValue.setText("--");
+                metricSquatHipValue.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            }
         }
 
         Double cvt = result.getCvtPercent();
@@ -687,8 +709,6 @@ public class CameraActivity extends AppCompatActivity {
             metricStability.setText(String.format(Locale.US, "%.1f%%", cvt));
         } else if (lastSquatCvtDisplay != null) {
             metricStability.setText(String.format(Locale.US, "%.1f%%", lastSquatCvtDisplay));
-        } else if (repCount > 0) {
-            metricStability.setText(getString(R.string.camera_squat_cvt_calibrando, repCount));
         } else {
             metricStability.setText("--");
         }
