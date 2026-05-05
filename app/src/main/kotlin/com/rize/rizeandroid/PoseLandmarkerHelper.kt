@@ -28,12 +28,14 @@ class PoseLandmarkerHelper(
 
     private var poseLandmarker: PoseLandmarker? = null
     private val isProcessing = AtomicBoolean(false)
+    @Volatile private var isClosed = false
 
     init {
         setupPoseLandmarker()
     }
 
     fun clearPoseLandmarker() {
+        isClosed = true
         poseLandmarker?.close()
         poseLandmarker = null
     }
@@ -98,6 +100,11 @@ class PoseLandmarkerHelper(
             )
         }
 
+        if (isClosed) {
+            imageProxy.close()
+            return
+        }
+
         if (!isProcessing.compareAndSet(false, true)) {
             imageProxy.close()
             return
@@ -139,10 +146,6 @@ class PoseLandmarkerHelper(
         poseLandmarker?.detectAsync(mpImage, frameTime)
     }
 
-    /**
-     * Detects pose in a single video frame (RunningMode.VIDEO — synchronous).
-     * Returns a ResultBundle or null if detection fails.
-     */
     fun detectVideoFrame(bitmap: Bitmap, frameTimestampMs: Long): ResultBundle? {
         if (runningMode != RunningMode.VIDEO) {
             throw IllegalArgumentException(

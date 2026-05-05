@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.view.View;
 import android.graphics.drawable.GradientDrawable;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,10 +33,11 @@ import java.util.Locale;
 public class CameraActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_REQUEST = 100;
-    public static final String EXTRA_AUTO_SAVE = "auto_save";
+    public static final String EXTRA_AUTO_SAVE     = "auto_save";
     public static final String EXTRA_EXERCISE_TYPE = "exercise_type";
     public static final String EXTRA_EXERCISE_NAME = "exercise_name_display";
     public static final String EXTRA_ALREADY_SAVED = "already_saved";
+    public static final String EXTRA_FRONT_CAMERA  = "front_camera";
 
     private FrameLayout cameraContainer;
     private TextView cameraTitle;
@@ -120,6 +122,29 @@ public class CameraActivity extends AppCompatActivity {
     private View extremeAlertOverlay;
     private TextView tvAlertOverlayTitle;
     private TextView tvAlertOverlayMessage;
+
+    // ── Curl live overlay (flotante semitransparente en tiempo real) ──────────
+    private LinearLayout curlLiveOverlay;
+    private TextView curlOverlayIcon;
+    private TextView curlOverlayTitle;
+    private TextView curlOverlayMessage;
+    // Contadores de frames para condiciones que requieren persistencia mínima
+    private int curlNoPoseFrames    = 0;
+    private int curlHighAngleFrames = 0;
+    private int curlWristHighFrames = 0;   // muñeca sobre el hombro
+    private int curlShoulderAlertFrames = 0; // histeresis del hombro — trigger
+    private int curlShoulderClearFrames = 0; // histeresis del hombro — clear
+    private boolean curlShoulderAlertActive = false; // estado mostrado en UI
+    private static final int CURL_NO_POSE_FRAMES    = 90;  // 3 s @ 30 Hz
+    private static final int CURL_HIGH_ANGLE_FRAMES = 60;  // 2 s @ 30 Hz
+    private static final int CURL_WRIST_HIGH_FRAMES = 15;  // 0.5 s @ 30 Hz
+    private static final int CURL_SHOULDER_TRIGGER_FRAMES = 20; // 0.67 s antes de mostrar
+    private static final int CURL_SHOULDER_CLEAR_FRAMES   = 15; // 0.5 s quieto antes de ocultar
+    // Control de duración mínima y dismiss por tap
+    private long curlOverlayShowUntilMs      = 0;   // el overlay no se oculta antes de este ts
+    private long curlOverlayDismissedUntilMs = 0;   // cooldown tras tap del usuario
+    private static final long CURL_OVERLAY_MIN_SHOW_MS  = 6_000;  // mínimo 6 s en pantalla
+    private static final long CURL_OVERLAY_COOLDOWN_MS  = 8_000;  // 8 s de cooldown post-tap
     private final Handler alertHandler = new Handler(Looper.getMainLooper());
     private Runnable alertDismissTask;
 
@@ -141,7 +166,8 @@ public class CameraActivity extends AppCompatActivity {
     private boolean sessionFinishing = false;
 
     // ── Persistencia de sesion ────────────────────────────────────────────────
-    private boolean autoSaveEnabled = false;
+    private boolean autoSaveEnabled   = false;
+    private boolean startFrontCamera   = true;
     private long sessionStartMs = 0L;
     private String exerciseDisplayName = "";
     private final List<PendingRep> pendingReps = new ArrayList<>();
@@ -184,7 +210,8 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         exerciseDisplayName = exerciseName == null ? "" : exerciseName;
-        autoSaveEnabled = getIntent().getBooleanExtra(EXTRA_AUTO_SAVE, true);
+        autoSaveEnabled   = getIntent().getBooleanExtra(EXTRA_AUTO_SAVE, true);
+        startFrontCamera  = getIntent().getBooleanExtra(EXTRA_FRONT_CAMERA, true);
         sessionStartMs = System.currentTimeMillis();
 
         setupToolbar();
@@ -243,6 +270,11 @@ public class CameraActivity extends AppCompatActivity {
         if (extremeAlertOverlay != null) {
             extremeAlertOverlay.setOnClickListener(v -> dismissExtremeAlert());
         }
+
+        curlLiveOverlay  = findViewById(R.id.curl_live_overlay);
+        curlOverlayIcon  = findViewById(R.id.curl_overlay_icon);
+        curlOverlayTitle = findViewById(R.id.curl_overlay_title);
+        curlOverlayMessage = findViewById(R.id.curl_overlay_message);
 
         // Detectar tipo de ejercicio desde el extra tipado (inmune al idioma).
         // Fallback a detección por string para compatibilidad con VideoAnalysisActivity.
@@ -360,13 +392,20 @@ public class CameraActivity extends AppCompatActivity {
             metricStability.setText("--");
             metricCurlVelocity.setText("--");
             metricCurlFlex.setText("0");
-            squatAlertText.setVisibility(View.VISIBLE);
-            squatAlertText.setText(R.string.camera_curl_status_ready);
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
+            squatAlertText.setVisibility(View.GONE);
             emaStability    = 100.0;
             emaCurlAngle    = null;
             emaCurlFlex     = null;
             emaCurlVelocity = null;
+            curlNoPoseFrames            = 0;
+            curlHighAngleFrames         = 0;
+            curlWristHighFrames         = 0;
+            curlShoulderAlertFrames     = 0;
+            curlShoulderClearFrames     = 0;
+            curlShoulderAlertActive     = false;
+            curlOverlayShowUntilMs      = 0;
+            curlOverlayDismissedUntilMs = 0;
+            hideCurlLiveOverlay();
         }
 
         algorithms = new Algorithms();
@@ -608,6 +647,76 @@ public class CameraActivity extends AppCompatActivity {
 
         // ── Panel 5: alerta contextual ───────────────────────────────────────
         updateCurlAlert(result, shoulderShift, displayRom, livePeak, curAngle != null);
+
+        // ── Overlay central semitransparente ─────────────────────────────────
+        // Prioridad: sin pose → muñeca muy alta → brazo muy bajo → hombro → fatiga
+        boolean hasPoseCurl = curAngle != null;
+        if (!hasPoseCurl) {
+            curlNoPoseFrames++;
+            curlHighAngleFrames  = 0;
+            curlWristHighFrames  = 0;
+            curlShoulderAlertFrames = 0;
+            curlShoulderClearFrames = 0;
+        } else {
+            curlNoPoseFrames = 0;
+
+            // "Demasiado arriba": muñeca sube por encima del hombro durante el curl.
+            // En MediaPipe Y crece hacia abajo, así que wristAboveShoulderRatio > 0
+            // indica que la muñeca está más alta que el hombro.
+            Double wristAbove = result.getWristAboveShoulderRatio();
+            boolean wristTooHigh = wristAbove != null && wristAbove > 0.0;
+            curlWristHighFrames = wristTooHigh ? curlWristHighFrames + 1 : 0;
+
+            // "Muy abajo": brazo casi extendido y el usuario ya ha intentado al
+            // menos un movimiento — usa attemptedRepCount para que dispare aunque
+            // no haya completado ninguna rep correcta todavía.
+            boolean armNearlyFlat = curAngle > 155.0
+                    && result.getAttemptedRepCount() > 0
+                    && livePeak == null;
+            curlHighAngleFrames = armNearlyFlat ? curlHighAngleFrames + 1 : 0;
+
+            // Histeresis del hombro — evita que el aviso parpadee.
+            // Se activa tras TRIGGER frames consecutivos por encima del umbral.
+            // Se desactiva solo tras CLEAR frames consecutivos por debajo del umbral.
+            boolean shoulderOverThreshold = shoulderShift != null && shoulderShift > 15.0;
+            if (shoulderOverThreshold) {
+                curlShoulderAlertFrames++;
+                curlShoulderClearFrames = 0;
+            } else {
+                curlShoulderClearFrames++;
+                curlShoulderAlertFrames = 0;
+            }
+            if (!curlShoulderAlertActive && curlShoulderAlertFrames >= CURL_SHOULDER_TRIGGER_FRAMES) {
+                curlShoulderAlertActive = true;
+            }
+            if (curlShoulderAlertActive && curlShoulderClearFrames >= CURL_SHOULDER_CLEAR_FRAMES) {
+                curlShoulderAlertActive = false;
+            }
+        }
+
+        if (curlNoPoseFrames >= CURL_NO_POSE_FRAMES) {
+            showCurlLiveOverlay("📷", "Ajusta el encuadre",
+                    "No se detecta el brazo\nAcércate o centra la cámara");
+        } else if (curlWristHighFrames >= CURL_WRIST_HIGH_FRAMES) {
+            showCurlLiveOverlay("⬆", "Demasiado arriba",
+                    "La muñeca subió sobre el hombro\nBaja el brazo al terminar el curl");
+        } else if (curlHighAngleFrames >= CURL_HIGH_ANGLE_FRAMES) {
+            showCurlLiveOverlay("⬇", "Sube el peso",
+                    "Completa el recorrido\nSube la muñeca hasta el pecho");
+        } else if (curlShoulderAlertActive) {
+            showCurlLiveOverlay("⚠", "Hombro hacia adelante",
+                    String.format(Locale.US,
+                            "%.0f° de compensación\nMantén el codo quieto",
+                            shoulderShift != null ? shoulderShift : 0.0));
+        } else if (result.getVelocityLossPercent() != null
+                && result.getVelocityLossPercent() >= 40.0) {
+            showCurlLiveOverlay("🔴", "Fatiga severa",
+                    String.format(Locale.US,
+                            "Pérdida de velocidad %.0f%%\nConsidera descansar",
+                            result.getVelocityLossPercent()));
+        } else {
+            hideCurlLiveOverlay();
+        }
     }
 
     /**
@@ -631,53 +740,6 @@ public class CameraActivity extends AppCompatActivity {
                                  Double livePeak,
                                  boolean hasPose) {
         if (squatAlertText == null) return;
-        squatAlertText.setVisibility(View.VISIBLE);
-
-        int repCount = result.getRepCount();
-        Double vl = result.getVelocityLossPercent();
-
-        // Sin pose: instrucción de corrección de encuadre.
-        if (!hasPose) {
-            squatAlertText.setText(R.string.camera_curl_no_pose);
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.toasted_almond));
-            return;
-        }
-
-        // Pre-arranque: pose detectada pero sin movimiento.
-        if (repCount == 0 && livePeak == null && (shoulderShift == null || shoulderShift < 2.0)) {
-            squatAlertText.setText(R.string.camera_curl_status_ready);
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.silver_2));
-            return;
-        }
-
-        // (1) Compensacion de hombro — apunta al panel ÁNGULO (que ahora mismo
-        // esta en rojo por el mismo motivo).
-        if (shoulderShift != null && shoulderShift > 15.0) {
-            squatAlertText.setText(getString(R.string.camera_curl_alert_shoulder, shoulderShift));
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.risk_red));
-            return;
-        }
-
-        // (2) Fatiga VL≥20% — apunta al panel VELOCIDAD (que ahora mismo lleva
-        // color ambar/rojo por VL).
-        if (vl != null && vl >= 20.0) {
-            squatAlertText.setText(getString(R.string.camera_curl_alert_fatigue, vl));
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.risk_red));
-            return;
-        }
-
-        // (3) ROM incompleto en la ULTIMA rep cerrada (no en una rep activa
-        // que aun no ha llegado al pico). repCount > 0 garantiza que hay una
-        // rep terminada; livePeak == null indica que no estamos en concentrica.
-        // Apunta al panel FLEXIÓN.
-        if (repCount > 0 && livePeak == null
-                && displayRom != null && displayRom < 110.0) {
-            squatAlertText.setText(getString(R.string.camera_curl_alert_partial_rom, displayRom));
-            squatAlertText.setTextColor(ContextCompat.getColor(this, R.color.toasted_almond));
-            return;
-        }
-
-        // (4) Estado OK — ocultar mensaje positivo.
         squatAlertText.setVisibility(View.GONE);
     }
 
@@ -1185,7 +1247,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void startCamera() {
-        cameraViewManager = new CameraViewManager(this, this, cameraContainer);
+        cameraViewManager = new CameraViewManager(this, this, cameraContainer, startFrontCamera);
         cameraViewManager.start();
         startTimer();
     }
@@ -1269,6 +1331,17 @@ public class CameraActivity extends AppCompatActivity {
             intent.putExtra(EXTRA_ALREADY_SAVED, false);
         }
 
+        // Liberar MediaPipe ANTES de navegar para evitar el crash
+        // "task graph hasn't been started" que ocurre cuando el background
+        // executor entrega un frame justo después de que la Activity destruye
+        // el PoseLandmarker en onDestroy. Al cerrar aquí el flag isClosed
+        // ya está activo cuando llegan los últimos frames del executor.
+        // Nullificamos la referencia para que onDestroy no haga doble-release.
+        if (cameraViewManager != null) {
+            cameraViewManager.release();
+            cameraViewManager = null;
+        }
+
         startActivity(intent);
         finish();
     }
@@ -1341,6 +1414,37 @@ public class CameraActivity extends AppCompatActivity {
             }
         }
     }
+
+    // ── Curl live overlay ─────────────────────────────────────────────────────
+
+    private void showCurlLiveOverlay(String icon, String title, String message) {
+        if (curlLiveOverlay == null) return;
+        long now = System.currentTimeMillis();
+        // Cooldown tras tap: no volver a mostrar hasta que pase el cooldown
+        if (now < curlOverlayDismissedUntilMs) return;
+        curlOverlayIcon.setText(icon);
+        curlOverlayTitle.setText(title);
+        curlOverlayMessage.setText(message);
+        // Si aún no está visible, fijar el tiempo mínimo de display
+        if (curlLiveOverlay.getVisibility() != View.VISIBLE) {
+            curlOverlayShowUntilMs = now + CURL_OVERLAY_MIN_SHOW_MS;
+            // Listener de tap para dismiss — se registra una sola vez aquí
+            curlLiveOverlay.setOnClickListener(v -> {
+                curlOverlayDismissedUntilMs = System.currentTimeMillis() + CURL_OVERLAY_COOLDOWN_MS;
+                curlLiveOverlay.setVisibility(View.GONE);
+            });
+        }
+        curlLiveOverlay.setVisibility(View.VISIBLE);
+    }
+
+    private void hideCurlLiveOverlay() {
+        if (curlLiveOverlay == null) return;
+        // Respetar el tiempo mínimo de display — no ocultar antes de que expire
+        if (System.currentTimeMillis() < curlOverlayShowUntilMs) return;
+        curlLiveOverlay.setVisibility(View.GONE);
+    }
+
+    // ── Extreme alert overlay ─────────────────────────────────────────────────
 
     private void showExtremeAlert(String title, String message) {
         if (extremeAlertOverlay == null) return;

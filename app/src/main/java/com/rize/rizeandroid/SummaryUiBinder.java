@@ -114,7 +114,13 @@ public final class SummaryUiBinder {
                 corrections.add(activity.getString(R.string.summary_corr_squat_ok));
             }
             if (corrections.size() < 2) {
-                corrections.add(activity.getString(R.string.summary_corr_squat_mobility));
+                // Alternar entre tip de movilidad y tip de rodillas según si hubo
+                // algún error de tronco (sugiere que la movilidad es la raíz) o no.
+                SquatSessionDetails squatForTip = data.getSquatDetails();
+                boolean trunkIssue = squatForTip != null && squatForTip.getTrunkLeanRiskCount() > 0;
+                corrections.add(trunkIssue
+                        ? activity.getString(R.string.summary_corr_squat_mobility)
+                        : activity.getString(R.string.summary_corr_squat_knees));
             }
 
         } else if (WorkoutSession.TYPE_CURL.equals(exerciseType)) {
@@ -136,7 +142,13 @@ public final class SummaryUiBinder {
                 corrections.add(activity.getString(R.string.summary_corr_curl_ok));
             }
             if (corrections.size() < 2) {
-                corrections.add(activity.getString(R.string.summary_corr_curl_eccentric));
+                // Si ya se dió feedback de hombro o ROM, el tip extra es respiración.
+                // Si la sesión fue limpia, reforzamos la excéntrica (más impacto en hipertrofia).
+                boolean hasFormIssue = corrections.stream().anyMatch(c ->
+                        c.contains("hombro") || c.contains("Rango"));
+                corrections.add(hasFormIssue
+                        ? activity.getString(R.string.summary_corr_curl_breathing)
+                        : activity.getString(R.string.summary_corr_curl_eccentric));
             }
 
         } else if (WorkoutSession.TYPE_BENCH.equals(exerciseType)) {

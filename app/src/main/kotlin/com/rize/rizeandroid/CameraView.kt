@@ -21,7 +21,8 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 
 class CameraView(
     private val context: Context,
-    private val lifecycleOwner: LifecycleOwner
+    private val lifecycleOwner: LifecycleOwner,
+    startFrontCamera: Boolean = true
 ) : PoseLandmarkerHelper.LandmarkerListener {
 
     private val frameLayout: FrameLayout = FrameLayout(context)
@@ -31,23 +32,12 @@ class CameraView(
     private var imageAnalyzer: ImageAnalysis? = null
     private var preview: Preview? = null
 
-    private var lensFacing: Int = CameraSelector.LENS_FACING_FRONT
+    private var lensFacing: Int = if (startFrontCamera) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
 
     private lateinit var poseLandmarkerHelper: PoseLandmarkerHelper
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
-    /**
-     * Suavizador 1€ paralelo dedicado al overlay. Aplica el mismo tipo de
-     * filtrado que internamente hace [Algorithms] sobre los landmarks que
-     * llegan al algoritmo biomecanico — pero en una instancia independiente
-     * para no acoplar el pipeline visual con el de logica. El esqueleto
-     * pintado coincide visualmente con los valores que la UI muestra y
-     * elimina el jitter inter-frame de MediaPipe (~1-3 px equivalentes).
-     *
-     * Parametros default (minCutoff=1.0, beta=0.01) son adecuados para los
-     * tres ejercicios; el algoritmo de bench tiene su propio smoother
-     * interno mas agresivo, esto es solo para el render.
-     */
+
     private val overlaySmoother = LandmarkSmoother()
 
     init {
@@ -170,8 +160,7 @@ class CameraView(
         val landmarks = firstResult.landmarks()
 
         if (landmarks.isEmpty()) {
-            // Sin pose: limpiamos el overlay para no dejar el ultimo
-            // esqueleto pintado de forma engañosa.
+
             ContextCompat.getMainExecutor(context).execute { overlayView.clear() }
             return
         }
@@ -185,14 +174,10 @@ class CameraView(
             flatList.add(landmark.visibility().orElse(0.0f).toDouble())
         }
 
-        // Pasamos la lista cruda al pipeline de logica — Algorithms aplica
-        // su propio suavizador (con parametros por ejercicio) antes de
-        // ejecutar el algoritmo biomecanico.
+
         PoseDataManager.sendPoseData(flatList)
 
-        // Para el overlay: aplicamos un suavizado 1€ independiente para que
-        // el esqueleto pintado se vea fluido, sin jitter, y coincida
-        // visualmente con los valores que la UI muestra.
+
         val smoothedForOverlay = overlaySmoother.filter(flatList, System.currentTimeMillis())
 
         ContextCompat.getMainExecutor(context).execute {

@@ -83,52 +83,110 @@
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- Auto-save toggle -->
+        <!-- Auto-save + Camera selector row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/bg_card_dark"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="14dp">
+            android:gravity="fill_vertical"
+            android:baselineAligned="false">
 
+            <!-- Auto-save (mitad izquierda) -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_card_dark"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="14dp">
 
-                <TextView
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_auto_save_label"
+                        android:textColor="@color/white"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_auto_save_desc"
+                        android:textColor="@color/silver_2"
+                        android:textSize="11sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/auto_save_switch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/select_auto_save_label"
-                    android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/select_auto_save_desc"
-                    android:textColor="@color/silver_2"
-                    android:textSize="12sp"
-                    android:layout_marginTop="2dp" />
+                    android:contentDescription="@string/select_auto_save_label"
+                    android:minWidth="48dp"
+                    android:text=""
+                    android:textOff=""
+                    android:textOn=""
+                    app:showText="false"
+                    app:useMaterialThemeColors="true" />
             </LinearLayout>
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/auto_save_switch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/select_auto_save_label"
-                android:minWidth="56dp"
-                android:text=""
-                android:textOff=""
-                android:textOn=""
-                app:showText="false"
-                app:useMaterialThemeColors="true" />
+            <!-- Camera selector (mitad derecha) -->
+            <LinearLayout
+                android:id="@+id/camera_selector_card"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_card_dark"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_camera_label"
+                        android:textColor="@color/white"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/camera_selector_desc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/silver_2"
+                        android:textSize="11sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/camera_selector_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_camera_switch"
+                    android:contentDescription="@string/select_camera_label"
+                    app:tint="@color/toasted_almond" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- Search Bar -->

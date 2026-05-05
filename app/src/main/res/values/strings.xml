@@ -59,12 +59,12 @@
 
     <!-- Exercise names -->
     <string name="exercise_bench_press">Press de Banca</string>
-    <string name="exercise_barbell_squat">Sentadilla con Barra</string>
+    <string name="exercise_barbell_squat">Sentadilla</string>
     <string name="exercise_dumbbell_curl">Curl con Mancuerna</string>
 
     <!-- Muscle groups -->
     <string name="muscles_bench_press">Pecho, Hombros, Tríceps</string>
-    <string name="muscles_barbell_squat">Cuádriceps, Glúteos, Zona Lumbar</string>
+    <string name="muscles_barbell_squat">Cuádriceps, Glúteos, Isquiotibiales</string>
     <string name="muscles_dumbbell_curl">Bíceps Braquial, Antebrazos</string>
     <string name="select_title_prefix">Elige Tu </string>
     <string name="select_title_highlight">Ejercicio</string>
@@ -76,6 +76,9 @@
     <string name="select_cat_isolation">AISLAMIENTO</string>
     <string name="select_auto_save_label">Guardado automático</string>
     <string name="select_auto_save_desc">Guarda la sesión al terminar (con al menos 1 repetición)</string>
+    <string name="select_camera_label">Cámara inicial</string>
+    <string name="select_camera_front">Delantera</string>
+    <string name="select_camera_back">Trasera</string>
     <string name="session_no_reps_toast">Sin repeticiones registradas</string>
     <string name="session_saved_toast">Sesión guardada</string>
     <string name="session_save_failed_toast">No se pudo guardar la sesión</string>
@@ -212,24 +215,26 @@
     <string name="summary_correction_priority_1">Corrección Prioritaria</string>
     <string name="summary_correction_priority_2">También Trabaja</string>
     <!-- Correcciones squat -->
-    <string name="summary_corr_squat_depth">%1$d rep(s) con profundidad insuficiente. Objetivo: ángulo de rodilla ≤90°. Baja más despacio y controla el descenso.</string>
-    <string name="summary_corr_squat_trunk">%1$d rep(s) con tronco inclinado. Eleva el pecho y activa el core durante toda la subida.</string>
-    <string name="summary_corr_squat_fatigue">Fatiga técnica detectada (%1$s pérdida de velocidad). Reduce volumen o aumenta el descanso entre series.</string>
-    <string name="summary_corr_squat_mobility">Trabaja la movilidad de tobillo y cadera para lograr mayor profundidad con tronco erecto.</string>
-    <string name="summary_corr_squat_ok">Técnica sólida. Para progresar, añade 2.5–5 kg en el próximo entrenamiento.</string>
+    <string name="summary_corr_squat_depth">%1$d rep(s) con profundidad insuficiente. Objetivo: rodilla ≤90°. Baja más despacio, controla el descenso y lleva las caderas hacia atrás.</string>
+    <string name="summary_corr_squat_trunk">%1$d rep(s) con tronco inclinado. Eleva el pecho, activa el core y mantén la mirada al frente durante toda la subida.</string>
+    <string name="summary_corr_squat_fatigue">Fatiga técnica detectada (%1$s pérdida de velocidad). Reduce el volumen o aumenta el descanso entre series antes de continuar.</string>
+    <string name="summary_corr_squat_mobility">Trabaja la movilidad de tobillo y cadera: sentadillas con talones elevados y estiramientos de flexores de cadera para ganar profundidad.</string>
+    <string name="summary_corr_squat_ok">Técnica sólida. Para progresar, aumenta el número de series o añade una repetición por serie en la próxima sesión.</string>
+    <string name="summary_corr_squat_knees">Vigila que las rodillas sigan la dirección de los pies al bajar: evita que colapsen hacia adentro (valgus).</string>
     <!-- Correcciones curl -->
-    <string name="summary_corr_curl_quality">%1$d%% de intentos con forma deficiente. Reduce el peso y prioriza el recorrido completo.</string>
-    <string name="summary_corr_curl_shoulder">Compensación de hombro detectada. Mantén el codo pegado al costado durante todo el movimiento.</string>
-    <string name="summary_corr_curl_rom">Rango de movimiento promedio bajo (%1$d°). Extiende completamente el brazo al bajar y sube hasta el pecho.</string>
-    <string name="summary_corr_curl_eccentric">Trabaja la fase excéntrica controlada: baja el peso en 3 segundos para mayor hipertrofia.</string>
-    <string name="summary_corr_curl_ok">Técnica correcta. Enfócate en la fase excéntrica controlada: 3 segundos al bajar el peso.</string>
+    <string name="summary_corr_curl_quality">%1$d%% de intentos con forma deficiente. Reduce el peso y prioriza el recorrido completo antes de aumentar carga.</string>
+    <string name="summary_corr_curl_shoulder">Compensación de hombro detectada. Mantén el codo pegado al costado y el hombro quieto durante todo el movimiento.</string>
+    <string name="summary_corr_curl_rom">Rango de movimiento promedio bajo (%1$d°). Extiende completamente el brazo al bajar y sube la mano hasta la altura del hombro.</string>
+    <string name="summary_corr_curl_eccentric">Controla la fase excéntrica: baja el peso en 2–3 segundos. Más tensión en el descenso = más estímulo de hipertrofia.</string>
+    <string name="summary_corr_curl_ok">Técnica correcta. Para mayor activación, aprieta el bíceps en el punto más alto y mantén la tensión 1 segundo antes de bajar.</string>
+    <string name="summary_corr_curl_breathing">Recuerda respirar: exhala al subir (fase concentrica) e inhala al bajar. Aguantar la respiración aumenta la presión arterial innecesariamente.</string>
     <!-- Correcciones bench -->
-    <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja hasta el umbral de conteo de codo (≤85°).</string>
-    <string name="summary_corr_bench_asymmetry">Asimetría bilateral en %1$d rep(s). Practica press con mancuernas para equilibrar la fuerza.</string>
-    <string name="summary_corr_bench_extension">%1$d rep(s) con extensión incompleta. Sube hasta el umbral de conteo de codo (≥160°).</string>
-    <string name="summary_corr_bench_grip">Agarre excesivo en %1$d rep(s). Acerca las manos a ~1.5× el ancho de hombros.</string>
-    <string name="summary_corr_bench_lat">Activa el dorsal ancho al bajar la barra para mayor estabilidad del hombro y más fuerza.</string>
-    <string name="summary_corr_bench_ok">Técnica correcta. Considera el press inclinado para un desarrollo completo del pecho.</string>
+    <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja la barra hasta rozar el pecho (codo ≤85°) para un estímulo completo del pectoral.</string>
+    <string name="summary_corr_bench_asymmetry">Asimetría bilateral en %1$d rep(s). Trabaja press con mancuernas para corregir desequilibrios de fuerza lado a lado.</string>
+    <string name="summary_corr_bench_extension">%1$d rep(s) con extensión incompleta. Sube hasta bloquear los codos (≥160°) para completar el recorrido y contar la rep.</string>
+    <string name="summary_corr_bench_grip">Agarre excesivo en %1$d rep(s). Acerca las manos a ~1.5× el ancho de hombros para proteger los hombros y maximizar fuerza.</string>
+    <string name="summary_corr_bench_lat">Activa el dorsal ancho al bajar la barra: imagina que intentas doblarla hacia afuera. Esto estabiliza el hombro y da más potencia en la subida.</string>
+    <string name="summary_corr_bench_ok">Técnica correcta. Refuerza el arco dorsal y la retracción escapular para una base más estable y mayor transferencia de fuerza.</string>
     <!-- Genérico -->
     <string name="summary_corr_nodata">Sin datos suficientes. Completa al menos 3 repeticiones para un análisis completo.</string>
     <string name="summary_rom_consistency">Consistencia de ROM</string>

@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -27,6 +30,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
 
         setupToolbar();
         setupAutoSaveToggle();
+        setupCameraSelector();
         setupExerciseList();
         setupSearch();
         setupBottomNav();
@@ -37,6 +41,28 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         toggle.setChecked(AppPreferences.isAutoSaveEnabled(this));
         toggle.setOnCheckedChangeListener((btn, checked) ->
                 AppPreferences.setAutoSaveEnabled(this, checked));
+    }
+
+    private void setupCameraSelector() {
+        LinearLayout card = findViewById(R.id.camera_selector_card);
+        TextView desc     = findViewById(R.id.camera_selector_desc);
+        ImageView icon    = findViewById(R.id.camera_selector_icon);
+
+        // Muestra el estado actual guardado en preferencias
+        updateCameraLabel(desc, AppPreferences.isFrontCameraPreferred(this));
+
+        // Cada tap alterna entre delantera y trasera y persiste la elección
+        card.setOnClickListener(v -> {
+            boolean nowFront = !AppPreferences.isFrontCameraPreferred(this);
+            AppPreferences.setFrontCameraPreferred(this, nowFront);
+            updateCameraLabel(desc, nowFront);
+        });
+    }
+
+    private void updateCameraLabel(TextView desc, boolean front) {
+        desc.setText(front
+                ? getString(R.string.select_camera_front)
+                : getString(R.string.select_camera_back));
     }
 
     private void setupToolbar() {
@@ -126,6 +152,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         intent.putExtra("exercise_name", exercise.name);
         intent.putExtra("exercise_type", exercise.exerciseType.name());
         intent.putExtra(CameraActivity.EXTRA_AUTO_SAVE, AppPreferences.isAutoSaveEnabled(this));
+        intent.putExtra(CameraActivity.EXTRA_FRONT_CAMERA, AppPreferences.isFrontCameraPreferred(this));
         startActivity(intent);
     }
 }

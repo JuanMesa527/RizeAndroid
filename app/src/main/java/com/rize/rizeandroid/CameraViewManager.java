@@ -10,9 +10,9 @@ public class CameraViewManager {
     private final CameraView cameraView;
     private final FrameLayout container;
 
-    public CameraViewManager(Context context, LifecycleOwner lifecycleOwner, FrameLayout container) {
+    public CameraViewManager(Context context, LifecycleOwner lifecycleOwner, FrameLayout container, boolean startFrontCamera) {
         this.container = container;
-        this.cameraView = new CameraView(context, lifecycleOwner);
+        this.cameraView = new CameraView(context, lifecycleOwner, startFrontCamera);
     }
 
     public void start() {

@@ -898,6 +898,56 @@
         </LinearLayout>
     </FrameLayout>
 
+    <!-- ══════════════════════════════════════════════════════════════════════
+         curl_live_overlay: aviso flotante semitransparente centrado sobre la
+         cámara. Se muestra en tiempo real mientras hay una condición activa
+         (sin pose, ángulo fuera de rango, compensación de hombro, fatiga).
+         No bloquea la pantalla — solo informa.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/curl_live_overlay"
+        android:layout_width="268dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="140dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_curl_overlay_card"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="26dp"
+        android:paddingBottom="26dp"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/curl_overlay_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="38sp"
+            android:gravity="center"
+            android:layout_marginBottom="10dp" />
+
+        <TextView
+            android:id="@+id/curl_overlay_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/curl_overlay_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#B3FFFFFF"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp" />
+
+    </LinearLayout>
+
     <include
         android:id="@+id/bottom_nav"
         layout="@layout/layout_bottom_nav"
