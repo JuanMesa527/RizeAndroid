@@ -130,8 +130,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val STICKING_DURATION_MS = 870L
 
         // ── Regla 7: Perdida de velocidad ───────────────────────────────────
-        private const val VL_WARNING_PERCENT = 15.0
-        private const val VL_CRITICAL_PERCENT = 25.0
+        private const val VL_WARNING_PERCENT = 25.0
+        private const val VL_CRITICAL_PERCENT = 35.0
 
         // ── Validacion de rep ────────────────────────────────────────────────
         private const val MIN_VALID_ROM_DEG = 30.0

@@ -165,6 +165,7 @@ public class CameraActivity extends AppCompatActivity {
     private int consecutiveInjuryReps = 0;
     private int lastRepCountForInjury = 0;
     private boolean injuryAlertShown = false;
+    private boolean benchStickingPopupShown = false;
 
     private static final long NO_POSE_THRESHOLD_MS  = 15_000;
     private static final long SEVERE_FORM_THRESHOLD_MS = 5_000;
@@ -1103,7 +1104,7 @@ public class CameraActivity extends AppCompatActivity {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_bench_alert_sticking;
             bgRes = R.drawable.bg_alert_banner_red;
-        } else if (velocityLoss != null && velocityLoss >= 25.0) {
+        } else if (velocityLoss != null && velocityLoss >= 35.0) {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_bench_alert_fatigue_vl25;
             bgRes = R.drawable.bg_alert_banner_red;
@@ -1116,6 +1117,10 @@ public class CameraActivity extends AppCompatActivity {
             color = ContextCompat.getColor(this, R.color.risk_red);
             messageRes = R.string.camera_bench_alert_depth_and_extension;
             bgRes = R.drawable.bg_alert_banner_red;
+        } else if (velocityLoss != null && velocityLoss >= 25.0) {
+            color = ContextCompat.getColor(this, R.color.toasted_almond);
+            messageRes = R.string.camera_bench_alert_fatigue_vl15;
+            bgRes = R.drawable.bg_alert_banner_amber;
         } else if (result.getDepthInsufficientBench()) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_bench_alert_depth;
@@ -1132,10 +1137,6 @@ public class CameraActivity extends AppCompatActivity {
         } else if (result.getBilateralAsymmetry() || symmetryWarn) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
             messageRes = R.string.camera_bench_alert_asymmetry;
-            bgRes = R.drawable.bg_alert_banner_amber;
-        } else if (velocityLoss != null && velocityLoss >= 15.0) {
-            color = ContextCompat.getColor(this, R.color.toasted_almond);
-            messageRes = R.string.camera_bench_alert_fatigue_vl15;
             bgRes = R.drawable.bg_alert_banner_amber;
         } else if (grip != null && grip > BENCH_GRIP_RATIO_MAX) {
             color = ContextCompat.getColor(this, R.color.toasted_almond);
@@ -1378,12 +1379,16 @@ public class CameraActivity extends AppCompatActivity {
                 || result.getElbowAngleDeg() != null;
 
         // Trigger 1: no pose for 15 s
+        if (lastValidPoseMs == 0) {
+            // Inicializa la referencia temporal para que el trigger funcione
+            // incluso si la sesion arranca sin pose detectable.
+            lastValidPoseMs = now;
+        }
         if (hasValidPose) {
             lastValidPoseMs = now;
             noPoseAlertActive = false;
         } else {
-            if (lastValidPoseMs > 0 && !noPoseAlertActive
-                    && (now - lastValidPoseMs) > NO_POSE_THRESHOLD_MS) {
+            if (!noPoseAlertActive && (now - lastValidPoseMs) > NO_POSE_THRESHOLD_MS) {
                 noPoseAlertActive = true;
                 showExtremeAlert(getString(R.string.alert_no_pose_title),
                         getString(R.string.alert_no_pose_message));
@@ -1392,19 +1397,23 @@ public class CameraActivity extends AppCompatActivity {
         }
         if (!hasValidPose) return;
 
-        // Trigger 2: SEVERE form for 5+ consecutive seconds
-        ErrorLevel techError = result.getTechnicalError();
-        if (techError == ErrorLevel.SEVERE) {
-            if (severeErrorStartMs == 0) severeErrorStartMs = now;
-            if (!severeFormAlertShown && (now - severeErrorStartMs) >= SEVERE_FORM_THRESHOLD_MS) {
-                severeFormAlertShown = true;
-                showExtremeAlert(getString(R.string.alert_bad_form_title),
-                        getString(R.string.alert_bad_form_message));
+        // Trigger 2: sticking point en bench -> popup preventivo.
+        if (isBenchPressExercise && result.getStickingPeriodDetected()) {
+            if (!benchStickingPopupShown) {
+                benchStickingPopupShown = true;
+                showExtremeAlert(
+                        getString(R.string.alert_sticking_title),
+                        getString(R.string.camera_bench_alert_sticking)
+                );
             }
         } else {
-            severeErrorStartMs = 0;
-            severeFormAlertShown = false;
+            benchStickingPopupShown = false;
         }
+
+        // Trigger 2 desactivado por requerimiento: popup de mala tecnica por
+        // severidad sostenida 5s.
+        severeErrorStartMs = 0;
+        severeFormAlertShown = false;
 
         // Trigger 3: injury risk in 3+ consecutive reps (SEVERE quality)
         int repCount = result.getRepCount();

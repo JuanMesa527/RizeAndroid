@@ -134,8 +134,8 @@
     <string name="camera_bench_alert_depth">Profundidad insuficiente: baja hasta el umbral de conteo (codo ≤85°).</string>
     <string name="camera_bench_alert_extension">Extension incompleta: sube hasta el umbral de conteo (codo ≥160°).</string>
     <string name="camera_bench_alert_sticking">Periodo de estancamiento detectado: considera asistencia.</string>
-    <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL15): monitorea la tecnica.</string>
-    <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL25): considera cerrar la serie.</string>
+    <string name="camera_bench_alert_fatigue_vl15">Fatiga moderada (VL25): monitorea la tecnica.</string>
+    <string name="camera_bench_alert_fatigue_vl25">Fatiga critica (VL35): considera cerrar la serie.</string>
     <string name="camera_bench_alert_depth_and_extension">Corrige profundidad y extension en esta repeticion.</string>
 
     <!-- Curl de biceps — telemetria en vivo -->
@@ -261,6 +261,7 @@
     <!-- Extreme alert overlay — camera screen -->
     <string name="alert_no_pose_title">Sin Detección</string>
     <string name="alert_no_pose_message">No se detecta tu cuerpo. Reposiciónate frente a la cámara y asegúrate de que tu silueta sea completamente visible.</string>
+    <string name="alert_sticking_title">Periodo de estancamiento</string>
     <string name="alert_bad_form_title">Técnica Deficiente</string>
     <string name="alert_bad_form_message">Se detectan errores graves de forma repetida. Considera reducir el peso o tomar un descanso breve.</string>
     <string name="alert_injury_risk_title">Riesgo de Lesión</string>
