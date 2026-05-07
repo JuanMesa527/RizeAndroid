@@ -54,7 +54,7 @@
             android:layout_gravity="center" />
 
         <!-- Skeleton overlay — transparent, drawn on top of VideoView -->
-        <com.rize.rizeandroid.SkeletonOverlayView
+        <com.rize.rizeandroid.ui.SkeletonOverlayView
             android:id="@+id/skeleton_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

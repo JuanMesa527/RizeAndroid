@@ -1,4 +1,4 @@
-package com.rize.rizeandroid
+package com.rize.rizeandroid.camera
 
 import android.content.Context
 import android.util.Log
@@ -18,6 +18,9 @@ import android.util.Size
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import com.rize.rizeandroid.pose.OverlayView
+import com.rize.rizeandroid.pose.PoseDataManager
+import com.rize.rizeandroid.pose.PoseLandmarkerHelper
 
 class CameraView(
     private val context: Context,

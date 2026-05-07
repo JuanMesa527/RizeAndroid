@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -32,6 +32,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.vision.core.RunningMode;
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult;
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.biomechanics.AlgorithmResult;
+import com.rize.rizeandroid.biomechanics.Algorithms;
+import com.rize.rizeandroid.biomechanics.ExerciseType;
+import com.rize.rizeandroid.pose.PoseLandmarkerHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;

@@ -1,10 +1,12 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.rize.rizeandroid.R;
 
 public class AboutActivity extends AppCompatActivity {
 

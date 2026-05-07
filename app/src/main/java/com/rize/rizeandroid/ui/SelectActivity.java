@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,6 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.rize.rizeandroid.AppPreferences;
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.biomechanics.ExerciseType;
 
 import java.util.ArrayList;
 import java.util.List;

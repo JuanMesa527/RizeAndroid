@@ -1,5 +1,9 @@
 package com.rize.rizeandroid
 
+import com.rize.rizeandroid.biomechanics.AlgorithmResult
+import com.rize.rizeandroid.biomechanics.ErrorLevel
+import com.rize.rizeandroid.biomechanics.SquatBiomechanicsAlgorithm
+import com.rize.rizeandroid.biomechanics.SquatDepthCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

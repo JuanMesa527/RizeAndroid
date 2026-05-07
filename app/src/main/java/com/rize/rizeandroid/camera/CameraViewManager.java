@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.camera;
 
 import android.content.Context;
 import android.widget.FrameLayout;

@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -15,6 +15,8 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.RizeApplication;
 import com.rize.rizeandroid.data.SessionRepository;
 import com.rize.rizeandroid.data.SessionRepository.ExerciseStats;
 import com.rize.rizeandroid.data.SessionRepository.LocalSummary;

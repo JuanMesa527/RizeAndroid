@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.view.View;
 import android.widget.ImageView;
@@ -6,6 +6,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.rize.rizeandroid.R;
 import com.rize.rizeandroid.data.PendingRep;
 import com.rize.rizeandroid.data.PendingSessionData;
 import com.rize.rizeandroid.data.entity.BenchSessionDetails;

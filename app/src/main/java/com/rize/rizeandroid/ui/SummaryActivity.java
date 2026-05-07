@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,8 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.RizeApplication;
 import com.rize.rizeandroid.data.PendingSessionData;
 import com.rize.rizeandroid.data.PendingSessionHolder;
 

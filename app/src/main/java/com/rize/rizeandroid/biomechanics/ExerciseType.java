@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.biomechanics;
 
 /**
  * Tipo de ejercicio independiente del idioma.

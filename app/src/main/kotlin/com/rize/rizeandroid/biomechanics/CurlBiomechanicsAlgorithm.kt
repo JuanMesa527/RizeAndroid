@@ -1,4 +1,4 @@
-package com.rize.rizeandroid
+package com.rize.rizeandroid.biomechanics
 
 import kotlin.math.*
 

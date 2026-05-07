@@ -1,4 +1,4 @@
-package com.rize.rizeandroid
+package com.rize.rizeandroid.pose
 
 import android.content.Context
 import android.graphics.Canvas

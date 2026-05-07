@@ -1,7 +1,7 @@
 package com.rize.rizeandroid.data
 
-import com.rize.rizeandroid.AlgorithmResult
-import com.rize.rizeandroid.ErrorLevel
+import com.rize.rizeandroid.biomechanics.AlgorithmResult
+import com.rize.rizeandroid.biomechanics.ErrorLevel
 import com.rize.rizeandroid.data.entity.BenchSessionDetails
 import com.rize.rizeandroid.data.entity.CurlSessionDetails
 import com.rize.rizeandroid.data.entity.RepBenchDetails

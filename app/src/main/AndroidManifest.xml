@@ -18,7 +18,7 @@
         android:theme="@style/Theme.RizeAndroid">
 
         <activity
-            android:name=".HomepageActivity"
+            android:name=".ui.HomepageActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,15 +26,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".SelectActivity" />
-        <activity android:name=".CameraActivity"
+        <activity android:name=".ui.SelectActivity" />
+        <activity android:name=".ui.CameraActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".SummaryActivity" />
-        <activity android:name=".SessionHistoryDetailActivity" />
-        <activity android:name=".StatsHistoryActivity" />
-        <activity android:name=".VideoAnalysisActivity"
+        <activity android:name=".ui.SummaryActivity" />
+        <activity android:name=".ui.SessionHistoryDetailActivity" />
+        <activity android:name=".ui.StatsHistoryActivity" />
+        <activity android:name=".ui.VideoAnalysisActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".AboutActivity" />
+        <activity android:name=".ui.AboutActivity" />
 
     </application>
 </manifest>

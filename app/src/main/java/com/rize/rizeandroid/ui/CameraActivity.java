@@ -1,4 +1,4 @@
-package com.rize.rizeandroid;
+package com.rize.rizeandroid.ui;
 
 import android.Manifest;
 import android.content.Intent;
@@ -20,11 +20,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.biomechanics.AlgorithmResult;
+import com.rize.rizeandroid.biomechanics.Algorithms;
+import com.rize.rizeandroid.biomechanics.ErrorLevel;
+import com.rize.rizeandroid.biomechanics.ExerciseType;
+import com.rize.rizeandroid.biomechanics.SquatDepthCategory;
+import com.rize.rizeandroid.biomechanics.SquatTrunkCategory;
+import com.rize.rizeandroid.camera.CameraViewManager;
 import com.rize.rizeandroid.data.PendingRep;
 import com.rize.rizeandroid.data.PendingSessionBuilder;
 import com.rize.rizeandroid.data.PendingSessionData;
 import com.rize.rizeandroid.data.PendingSessionHolder;
 import com.rize.rizeandroid.data.entity.WorkoutSession;
+import com.rize.rizeandroid.pose.PoseDataManager;
+import com.rize.rizeandroid.RizeApplication;
 
 import java.util.ArrayList;
 import java.util.List;
