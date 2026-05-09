@@ -377,6 +377,27 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Banner de estado del curl — análogo al squat_live_header.
+                 Muestra en VIVO: calibrando / técnica OK / compensación /
+                 ROM parcial / fatiga. Solo visible cuando isCurlExercise. -->
+            <TextView
+                android:id="@+id/curl_alert_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_alert_banner_neutral"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:text="@string/camera_curl_status_ready"
+                android:textColor="@color/silver_2"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:visibility="gone" />
+
             <!-- ═══════════════════════════════════════════════════════════
                  curl_metrics_row: Velocity + Live Flex (solo curl).
                  Mismo estilo visual que la fila de PEAK FLEXION + STABILITY.

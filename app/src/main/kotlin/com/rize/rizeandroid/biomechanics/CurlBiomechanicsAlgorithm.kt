@@ -35,23 +35,42 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val DELTA_MIN_DEG      = 10.0
 
 
-        private const val FULL_ROM_MIN_DEG = 110.0
+        // ROM mínimo para advertencia de ROM parcial (Pinto 2012: objetivo ≥110°).
+        // Se mantiene en 100° para advertencia (ligeramente por debajo del
+        // objetivo académico) — la UI ya muestra el objetivo de 110° al usuario.
+        private const val FULL_ROM_MIN_DEG = 100.0
 
 
         private const val SHOULDER_COMPENSATION_DEG = 15.0
         private const val REST_SAMPLES              = 15
 
 
-        private const val FLEXION_PEAK_THRESHOLD     = 80.0
-        private const val EXTENSION_VALLEY_THRESHOLD = 140.0
+        // Umbrales de conteo de reps — calibrados según ROM normativo del codo
+        // (Morrey 1981: extensión funcional 30°-130°; Pinto 2012: full ROM ≥110°).
+        // Se usa 95° de pico de flexión (sube el umbral desde 80°) para contar
+        // reps con rango funcional bueno aunque no lleguen al extremo anatómico.
+        // Se usa 125° de extensión (baja desde 140°) para no exigir extensión
+        // completa de codo — movimiento funcional normal según Morrey 1981.
+        private const val FLEXION_PEAK_THRESHOLD     = 95.0
+        private const val EXTENSION_VALLEY_THRESHOLD = 125.0
 
 
-        private const val ATTEMPT_FLEXION_THRESHOLD   = 115.0
-        private const val ATTEMPT_EXTENSION_THRESHOLD = 120.0
+        // Umbrales de intento (attemptedRepCount) — umbral más bajo para
+        // detectar cualquier intento de flexión aunque no complete la rep.
+        private const val ATTEMPT_FLEXION_THRESHOLD   = 120.0
+        private const val ATTEMPT_EXTENSION_THRESHOLD = 125.0
 
-        private const val ATTEMPT_RESET_THRESHOLD     = 135.0
+        private const val ATTEMPT_RESET_THRESHOLD     = 140.0
 
-        private const val MIN_VISIBILITY = 0.5f
+        // Umbral de visibilidad MediaPipe: 0.65 rechaza landmarks inferidos/predichos
+        // (que suelen rondar 0.5-0.6) y solo acepta landmarks con detección real.
+        // Cada punto del brazo (hombro, codo, muñeca) debe superar este umbral
+        // individualmente — el promedio no basta porque un solo punto predicho
+        // puede contaminar el ángulo calculado.
+        private const val MIN_VISIBILITY = 0.65f
+
+        // Número de frames para consolidar la decisión de brazo activo (~0.33 s @ 30 Hz)
+        private const val SIDE_LOCK_FRAMES = 10
     }
 
 
@@ -65,6 +84,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var currentPeak   = Double.POSITIVE_INFINITY
     private var currentValley = Double.NEGATIVE_INFINITY
     private var currentRepMaxOmega = 0.0
+    // Protección contra rep fantasma: exige que el brazo haya estado en
+    // extensión (≥ EXTENSION_VALLEY_THRESHOLD) al menos una vez antes de
+    // permitir contar cualquier rep. Evita contar una rep en el primer frame
+    // en que MediaPipe detecta el cuerpo con el codo ya flexionado.
+    private var hasSeenExtension = false
 
 
     private val repPeakAngles   = mutableListOf<Double>()
@@ -90,6 +114,15 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private enum class ArmSide { NONE, LEFT, RIGHT }
     private var lockedSide: ArmSide = ArmSide.NONE
+    // Una vez que se escoge un lado, se mantiene durante toda la sesión para
+    // evitar que el brazo inactivo (que puede cruzar la imagen o tener más
+    // visibilidad puntual) "robe" el análisis. Solo se resetea en reset().
+    private var sideDecisionMade: Boolean = false
+    // Acumulador de visibilidad por lado para tomar decisión robusta en los
+    // primeros SIDE_LOCK_FRAMES frames (no basarse en un único frame ruidoso).
+    private var visAccumR: Double = 0.0
+    private var visAccumL: Double = 0.0
+    private var sideFrameCount: Int = 0
 
 
     private var lastSeenRepCount = 0
@@ -228,6 +261,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentPeak        = Double.POSITIVE_INFINITY
         currentValley      = Double.NEGATIVE_INFINITY
         currentRepMaxOmega = 0.0
+        hasSeenExtension   = false
         inAttemptFlexion    = false
         attemptReadyForNext = true
         attemptCount        = 0
@@ -244,6 +278,10 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         snapLastRepShoulderCompDeg = null
         snapLastRepFormQuality = null
         lockedSide = ArmSide.NONE
+        sideDecisionMade = false
+        visAccumR = 0.0
+        visAccumL = 0.0
+        sideFrameCount = 0
     }
 
 
@@ -270,6 +308,12 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private fun detectRepetition(angleDeg: Double) {
 
+        // Marcar que el brazo ha llegado a extensión al menos una vez.
+        // Hasta que esto ocurra no se permite contar ninguna rep (evita
+        // la rep fantasma cuando MediaPipe detecta el cuerpo con el codo
+        // ya flexionado en el primer frame).
+        if (angleDeg >= EXTENSION_VALLEY_THRESHOLD) hasSeenExtension = true
+
         if (!inAttemptFlexion) {
             if (angleDeg >= ATTEMPT_RESET_THRESHOLD) attemptReadyForNext = true
             if (attemptReadyForNext && angleDeg < ATTEMPT_FLEXION_THRESHOLD) {
@@ -288,7 +332,9 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         if (!inFlexion) {
 
             if (angleDeg > currentValley) currentValley = angleDeg
-            if (angleDeg < FLEXION_PEAK_THRESHOLD) {
+            // Solo entrar en fase de flexión si el brazo ya estuvo extendido
+            // al menos una vez — protege contra la rep fantasma inicial.
+            if (hasSeenExtension && angleDeg < FLEXION_PEAK_THRESHOLD) {
                 inFlexion   = true
                 currentPeak = angleDeg
             }
@@ -443,27 +489,59 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rightOk = listOf(sR, eR, wR).all { it.visibility >= MIN_VISIBILITY }
         val leftOk  = listOf(sL, eL, wL).all { it.visibility >= MIN_VISIBILITY }
 
-
-        if (lockedSide == ArmSide.RIGHT && rightOk) return ArmSample(sR.vec, eR.vec, wR.vec)
-        if (lockedSide == ArmSide.LEFT  && leftOk)  return ArmSample(sL.vec, eL.vec, wL.vec)
-
-
-        return when {
-            rightOk && leftOk -> {
-                val visR = listOf(sR, eR, wR).map { it.visibility }
-                val visL = listOf(sL, eL, wL).map { it.visibility }
-                if (visR.average() >= visL.average()) {
-                    lockedSide = ArmSide.RIGHT
-                    ArmSample(sR.vec, eR.vec, wR.vec)
-                } else {
-                    lockedSide = ArmSide.LEFT
-                    ArmSample(sL.vec, eL.vec, wL.vec)
-                }
+        // Si ya se tomó la decisión de lado, usarla SIEMPRE (bloqueo permanente).
+        // Solo se cae a null si el lado bloqueado pierde visibilidad completamente
+        // para no congelar la UI con datos basura.
+        if (sideDecisionMade) {
+            return when (lockedSide) {
+                ArmSide.RIGHT -> if (rightOk) ArmSample(sR.vec, eR.vec, wR.vec) else null
+                ArmSide.LEFT  -> if (leftOk)  ArmSample(sL.vec, eL.vec, wL.vec) else null
+                ArmSide.NONE  -> null
             }
-            rightOk -> { lockedSide = ArmSide.RIGHT; ArmSample(sR.vec, eR.vec, wR.vec) }
-            leftOk  -> { lockedSide = ArmSide.LEFT;  ArmSample(sL.vec, eL.vec, wL.vec) }
-            else    -> null
         }
+
+        // Fase de acumulación: esperar SIDE_LOCK_FRAMES frames con al menos
+        // un lado visible para tomar una decisión robusta.
+        // Solo acumulamos visibilidad del lado que pasa el umbral completo
+        // (todos sus landmarks > MIN_VISIBILITY). Esto evita que landmarks
+        // predichos por MediaPipe (~0.5-0.6) acumulen peso en la decisión.
+        val visR = listOf(sR, eR, wR).map { it.visibility.toDouble() }.average()
+        val visL = listOf(sL, eL, wL).map { it.visibility.toDouble() }.average()
+
+        // Si solo un lado supera el umbral, bloquear inmediatamente sin esperar
+        // SIDE_LOCK_FRAMES — el brazo activo está claro y no hay ambigüedad.
+        if (rightOk && !leftOk) {
+            lockedSide = ArmSide.RIGHT
+            sideDecisionMade = true
+            return ArmSample(sR.vec, eR.vec, wR.vec)
+        }
+        if (leftOk && !rightOk) {
+            lockedSide = ArmSide.LEFT
+            sideDecisionMade = true
+            return ArmSample(sL.vec, eL.vec, wL.vec)
+        }
+
+        // Ambos lados visibles: acumular y decidir tras SIDE_LOCK_FRAMES
+        if (rightOk || leftOk) {
+            if (rightOk) visAccumR += visR
+            if (leftOk)  visAccumL += visL
+            sideFrameCount++
+        }
+
+        if (sideFrameCount >= SIDE_LOCK_FRAMES) {
+            // Decisión final basada en visibilidad acumulada de los primeros frames
+            lockedSide = if (visAccumR >= visAccumL) ArmSide.RIGHT else ArmSide.LEFT
+            sideDecisionMade = true
+            return when (lockedSide) {
+                ArmSide.RIGHT -> if (rightOk) ArmSample(sR.vec, eR.vec, wR.vec) else null
+                ArmSide.LEFT  -> if (leftOk)  ArmSample(sL.vec, eL.vec, wL.vec) else null
+                ArmSide.NONE  -> null
+            }
+        }
+
+        // Mientras acumulamos (ambos lados visibles), devolver el mejor lado este frame
+        return if (visR >= visL) ArmSample(sR.vec, eR.vec, wR.vec)
+               else              ArmSample(sL.vec, eL.vec, wL.vec)
     }
 
     private data class ArmSample(

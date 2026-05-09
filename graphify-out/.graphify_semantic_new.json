@@ -1,0 +1,1822 @@
+{
+  "nodes": [
+    {
+      "id": "build_gradle_root",
+      "label": "Root Build Gradle (KTS)",
+      "file_type": "code",
+      "source_file": "build.gradle.kts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "settings_gradle",
+      "label": "Settings Gradle (KTS)",
+      "file_type": "code",
+      "source_file": "settings.gradle.kts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "app_build_gradle",
+      "label": "App Build Gradle (KTS)",
+      "file_type": "code",
+      "source_file": "app/build.gradle.kts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aboutactivity",
+      "label": "AboutActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/AboutActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "apppreferences",
+      "label": "AppPreferences",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/AppPreferences.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "cameraactivity",
+      "label": "CameraActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "cameraviewmanager",
+      "label": "CameraViewManager",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraViewManager.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "exerciseadapter",
+      "label": "ExerciseAdapter",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/ExerciseAdapter.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "exercisetype",
+      "label": "ExerciseType (Enum)",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/ExerciseType.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "homepageactivity",
+      "label": "HomepageActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/HomepageActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "selectactivity",
+      "label": "SelectActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "sessionhistorydetailactivity",
+      "label": "SessionHistoryDetailActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SessionHistoryDetailActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "skeletonoverlayview",
+      "label": "SkeletonOverlayView",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SkeletonOverlayView.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "statshistoryactivity",
+      "label": "StatsHistoryActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/StatsHistoryActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "summaryactivity",
+      "label": "SummaryActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "summaryuibinder",
+      "label": "SummaryUiBinder",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryUiBinder.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "videoanalysisactivity",
+      "label": "VideoAnalysisActivity",
+      "file_type": "code",
+      "source_file": "app/src/main/java/com/rize/rizeandroid/VideoAnalysisActivity.java",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "algorithms_kt",
+      "label": "Algorithms (Kotlin)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "algorithmresult",
+      "label": "AlgorithmResult (data class)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "biomechanicsalgorithm",
+      "label": "BiomechanicsAlgorithm (interface)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "errorlevel",
+      "label": "ErrorLevel (enum)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "squatdepthcategory",
+      "label": "SquatDepthCategory (enum)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "squattrunkcategory",
+      "label": "SquatTrunkCategory (enum)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "benchpressbiomechanicsalgorithm",
+      "label": "BenchPressBiomechanicsAlgorithm",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/BenchPressBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "cameraview_kt",
+      "label": "CameraView (Kotlin)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CameraView.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "curlbiomechanicsalgorithm",
+      "label": "CurlBiomechanicsAlgorithm",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CurlBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "overlayview_kt",
+      "label": "OverlayView (Kotlin)",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/OverlayView.kt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "posedatamanager_PoseDataManager",
+      "label": "PoseDataManager",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/PoseDataManager.kt"
+    },
+    {
+      "id": "poselandmarkerhelper_PoseLandmarkerHelper",
+      "label": "PoseLandmarkerHelper",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/PoseLandmarkerHelper.kt"
+    },
+    {
+      "id": "poselandmarkerhelper_ResultBundle",
+      "label": "PoseLandmarkerHelper.ResultBundle",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/PoseLandmarkerHelper.kt"
+    },
+    {
+      "id": "poselandmarkerhelper_LandmarkerListener",
+      "label": "PoseLandmarkerHelper.LandmarkerListener",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/PoseLandmarkerHelper.kt"
+    },
+    {
+      "id": "rizeapplication_RizeApplication",
+      "label": "RizeApplication",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/RizeApplication.kt"
+    },
+    {
+      "id": "squatbiomechanicsalgorithm_SquatBiomechanicsAlgorithm",
+      "label": "SquatBiomechanicsAlgorithm",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/SquatBiomechanicsAlgorithm.kt"
+    },
+    {
+      "id": "velocitysmoothing_VelocitySmoothing",
+      "label": "VelocitySmoothing",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/VelocitySmoothing.kt"
+    },
+    {
+      "id": "pendingsessiondata_PendingSessionData",
+      "label": "PendingSessionData",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt"
+    },
+    {
+      "id": "pendingsessiondata_PendingRep",
+      "label": "PendingRep",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt"
+    },
+    {
+      "id": "pendingsessionholder_PendingSessionHolder",
+      "label": "PendingSessionHolder",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionHolder.kt"
+    },
+    {
+      "id": "rizedatabase_RizeDatabase",
+      "label": "RizeDatabase",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt"
+    },
+    {
+      "id": "sessionaggregator_PendingSessionBuilder",
+      "label": "PendingSessionBuilder",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt"
+    },
+    {
+      "id": "sessionrepository_SessionRepository",
+      "label": "SessionRepository",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt"
+    },
+    {
+      "id": "repdao_RepDao",
+      "label": "RepDao",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/RepDao.kt"
+    },
+    {
+      "id": "workoutsessiondao_WorkoutSessionDao",
+      "label": "WorkoutSessionDao",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/WorkoutSessionDao.kt"
+    },
+    {
+      "id": "benchsessiondetails_BenchSessionDetails",
+      "label": "BenchSessionDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/BenchSessionDetails.kt"
+    },
+    {
+      "id": "curlsessiondetails_CurlSessionDetails",
+      "label": "CurlSessionDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/CurlSessionDetails.kt"
+    },
+    {
+      "id": "repbenchdetails_RepBenchDetails",
+      "label": "RepBenchDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepBenchDetails.kt"
+    },
+    {
+      "id": "repcurldetails_RepCurlDetails",
+      "label": "RepCurlDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepCurlDetails.kt"
+    },
+    {
+      "id": "repsquatdetails_RepSquatDetails",
+      "label": "RepSquatDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepSquatDetails.kt"
+    },
+    {
+      "id": "sessionrep_SessionRep",
+      "label": "SessionRep",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/SessionRep.kt"
+    },
+    {
+      "id": "squatsessiondetails_SquatSessionDetails",
+      "label": "SquatSessionDetails",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/SquatSessionDetails.kt"
+    },
+    {
+      "id": "workoutsession_WorkoutSession",
+      "label": "WorkoutSession",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/WorkoutSession.kt"
+    },
+    {
+      "id": "landmarksmoother_LandmarkSmoother",
+      "label": "LandmarkSmoother",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/signal/LandmarkSmoother.kt"
+    },
+    {
+      "id": "oneeuropfilter_OneEuroFilter",
+      "label": "OneEuroFilter",
+      "file_type": "code",
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/signal/OneEuroFilter.kt"
+    },
+    {
+      "id": "squatbiomechanicsalgorithmtest_SquatBiomechanicsAlgorithmTest",
+      "label": "SquatBiomechanicsAlgorithmTest",
+      "file_type": "code",
+      "source_file": "app/src/test/java/com/rize/rizeandroid/SquatBiomechanicsAlgorithmTest.kt"
+    },
+    {
+      "id": "a_mejorar_img_source",
+      "label": "A Mejorar Source Image",
+      "file_type": "image",
+      "source_file": "app/src/main/img/A_MEJORAR.png"
+    },
+    {
+      "id": "a_mejorar_drawable",
+      "label": "A Mejorar Drawable Resource",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/a_mejorar.png"
+    },
+    {
+      "id": "a_mejorar_concept",
+      "label": "A Mejorar Needs Improvement State",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/a_mejorar.png"
+    },
+    {
+      "id": "rize_brand",
+      "label": "Rize Brand Identity",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/a_mejorar.png"
+    },
+    {
+      "id": "performance_feedback_ui",
+      "label": "Performance Feedback UI Component",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/a_mejorar.png"
+    },
+    {
+      "id": "por_buen_camino_img_source",
+      "label": "Por Buen Camino Source Image",
+      "file_type": "image",
+      "source_file": "app/src/main/img/POR_BUEN_CAMINO.png"
+    },
+    {
+      "id": "por_buen_camino_drawable",
+      "label": "Por Buen Camino Drawable Resource",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/por_buen_camino.png"
+    },
+    {
+      "id": "por_buen_camino_concept_progress",
+      "label": "On the Right Track Progress Feedback State",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/por_buen_camino.png"
+    },
+    {
+      "id": "sigue_asi_img_source",
+      "label": "SIGUE_ASI Source Image",
+      "file_type": "image",
+      "source_file": "app/src/main/img/SIGUE_ASI.png"
+    },
+    {
+      "id": "sigue_asi_drawable",
+      "label": "Sigue Asi Drawable Resource",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/sigue_asi.png"
+    },
+    {
+      "id": "sigue_asi_concept_positive_feedback",
+      "label": "Positive Feedback Keep It Up Badge",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/sigue_asi.png"
+    },
+    {
+      "id": "sigue_asi_concept_motivational_ui",
+      "label": "Motivational UI Feedback Element",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/sigue_asi.png"
+    },
+    {
+      "id": "ic_launcher_image_appicon",
+      "label": "App Launcher Icon Rize",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/ic_launcher_image.png"
+    },
+    {
+      "id": "main_page_uiscreenshot",
+      "label": "Main Page UI Screenshot",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/main_page.png"
+    },
+    {
+      "id": "main_page_squat",
+      "label": "Squat Exercise Feature",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/main_page.png"
+    },
+    {
+      "id": "main_page_benchpress",
+      "label": "Bench Press Exercise Feature",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/main_page.png"
+    },
+    {
+      "id": "main_page_curl",
+      "label": "Curl Exercise Feature",
+      "file_type": "image",
+      "source_file": "app/src/main/res/drawable/main_page.png"
+    },
+    {
+      "id": "rize_orangecolor",
+      "label": "Rize Orange Color Theme",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/drawable/ic_launcher_image.png"
+    },
+    {
+      "id": "ic_launcher_square_design",
+      "label": "Rize Square Launcher Icon",
+      "file_type": "image",
+      "source_file": "app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+      "id": "ic_launcher_round_design",
+      "label": "Rize Round Launcher Icon",
+      "file_type": "image",
+      "source_file": "app/src/main/res/mipmap-hdpi/ic_launcher_round.webp"
+    },
+    {
+      "id": "orange_neon_trend_logo",
+      "label": "Orange Neon Trend Logo Concept",
+      "file_type": "rationale",
+      "source_file": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+    }
+  ],
+  "edges": [
+    {
+      "source": "settings_gradle",
+      "target": "build_gradle_root",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "settings.gradle.kts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "app_build_gradle",
+      "target": "build_gradle_root",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/build.gradle.kts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "homepageactivity",
+      "target": "selectactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/HomepageActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "homepageactivity",
+      "target": "aboutactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/HomepageActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "homepageactivity",
+      "target": "statshistoryactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/HomepageActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "cameraactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "exerciseadapter",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "apppreferences",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "homepageactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "statshistoryactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "selectactivity",
+      "target": "exercisetype",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SelectActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "exerciseadapter",
+      "target": "exercisetype",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/ExerciseAdapter.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "cameraviewmanager",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "algorithms_kt",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "algorithmresult",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "exercisetype",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "summaryactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "homepageactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "errorlevel",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "squatdepthcategory",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "squattrunkcategory",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraviewmanager",
+      "target": "cameraview_kt",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraViewManager.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraview_kt",
+      "target": "overlayview_kt",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CameraView.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithms_kt",
+      "target": "curlbiomechanicsalgorithm",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithms_kt",
+      "target": "benchpressbiomechanicsalgorithm",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithms_kt",
+      "target": "biomechanicsalgorithm",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithms_kt",
+      "target": "algorithmresult",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithms_kt",
+      "target": "exercisetype",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "curlbiomechanicsalgorithm",
+      "target": "biomechanicsalgorithm",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CurlBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "curlbiomechanicsalgorithm",
+      "target": "algorithmresult",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CurlBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "benchpressbiomechanicsalgorithm",
+      "target": "biomechanicsalgorithm",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/BenchPressBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "benchpressbiomechanicsalgorithm",
+      "target": "algorithmresult",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/BenchPressBiomechanicsAlgorithm.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "summaryactivity",
+      "target": "summaryuibinder",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "summaryactivity",
+      "target": "homepageactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "summaryactivity",
+      "target": "selectactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "summaryactivity",
+      "target": "statshistoryactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sessionhistorydetailactivity",
+      "target": "summaryuibinder",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SessionHistoryDetailActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "statshistoryactivity",
+      "target": "sessionhistorydetailactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/StatsHistoryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "statshistoryactivity",
+      "target": "homepageactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/StatsHistoryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "statshistoryactivity",
+      "target": "selectactivity",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/StatsHistoryActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "videoanalysisactivity",
+      "target": "algorithms_kt",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/VideoAnalysisActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "videoanalysisactivity",
+      "target": "skeletonoverlayview",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/VideoAnalysisActivity.java",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithmresult",
+      "target": "errorlevel",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithmresult",
+      "target": "squatdepthcategory",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "algorithmresult",
+      "target": "squattrunkcategory",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "summaryuibinder",
+      "target": "algorithmresult",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/SummaryUiBinder.java",
+      "source_location": null,
+      "weight": 0.85
+    },
+    {
+      "source": "cameraview_kt",
+      "target": "algorithms_kt",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CameraView.kt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "cameraactivity",
+      "target": "apppreferences",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/CameraActivity.java",
+      "source_location": null,
+      "weight": 0.85
+    },
+    {
+      "source": "rizeapplication_RizeApplication",
+      "target": "rizedatabase_RizeDatabase",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/RizeApplication.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizeapplication_RizeApplication",
+      "target": "sessionrepository_SessionRepository",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/RizeApplication.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "rizedatabase_RizeDatabase",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "workoutsessiondao_WorkoutSessionDao",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "repdao_RepDao",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "squatsessiondetails_SquatSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "curlsessiondetails_CurlSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "benchsessiondetails_BenchSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrepository_SessionRepository",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionRepository.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "workoutsessiondao_WorkoutSessionDao",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "repdao_RepDao",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "squatsessiondetails_SquatSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "curlsessiondetails_CurlSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "benchsessiondetails_BenchSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "repsquatdetails_RepSquatDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "repcurldetails_RepCurlDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "rizedatabase_RizeDatabase",
+      "target": "repbenchdetails_RepBenchDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "workoutsessiondao_WorkoutSessionDao",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/WorkoutSessionDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "workoutsessiondao_WorkoutSessionDao",
+      "target": "squatsessiondetails_SquatSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/WorkoutSessionDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "workoutsessiondao_WorkoutSessionDao",
+      "target": "curlsessiondetails_CurlSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/WorkoutSessionDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "workoutsessiondao_WorkoutSessionDao",
+      "target": "benchsessiondetails_BenchSessionDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/WorkoutSessionDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repdao_RepDao",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/RepDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repdao_RepDao",
+      "target": "repsquatdetails_RepSquatDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/RepDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repdao_RepDao",
+      "target": "repcurldetails_RepCurlDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/RepDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repdao_RepDao",
+      "target": "repbenchdetails_RepBenchDetails",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/dao/RepDao.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessiondata_PendingRep",
+      "target": "sessionrep_SessionRep",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessiondata_PendingRep",
+      "target": "repsquatdetails_RepSquatDetails",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessiondata_PendingRep",
+      "target": "repcurldetails_RepCurlDetails",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessiondata_PendingRep",
+      "target": "repbenchdetails_RepBenchDetails",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessiondata_PendingSessionData",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionData.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "pendingsessionholder_PendingSessionHolder",
+      "target": "pendingsessiondata_PendingSessionData",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/PendingSessionHolder.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "pendingsessiondata_PendingSessionData",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "squatsessiondetails_SquatSessionDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "curlsessiondetails_CurlSessionDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "benchsessiondetails_BenchSessionDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "repsquatdetails_RepSquatDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "repcurldetails_RepCurlDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "repbenchdetails_RepBenchDetails",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionaggregator_PendingSessionBuilder",
+      "target": "sessionrep_SessionRep",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "landmarksmoother_LandmarkSmoother",
+      "target": "oneeuropfilter_OneEuroFilter",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/signal/LandmarkSmoother.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "squatbiomechanicsalgorithm_SquatBiomechanicsAlgorithm",
+      "target": "velocitysmoothing_VelocitySmoothing",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/SquatBiomechanicsAlgorithm.kt",
+      "weight": 0.75
+    },
+    {
+      "source": "poselandmarkerhelper_PoseLandmarkerHelper",
+      "target": "poselandmarkerhelper_ResultBundle",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/PoseLandmarkerHelper.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "squatbiomechanicsalgorithmtest_SquatBiomechanicsAlgorithmTest",
+      "target": "squatbiomechanicsalgorithm_SquatBiomechanicsAlgorithm",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/rize/rizeandroid/SquatBiomechanicsAlgorithmTest.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "benchsessiondetails_BenchSessionDetails",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/BenchSessionDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "curlsessiondetails_CurlSessionDetails",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/CurlSessionDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "squatsessiondetails_SquatSessionDetails",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/SquatSessionDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "sessionrep_SessionRep",
+      "target": "workoutsession_WorkoutSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/SessionRep.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repbenchdetails_RepBenchDetails",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepBenchDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repcurldetails_RepCurlDetails",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepCurlDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "repsquatdetails_RepSquatDetails",
+      "target": "sessionrep_SessionRep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/entity/RepSquatDetails.kt",
+      "weight": 1.0
+    },
+    {
+      "source": "velocitysmoothing_VelocitySmoothing",
+      "target": "oneeuropfilter_OneEuroFilter",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/VelocitySmoothing.kt",
+      "weight": 0.75
+    },
+    {
+      "source": "a_mejorar_img_source",
+      "target": "a_mejorar_drawable",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/img/A_MEJORAR.png",
+      "weight": 1.0
+    },
+    {
+      "source": "a_mejorar_drawable",
+      "target": "a_mejorar_concept",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/a_mejorar.png",
+      "weight": 1.0
+    },
+    {
+      "source": "a_mejorar_drawable",
+      "target": "rize_brand",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/a_mejorar.png",
+      "weight": 1.0
+    },
+    {
+      "source": "a_mejorar_concept",
+      "target": "performance_feedback_ui",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/res/drawable/a_mejorar.png",
+      "weight": 0.95
+    },
+    {
+      "source": "por_buen_camino_img_source",
+      "target": "por_buen_camino_drawable",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/img/POR_BUEN_CAMINO.png",
+      "weight": 1.0
+    },
+    {
+      "source": "por_buen_camino_drawable",
+      "target": "por_buen_camino_concept_progress",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/res/drawable/por_buen_camino.png",
+      "weight": 0.95
+    },
+    {
+      "source": "sigue_asi_img_source",
+      "target": "sigue_asi_drawable",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/img/SIGUE_ASI.png",
+      "weight": 1.0
+    },
+    {
+      "source": "sigue_asi_drawable",
+      "target": "sigue_asi_concept_positive_feedback",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/sigue_asi.png",
+      "weight": 1.0
+    },
+    {
+      "source": "sigue_asi_concept_positive_feedback",
+      "target": "sigue_asi_concept_motivational_ui",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/src/main/res/drawable/sigue_asi.png",
+      "weight": 0.85
+    },
+    {
+      "source": "main_page_uiscreenshot",
+      "target": "main_page_squat",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/main_page.png",
+      "weight": 1.0
+    },
+    {
+      "source": "main_page_uiscreenshot",
+      "target": "main_page_benchpress",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/main_page.png",
+      "weight": 1.0
+    },
+    {
+      "source": "main_page_uiscreenshot",
+      "target": "main_page_curl",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/main_page.png",
+      "weight": 1.0
+    },
+    {
+      "source": "ic_launcher_image_appicon",
+      "target": "rize_orangecolor",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/ic_launcher_image.png",
+      "weight": 1.0
+    },
+    {
+      "source": "ic_launcher_square_design",
+      "target": "orange_neon_trend_logo",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "weight": 1.0
+    },
+    {
+      "source": "ic_launcher_square_design",
+      "target": "ic_launcher_round_design",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.55,
+      "source_file": "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "weight": 0.55
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "activity_navigation_flow",
+      "label": "Main Activity Navigation Flow",
+      "nodes": [
+        "homepageactivity",
+        "selectactivity",
+        "cameraactivity",
+        "summaryactivity",
+        "statshistoryactivity",
+        "sessionhistorydetailactivity"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/HomepageActivity.java"
+    },
+    {
+      "id": "biomechanics_pipeline",
+      "label": "Biomechanics Analysis Pipeline",
+      "nodes": [
+        "algorithms_kt",
+        "biomechanicsalgorithm",
+        "curlbiomechanicsalgorithm",
+        "benchpressbiomechanicsalgorithm",
+        "algorithmresult",
+        "cameraview_kt",
+        "cameraactivity"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/Algorithms.kt"
+    },
+    {
+      "id": "exercise_type_system",
+      "label": "Exercise Type Classification System",
+      "nodes": [
+        "exercisetype",
+        "exerciseadapter",
+        "selectactivity",
+        "cameraactivity",
+        "algorithms_kt"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/java/com/rize/rizeandroid/ExerciseType.java"
+    },
+    {
+      "id": "camera_mediapipe_overlay",
+      "label": "Camera + MediaPipe + Overlay Rendering",
+      "nodes": [
+        "cameraviewmanager",
+        "cameraview_kt",
+        "overlayview_kt",
+        "skeletonoverlayview"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/CameraView.kt"
+    },
+    {
+      "id": "room_db_layer",
+      "label": "Room Database Layer",
+      "nodes": [
+        "rizedatabase_RizeDatabase",
+        "workoutsessiondao_WorkoutSessionDao",
+        "repdao_RepDao",
+        "workoutsession_WorkoutSession",
+        "squatsessiondetails_SquatSessionDetails",
+        "curlsessiondetails_CurlSessionDetails",
+        "benchsessiondetails_BenchSessionDetails",
+        "sessionrep_SessionRep",
+        "repsquatdetails_RepSquatDetails",
+        "repcurldetails_RepCurlDetails",
+        "repbenchdetails_RepBenchDetails"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/RizeDatabase.kt"
+    },
+    {
+      "id": "signal_smoothing_pipeline",
+      "label": "Signal Smoothing Pipeline",
+      "nodes": [
+        "landmarksmoother_LandmarkSmoother",
+        "oneeuropfilter_OneEuroFilter",
+        "velocitysmoothing_VelocitySmoothing"
+      ],
+      "relation": "implement",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/signal/LandmarkSmoother.kt"
+    },
+    {
+      "id": "session_persistence_flow",
+      "label": "Session Persistence Flow",
+      "nodes": [
+        "sessionaggregator_PendingSessionBuilder",
+        "pendingsessiondata_PendingSessionData",
+        "pendingsessionholder_PendingSessionHolder",
+        "sessionrepository_SessionRepository"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "app/src/main/kotlin/com/rize/rizeandroid/data/SessionAggregator.kt"
+    },
+    {
+      "id": "rize_exercise_features",
+      "label": "Rize Core Exercise Features",
+      "nodes": [
+        "main_page_squat",
+        "main_page_benchpress",
+        "main_page_curl"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/res/drawable/main_page.png"
+    }
+  ],
+  "input_tokens": 233417,
+  "output_tokens": 0
+}

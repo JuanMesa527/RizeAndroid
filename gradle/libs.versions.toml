@@ -1,6 +1,7 @@
 [versions]
 agp = "8.9.2"
 kotlin = "2.3.0"
+vico = "2.0.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -31,6 +32,8 @@ mediapipe-tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
+vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

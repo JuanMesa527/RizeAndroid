@@ -29,29 +29,64 @@ public final class SummaryUiBinder {
 
     public static void bindSummaryContent(AppCompatActivity activity, PendingSessionData data) {
         WorkoutSession s = data.getSession();
+        boolean isCurl = WorkoutSession.TYPE_CURL.equals(s.getExerciseType());
 
-        int qualityReps = s.getTotalReps();
+        // Para curl, desglosamos en tres categorías usando formQuality:
+        //   NONE     → bien hecha   (verde)
+        //   MILD     → casi bien    (amarillo) — solo curl
+        //   MODERATE → mal hecha    (rojo)
+        // Para otros ejercicios: todas las reps completadas = "calidad".
+        int goodReps;
+        int almostReps = 0;
+        int qualityReps; // bien + casi bien (para el banner de rendimiento)
+        if (isCurl) {
+            goodReps = 0;
+            for (PendingRep r : data.getReps()) {
+                String q = r.getRep().getFormQuality();
+                if ("NONE".equals(q))      goodReps++;
+                else if ("MILD".equals(q)) almostReps++;
+            }
+            qualityReps = goodReps + almostReps;
+        } else {
+            goodReps    = s.getTotalReps();
+            qualityReps = goodReps;
+        }
+
         int attempted = data.getAttemptedRepCount();
-        if (attempted < qualityReps) {
-            attempted = qualityReps;
+        if (attempted < s.getTotalReps()) {
+            attempted = s.getTotalReps();
         }
         int badReps = Math.max(0, attempted - qualityReps);
-        int goodPct = attempted > 0 ? Math.round(qualityReps * 100f / attempted) : 100;
-        int badPct = attempted > 0 ? Math.round(badReps * 100f / attempted) : 0;
+        int goodPct   = attempted > 0 ? Math.round(goodReps   * 100f / attempted) : 100;
+        int almostPct = attempted > 0 ? Math.round(almostReps * 100f / attempted) : 0;
+        int badPct    = attempted > 0 ? Math.round(badReps    * 100f / attempted) : 0;
 
         ((TextView) activity.findViewById(R.id.tv_good_reps_pct)).setText(goodPct + "%");
         ((TextView) activity.findViewById(R.id.tv_bad_reps_pct)).setText(badPct + "%");
+
+        // Columna "Casi bien" — solo curl
+        View layoutAlmost = activity.findViewById(R.id.layout_almost_reps);
+        if (isCurl) {
+            layoutAlmost.setVisibility(View.VISIBLE);
+            ((TextView) activity.findViewById(R.id.tv_almost_reps_pct)).setText(almostPct + "%");
+        } else {
+            layoutAlmost.setVisibility(View.GONE);
+        }
+
         ((TextView) activity.findViewById(R.id.tv_attempts_summary)).setText(
                 activity.getString(R.string.summary_attempts_format, qualityReps, attempted));
+
+        // Para el banner de rendimiento usamos bien+casi bien combinados
+        int qualityPct = attempted > 0 ? Math.round(qualityReps * 100f / attempted) : 100;
 
         ImageView bannerImage = activity.findViewById(R.id.summary_banner_image);
         TextView tvTitle = activity.findViewById(R.id.tv_performance_title);
         TextView tvSubtitle = activity.findViewById(R.id.tv_performance_subtitle);
-        if (goodPct >= 75) {
+        if (qualityPct >= 75) {
             bannerImage.setImageResource(R.drawable.sigue_asi);
             tvTitle.setText(R.string.summary_performance_title_high);
             tvSubtitle.setText(R.string.summary_performance_subtitle_high);
-        } else if (goodPct >= 50) {
+        } else if (qualityPct >= 50) {
             bannerImage.setImageResource(R.drawable.por_buen_camino);
             tvTitle.setText(R.string.summary_performance_title_mid);
             tvSubtitle.setText(R.string.summary_performance_subtitle_mid);
@@ -87,10 +122,19 @@ public final class SummaryUiBinder {
             WorkoutSession s
     ) {
         String exerciseType = s.getExerciseType();
-        int qualityReps = s.getTotalReps();
+        int qualityReps;
+        if (WorkoutSession.TYPE_CURL.equals(exerciseType)) {
+            qualityReps = 0;
+            for (PendingRep r : data.getReps()) {
+                String q = r.getRep().getFormQuality();
+                if ("NONE".equals(q) || "MILD".equals(q)) qualityReps++;
+            }
+        } else {
+            qualityReps = s.getTotalReps();
+        }
         int attempted = data.getAttemptedRepCount();
-        if (attempted < qualityReps) {
-            attempted = qualityReps;
+        if (attempted < s.getTotalReps()) {
+            attempted = s.getTotalReps();
         }
         int badPct = attempted > 0 ? Math.round((attempted - qualityReps) * 100f / attempted) : 0;
 

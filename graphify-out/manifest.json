@@ -1,0 +1,266 @@
+{
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\build.gradle.kts": {
+    "mtime": 1778037120.9363058,
+    "hash": "4450c7ddb91b0373c128e0bda0ece8a3"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\gradlew": {
+    "mtime": 1778037120.938305,
+    "hash": "c6ea21dea2d500b277296894708cf792"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\settings.gradle.kts": {
+    "mtime": 1778037120.9388046,
+    "hash": "3ee3731301afad606c53b860201dbf9b"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\build.gradle.kts": {
+    "mtime": 1778348508.79485,
+    "hash": "3e0d02c5badc00a9c024bbf98e820b36"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\androidTest\\java\\com\\rize\\rizeandroid\\ExampleInstrumentedTest.java": {
+    "mtime": 1778037120.855247,
+    "hash": "aadc88804e0db3879d4910aa96e4775d"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\AboutActivity.java": {
+    "mtime": 1778037120.873264,
+    "hash": "d4b79d203347bf6fd3ea833a089383c0"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\AppPreferences.java": {
+    "mtime": 1778037120.8737626,
+    "hash": "01638018d22dd37d1128eb1fbd5fb3f1"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\CameraActivity.java": {
+    "mtime": 1778037120.8747644,
+    "hash": "84c4353bb75778b251e25715806362ff"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\CameraViewManager.java": {
+    "mtime": 1778037120.8747644,
+    "hash": "9d2c2ae6a5acf2145bd09f7546c558cc"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\ExerciseAdapter.java": {
+    "mtime": 1778037120.8752637,
+    "hash": "a497965e3d738f7cf4f003b0c75ffdcf"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\ExerciseType.java": {
+    "mtime": 1778037120.875762,
+    "hash": "49e1d9878ff38d6ebf5686c48a6991bc"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\HomepageActivity.java": {
+    "mtime": 1778037120.8762622,
+    "hash": "904dec6a89da15f7f91eeb4af5b2b939"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\SelectActivity.java": {
+    "mtime": 1778037120.8762622,
+    "hash": "1844303be2c571b8ed1de0c7357032a0"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\SessionHistoryDetailActivity.java": {
+    "mtime": 1778037120.8767617,
+    "hash": "cc33f578641920542fca99df9cf2e108"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\SkeletonOverlayView.java": {
+    "mtime": 1778037120.8772616,
+    "hash": "b1a85c86a60524ec921a9922440c4fa0"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\StatsHistoryActivity.java": {
+    "mtime": 1778037120.8772616,
+    "hash": "1df1ff8c8c6986597a5de82b11476d39"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\SummaryActivity.java": {
+    "mtime": 1778037120.8777616,
+    "hash": "d772ee50629e75d07b766652d7c7a814"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\SummaryUiBinder.java": {
+    "mtime": 1778037120.8782616,
+    "hash": "760fc793b4a45f352830bd085e813644"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\java\\com\\rize\\rizeandroid\\VideoAnalysisActivity.java": {
+    "mtime": 1778037120.8787615,
+    "hash": "01a8da78251e02af3e84d18e7999c11c"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\Algorithms.kt": {
+    "mtime": 1778037120.8802702,
+    "hash": "0fbf952f5d287a56c647ac93cd0b79cc"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\BenchPressBiomechanicsAlgorithm.kt": {
+    "mtime": 1778037120.8807695,
+    "hash": "f83fb56258dedfc5e35f2b746e1e3906"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\CameraView.kt": {
+    "mtime": 1778037120.8807695,
+    "hash": "ed83e87dd8bf2555ec9ed661229ad562"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\CurlBiomechanicsAlgorithm.kt": {
+    "mtime": 1778037120.8812685,
+    "hash": "d39967962b54e59883ed5ccbc5099be3"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\OverlayView.kt": {
+    "mtime": 1778037120.881769,
+    "hash": "3e6d779accf17f0c53101bee8e1639c7"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\PoseDataManager.kt": {
+    "mtime": 1778037120.8822687,
+    "hash": "0b7b17aabb0f22f130162f62067ee3de"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\PoseLandmarkerHelper.kt": {
+    "mtime": 1778037120.8827682,
+    "hash": "9f0fbcdef37a36be59ddb95a7bfb8aef"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\RizeApplication.kt": {
+    "mtime": 1778037120.8827682,
+    "hash": "a1fb7b7dc375f7e2f29b2b60aaaecff1"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\SquatBiomechanicsAlgorithm.kt": {
+    "mtime": 1778037120.8832686,
+    "hash": "c5d1c77a352a2d935ea086aa62b8a677"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\VelocitySmoothing.kt": {
+    "mtime": 1778037120.883768,
+    "hash": "e8af70b313240e1197bbc2368bb64ef1"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\PendingSessionData.kt": {
+    "mtime": 1778037120.8842685,
+    "hash": "1a38e570c335df94d8eb6c0e7aca7787"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\PendingSessionHolder.kt": {
+    "mtime": 1778037120.8842685,
+    "hash": "a14142de1bbe446dea104ff0c6bc153f"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\RizeDatabase.kt": {
+    "mtime": 1778037120.884768,
+    "hash": "0faf78d032e4954e0ace3167c2a57432"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\SessionAggregator.kt": {
+    "mtime": 1778037120.88527,
+    "hash": "16954c93e0befce76e17dc11e59c7f9c"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\SessionRepository.kt": {
+    "mtime": 1778037120.8857684,
+    "hash": "02100a3e0b7486b98df9f10a60771f40"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\dao\\RepDao.kt": {
+    "mtime": 1778037120.8862686,
+    "hash": "2d04fa15583aa151f44eb165fa600278"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\dao\\WorkoutSessionDao.kt": {
+    "mtime": 1778037120.886769,
+    "hash": "574e5cce1fd0dd129f723154ceb7fb7c"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\BenchSessionDetails.kt": {
+    "mtime": 1778037120.8872685,
+    "hash": "369ed9fb36bdb9afc68ff116244e8309"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\CurlSessionDetails.kt": {
+    "mtime": 1778037120.8872685,
+    "hash": "7b6d400f190586211961f984ddd05922"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\RepBenchDetails.kt": {
+    "mtime": 1778037120.8877685,
+    "hash": "4345905a670a6d76a53820c509da26a9"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\RepCurlDetails.kt": {
+    "mtime": 1778037120.8882682,
+    "hash": "4ea26442cffce7761570c00379238c66"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\RepSquatDetails.kt": {
+    "mtime": 1778037120.8882682,
+    "hash": "e9a0478230a804602056bea1b752aa97"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\SessionRep.kt": {
+    "mtime": 1778037120.8887682,
+    "hash": "e243093ffcb06f95208e1a9141904fd2"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\SquatSessionDetails.kt": {
+    "mtime": 1778037120.8887682,
+    "hash": "f3b213d7adf60468ff49ca027ef9cfce"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\data\\entity\\WorkoutSession.kt": {
+    "mtime": 1778037120.8887682,
+    "hash": "5ee05e1df9a6c395d46c161664f987c2"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\signal\\LandmarkSmoother.kt": {
+    "mtime": 1778037120.890276,
+    "hash": "aef251f6ae5a28cdc7cd62f81d45e988"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\kotlin\\com\\rize\\rizeandroid\\signal\\OneEuroFilter.kt": {
+    "mtime": 1778037120.890276,
+    "hash": "13b627206c4e32a00642836c816b9379"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\test\\java\\com\\rize\\rizeandroid\\ExampleUnitTest.java": {
+    "mtime": 1778037120.9358058,
+    "hash": "afff99af3a1c89ad1f8b9819c1d59c41"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\test\\java\\com\\rize\\rizeandroid\\SquatBiomechanicsAlgorithmTest.kt": {
+    "mtime": 1778037120.9358058,
+    "hash": "799cb09e6efe05abc9497a5d203f56a1"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\img\\A_MEJORAR.png": {
+    "mtime": 1778037120.8612561,
+    "hash": "f5be10157b7427d184d92b1d4f91987b"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\img\\POR_BUEN_CAMINO.png": {
+    "mtime": 1778037120.8667562,
+    "hash": "10ac018596efd5b3f210509b03c1d5aa"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\img\\SIGUE_ASI.png": {
+    "mtime": 1778037120.8717647,
+    "hash": "2c6e170246ecd531f46a36b774435f81"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\drawable\\a_mejorar.png": {
+    "mtime": 1778037120.8952754,
+    "hash": "f5be10157b7427d184d92b1d4f91987b"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\drawable\\ic_launcher_image.png": {
+    "mtime": 1778037120.905285,
+    "hash": "7b4f1f6ee87ebe9bc2f6d1b8e13e7ee2"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\drawable\\main_page.png": {
+    "mtime": 1778037120.9127893,
+    "hash": "76db0f1876ef9a7e569496edc8a34de1"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\drawable\\por_buen_camino.png": {
+    "mtime": 1778037120.9172902,
+    "hash": "10ac018596efd5b3f210509b03c1d5aa"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\drawable\\sigue_asi.png": {
+    "mtime": 1778037120.9217942,
+    "hash": "2c6e170246ecd531f46a36b774435f81"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher.png": {
+    "mtime": 1778037120.9277935,
+    "hash": "8a93af7288af7720189647ad39f3f03c"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher_round.webp": {
+    "mtime": 1778037120.9282947,
+    "hash": "70d6f58af3c76ee221c829b1ce9daa04"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher.png": {
+    "mtime": 1778037120.9287982,
+    "hash": "59c0df55702588075193da04b40e3817"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher_round.webp": {
+    "mtime": 1778037120.9287982,
+    "hash": "6376acb48f96a855ee95c113cd7fd616"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xhdpi\\ic_launcher.png": {
+    "mtime": 1778037120.9287982,
+    "hash": "9cc8c2c069f2a41a0c54ab3ae09693ec"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xhdpi\\ic_launcher_round.webp": {
+    "mtime": 1778037120.9303057,
+    "hash": "7479edd56ab712609f030054bffd7263"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xxhdpi\\ic_launcher.png": {
+    "mtime": 1778037120.930806,
+    "hash": "b6d1e6a0df615c8246e6a3bc008d5966"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xxhdpi\\ic_launcher_round.webp": {
+    "mtime": 1778037120.930806,
+    "hash": "947842742b29eeda80ee0805e1600366"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher.png": {
+    "mtime": 1778037120.931806,
+    "hash": "7b4f1f6ee87ebe9bc2f6d1b8e13e7ee2"
+  },
+  "C:\\Users\\User\\Documents\\GitHub\\RizeAndroid\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher_round.webp": {
+    "mtime": 1778037120.932306,
+    "hash": "9ee591be72fb336861a8044086054daa"
+  }
+}

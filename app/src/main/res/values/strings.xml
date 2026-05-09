@@ -152,7 +152,8 @@
     <string name="camera_curl_flex_unit">intentos</string>
     <string name="camera_curl_status_ready">Levanta el peso para iniciar el análisis.</string>
     <string name="camera_curl_no_pose">Sin pose detectada. Colócate de perfil con el brazo visible.</string>
-    <string name="camera_curl_status_ok">Curl técnicamente estable.</string>
+    <string name="camera_curl_status_ok">Técnica estable</string>
+    <string name="camera_curl_status_ok_with_rep">Rep %1$d · Técnica estable</string>
     <string name="camera_curl_calibrando">Calibrando referencias… rep %1$d/3</string>
     <!-- Alertas reescritas para apuntar al panel afectado -->
     <string name="camera_curl_alert_shoulder">Ángulo: codo separado %1$.0f° del torso, pégalo al costado.</string>
@@ -208,6 +209,7 @@
     <string name="summary_rep_count">Repeticiones bien hechas</string>
     <string name="summary_quality_title">Calidad de Ejecución</string>
     <string name="summary_good_reps_label">BIEN HECHAS</string>
+    <string name="summary_almost_reps_label">CASI BIEN</string>
     <string name="summary_bad_reps_label">MAL HECHAS</string>
     <string name="summary_attempts_format">%1$d de %2$d intentos contabilizados</string>
     <string name="summary_avg_velocity">Velocidad Promedio bien hechas</string>
