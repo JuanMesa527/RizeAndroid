@@ -120,9 +120,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var restVarianceBuffer = ArrayDeque<Double>(VARIANCE_WINDOW)
 
 
-    private var inAttemptFlexion    = false
-    private var attemptReadyForNext = true
-    private var attemptCount        = 0
+    private var inAttemptFlexion       = false
+    private var attemptReadyForNext    = true
+    private var attemptCount           = 0
+    private var partialRepCount        = 0
+    private var repCountedDuringAttempt = false
 
 
     private enum class ArmSide { NONE, LEFT, RIGHT }
@@ -260,6 +262,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             alert               = alert,
             repCount            = repPeakAngles.size,
             attemptedRepCount   = attemptCount,
+            partialRepCount     = partialRepCount,
             algorithmName       = "CurlBiomechanics",
 
             currentRepPeakFlexionDeg     = livePeak,
@@ -289,9 +292,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentValley      = Double.NEGATIVE_INFINITY
         currentRepMaxOmega = 0.0
         hasSeenExtension   = false
-        inAttemptFlexion    = false
-        attemptReadyForNext = true
-        attemptCount        = 0
+        inAttemptFlexion           = false
+        attemptReadyForNext        = true
+        attemptCount               = 0
+        partialRepCount            = 0
+        repCountedDuringAttempt    = false
         thetaRefPeak       = null
         thetaRefValley     = null
         deltaSigma         = null
@@ -347,14 +352,16 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         if (!inAttemptFlexion) {
             if (angleDeg >= ATTEMPT_RESET_THRESHOLD) attemptReadyForNext = true
             if (attemptReadyForNext && angleDeg < ATTEMPT_FLEXION_THRESHOLD) {
-                inAttemptFlexion    = true
-                attemptReadyForNext = false
+                inAttemptFlexion           = true
+                attemptReadyForNext        = false
+                repCountedDuringAttempt    = false
             }
         } else {
             if (angleDeg > ATTEMPT_EXTENSION_THRESHOLD) {
                 attemptCount++
-                inAttemptFlexion = false
-
+                if (!repCountedDuringAttempt) partialRepCount++
+                repCountedDuringAttempt = false
+                inAttemptFlexion        = false
             }
         }
 
@@ -372,6 +379,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             if (angleDeg < currentPeak) currentPeak = angleDeg
             if (angleDeg > EXTENSION_VALLEY_THRESHOLD) {
 
+                repCountedDuringAttempt = true
                 repPeakAngles.add(currentPeak)
                 // For continuous reps, currentValley resets to EXTENSION_VALLEY_THRESHOLD
                 // after each rep. If user doesn't fully extend, valley gets truncated.

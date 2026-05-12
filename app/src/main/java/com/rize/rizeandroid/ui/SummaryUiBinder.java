@@ -113,7 +113,7 @@ public final class SummaryUiBinder {
                 : "—");
 
         populateCorrections(activity, data, s);
-        populateRisk(activity, s);
+        populateRisk(activity, data);
     }
 
     private static void populateCorrections(
@@ -169,28 +169,34 @@ public final class SummaryUiBinder {
             }
 
         } else if (WorkoutSession.TYPE_CURL.equals(exerciseType)) {
-            if (badPct > 30) {
-                corrections.add(activity.getString(R.string.summary_corr_curl_quality, badPct));
+            // Reps parciales = intentos sin rep completa
+            int partialReps = Math.max(0, attempted - s.getTotalReps());
+            if (partialReps > 0 && corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_curl_partial, partialReps));
             }
             CurlSessionDetails curl = data.getCurlDetails();
             if (curl != null) {
                 Double shoulderComp = curl.getMaxShoulderCompensationDeg();
-                if (shoulderComp != null && shoulderComp > 15.0 && corrections.size() < 2) {
-                    corrections.add(activity.getString(R.string.summary_corr_curl_shoulder));
+                if (shoulderComp != null && shoulderComp > 12.0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_curl_shoulder,
+                            shoulderComp));
                 }
                 Double avgRom = curl.getAvgRomDeg();
-                if (avgRom != null && avgRom < 110.0 && corrections.size() < 2) {
-                    corrections.add(activity.getString(R.string.summary_corr_curl_rom, (int) avgRom.doubleValue()));
+                if (avgRom != null && avgRom < 90.0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_curl_rom,
+                            (int) avgRom.doubleValue()));
                 }
+            }
+            if (badPct > 25 && corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_curl_quality, badPct));
             }
             if (corrections.isEmpty()) {
                 corrections.add(activity.getString(R.string.summary_corr_curl_ok));
             }
             if (corrections.size() < 2) {
-                // Si ya se dió feedback de hombro o ROM, el tip extra es respiración.
-                // Si la sesión fue limpia, reforzamos la excéntrica (más impacto en hipertrofia).
-                boolean hasFormIssue = corrections.stream().anyMatch(c ->
-                        c.contains("hombro") || c.contains("Rango"));
+                boolean hasFormIssue = !corrections.isEmpty() &&
+                        (corrections.get(0).contains("ombro") || corrections.get(0).contains("ecorrido")
+                                || corrections.get(0).contains("ncompletas"));
                 corrections.add(hasFormIssue
                         ? activity.getString(R.string.summary_corr_curl_breathing)
                         : activity.getString(R.string.summary_corr_curl_eccentric));
@@ -229,18 +235,52 @@ public final class SummaryUiBinder {
                 corrections.size() > 1 ? corrections.get(1) : activity.getString(R.string.summary_corr_nodata));
     }
 
-    private static void populateRisk(AppCompatActivity activity, WorkoutSession s) {
+    private static void populateRisk(AppCompatActivity activity, PendingSessionData data) {
+        WorkoutSession s = data.getSession();
         View sectionRisk = activity.findViewById(R.id.section_risk);
         String level = s.getTechnicalErrorLevel();
-        if ("MODERATE".equals(level) || "SEVERE".equals(level)) {
-            sectionRisk.setVisibility(View.VISIBLE);
-            boolean severe = "SEVERE".equals(level);
-            ((TextView) activity.findViewById(R.id.tv_risk_title)).setText(
-                    severe ? R.string.summary_risk_severe_title : R.string.summary_risk_moderate_title);
-            ((TextView) activity.findViewById(R.id.tv_risk_desc)).setText(
-                    severe ? R.string.summary_risk_severe_desc : R.string.summary_risk_moderate_desc);
-        } else {
+        if (!"MODERATE".equals(level) && !"SEVERE".equals(level)) {
             sectionRisk.setVisibility(View.GONE);
+            return;
         }
+        sectionRisk.setVisibility(View.VISIBLE);
+        boolean severe = "SEVERE".equals(level);
+        ((TextView) activity.findViewById(R.id.tv_risk_title)).setText(
+                severe ? R.string.summary_risk_severe_title : R.string.summary_risk_moderate_title);
+
+        StringBuilder desc = new StringBuilder();
+        if (WorkoutSession.TYPE_CURL.equals(s.getExerciseType())) {
+            CurlSessionDetails curl = data.getCurlDetails();
+            if (curl != null) {
+                Double shoulder = curl.getMaxShoulderCompensationDeg();
+                if (shoulder != null && shoulder > 12.0) {
+                    desc.append(String.format(Locale.getDefault(),
+                            "• Compensación de hombro máxima: %.0f° (límite: 12°)\n", shoulder));
+                }
+                Double avgRom = curl.getAvgRomDeg();
+                if (avgRom != null && avgRom < 85.0) {
+                    desc.append(String.format(Locale.getDefault(),
+                            "• Recorrido promedio: %.0f° (objetivo ≥ 85°)\n", avgRom));
+                }
+            }
+            Double vl = s.getVelocityLossPercent();
+            if (vl != null && vl >= 40.0) {
+                desc.append(String.format(Locale.getDefault(),
+                        "• Pérdida de velocidad: %.0f%% — fatiga muscular alta\n", vl));
+            }
+            int partialReps = Math.max(0,
+                    data.getAttemptedRepCount() - s.getTotalReps());
+            if (partialReps > 0) {
+                desc.append(String.format(Locale.getDefault(),
+                        "• %d rep(s) con recorrido incompleto\n", partialReps));
+            }
+        }
+
+        if (desc.length() == 0) {
+            desc.append(severe
+                    ? activity.getString(R.string.summary_risk_severe_desc)
+                    : activity.getString(R.string.summary_risk_moderate_desc));
+        }
+        ((TextView) activity.findViewById(R.id.tv_risk_desc)).setText(desc.toString().trim());
     }
 }

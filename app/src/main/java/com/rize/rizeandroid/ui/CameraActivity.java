@@ -148,7 +148,8 @@ public class CameraActivity extends AppCompatActivity {
     private int curlShoulderClearFrames = 0; // histeresis del hombro — clear
     private boolean curlShoulderAlertActive = false; // estado mostrado en UI
     // Aviso por rep: se muestra al cerrar cada rep y dura REP_FEEDBACK_MS ms
-    private int lastFeedbackRepCount = 0;
+    private int lastFeedbackRepCount     = 0;
+    private int lastFeedbackPartialCount = 0;
     private static final long REP_FEEDBACK_MS = 2_500; // 2.5 s en pantalla
     private boolean repFeedbackActive = false;
     // Histéresis del color del ángulo (evita parpadeos por jitter del hombro)
@@ -428,6 +429,7 @@ public class CameraActivity extends AppCompatActivity {
             curlOverlayShowUntilMs      = 0;
             curlOverlayDismissedUntilMs = 0;
             lastFeedbackRepCount        = 0;
+            lastFeedbackPartialCount    = 0;
             repFeedbackActive           = false;
             curlAngleColorState         = 0;
             curlAngleColorFrames        = 0;
@@ -700,8 +702,12 @@ public class CameraActivity extends AppCompatActivity {
         // justo en el frame de cierre de rep.
         int currentRepCount = result.getRepCount();
         if (currentRepCount > lastFeedbackRepCount && currentRepCount > 0) {
-            lastFeedbackRepCount = currentRepCount;
+            lastFeedbackRepCount     = currentRepCount;
+            lastFeedbackPartialCount = result.getPartialRepCount(); // sync so partial branch doesn't double-fire
             showRepFeedback(result, result.getLastRepRomDeg(), result.getLastRepShoulderCompensationDeg());
+        } else if (result.getPartialRepCount() > lastFeedbackPartialCount) {
+            lastFeedbackPartialCount = result.getPartialRepCount();
+            showPartialRepFeedback();
         }
 
         // ── Panel 5: banner de estado del curl ───────────────────────────────
@@ -818,6 +824,16 @@ public class CameraActivity extends AppCompatActivity {
         repFeedbackActive = true;
         showCurlLiveOverlay(icon, title, message, true);
 
+        alertHandler.postDelayed(() -> {
+            repFeedbackActive = false;
+            hideCurlLiveOverlay();
+        }, REP_FEEDBACK_MS);
+    }
+
+    private void showPartialRepFeedback() {
+        repFeedbackActive = true;
+        showCurlLiveOverlay("❌", "Mal hecha",
+                "Recorrido muy corto\nSube el brazo hasta el pecho", true);
         alertHandler.postDelayed(() -> {
             repFeedbackActive = false;
             hideCurlLiveOverlay();

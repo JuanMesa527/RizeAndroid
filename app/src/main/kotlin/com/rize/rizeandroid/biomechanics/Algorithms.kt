@@ -180,7 +180,9 @@ data class AlgorithmResult(
     val lastRepGripTooWide: Boolean                = false,
     val lastRepBilateralAsymmetry: Boolean         = false,
     val lastRepDepthInsufficientBench: Boolean     = false,
-    val lastRepExtensionIncomplete: Boolean        = false
+    val lastRepExtensionIncomplete: Boolean        = false,
+
+    val partialRepCount: Int                       = 0
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }

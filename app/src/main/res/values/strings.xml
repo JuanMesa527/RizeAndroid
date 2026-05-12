@@ -224,12 +224,13 @@
     <string name="summary_corr_squat_ok">Técnica sólida. Para progresar, aumenta el número de series o añade una repetición por serie en la próxima sesión.</string>
     <string name="summary_corr_squat_knees">Vigila que las rodillas sigan la dirección de los pies al bajar: evita que colapsen hacia adentro (valgus).</string>
     <!-- Correcciones curl -->
-    <string name="summary_corr_curl_quality">%1$d%% de intentos con forma deficiente. Reduce el peso y prioriza el recorrido completo antes de aumentar carga.</string>
-    <string name="summary_corr_curl_shoulder">Compensación de hombro detectada. Mantén el codo pegado al costado y el hombro quieto durante todo el movimiento.</string>
-    <string name="summary_corr_curl_rom">Rango de movimiento promedio bajo (%1$d°). Extiende completamente el brazo al bajar y sube la mano hasta la altura del hombro.</string>
+    <string name="summary_corr_curl_quality">%1$d%% de reps con forma deficiente. Reduce el peso y prioriza el recorrido completo antes de aumentar carga.</string>
+    <string name="summary_corr_curl_shoulder">Hombro hacia adelante detectado (máx %1$.0f°). Pega el codo al costado y mantén el hombro quieto: el movimiento debe salir solo del antebrazo.</string>
+    <string name="summary_corr_curl_rom">Recorrido promedio bajo (%1$d°, objetivo ≥85°). Extiende el brazo completamente al bajar y sube la mano hasta la altura del hombro.</string>
+    <string name="summary_corr_curl_partial">%1$d reps incompletas detectadas. Sube el brazo hasta el pecho y baja completamente en cada rep antes de iniciar la siguiente.</string>
     <string name="summary_corr_curl_eccentric">Controla la fase excéntrica: baja el peso en 2–3 segundos. Más tensión en el descenso = más estímulo de hipertrofia.</string>
     <string name="summary_corr_curl_ok">Técnica correcta. Para mayor activación, aprieta el bíceps en el punto más alto y mantén la tensión 1 segundo antes de bajar.</string>
-    <string name="summary_corr_curl_breathing">Recuerda respirar: exhala al subir (fase concentrica) e inhala al bajar. Aguantar la respiración aumenta la presión arterial innecesariamente.</string>
+    <string name="summary_corr_curl_breathing">Recuerda respirar: exhala al subir (fase concéntrica) e inhala al bajar. Aguantar la respiración aumenta la presión arterial innecesariamente.</string>
     <!-- Correcciones bench -->
     <string name="summary_corr_bench_depth">%1$d rep(s) sin profundidad. Baja la barra hasta rozar el pecho (codo ≤85°) para un estímulo completo del pectoral.</string>
     <string name="summary_corr_bench_asymmetry">Asimetría bilateral en %1$d rep(s). Trabaja press con mancuernas para corregir desequilibrios de fuerza lado a lado.</string>
