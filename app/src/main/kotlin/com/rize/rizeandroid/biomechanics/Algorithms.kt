@@ -182,7 +182,15 @@ data class AlgorithmResult(
     val lastRepDepthInsufficientBench: Boolean     = false,
     val lastRepExtensionIncomplete: Boolean        = false,
 
-    val partialRepCount: Int                       = 0
+    val partialRepCount: Int                       = 0,
+
+    // Bench press calibration metadata. calibrationCommitted = true significa
+    // que el algoritmo capturo el perfil del entorno y aplica umbrales
+    // ajustados al banco / camara actuales. calibrationDebug solo se llena si
+    // BenchPressDebugSwitches.emitDebugMap esta activo (para no asignar mapa
+    // en cada frame en produccion).
+    val calibrationCommitted: Boolean              = false,
+    val calibrationDebug: Map<String, Double>?     = null
 )
 
 enum class ErrorLevel { NONE, MILD, MODERATE, SEVERE }
