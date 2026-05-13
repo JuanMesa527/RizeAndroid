@@ -45,32 +45,45 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         private const val REST_SAMPLES              = 15
 
 
-        // Umbrales de conteo de reps — calibrados según ROM normativo del codo
-        // (Morrey 1981: extensión funcional 30°-130°; Pinto 2012: full ROM ≥110°).
-        // Se usa 95° de pico de flexión (sube el umbral desde 80°) para contar
-        // reps con rango funcional bueno aunque no lleguen al extremo anatómico.
-        // Se usa 125° de extensión (baja desde 140°) para no exigir extensión
-        // completa de codo — movimiento funcional normal según Morrey 1981.
-        private const val FLEXION_PEAK_THRESHOLD     = 95.0
-        private const val EXTENSION_VALLEY_THRESHOLD = 125.0
+        // Umbrales de conteo de reps.
+        // FLEXION_PEAK_THRESHOLD: el brazo debe bajar POR DEBAJO de este ángulo
+        // para iniciar la fase de flexión (90° ≈ ángulo recto — curl normal).
+        // EXTENSION_VALLEY_THRESHOLD: el brazo debe subir POR ENCIMA de este ángulo
+        // para que la rep se cuente. 105° permite reps continuas sin extensión
+        // completa; el gap de 15° (90→105) evita oscilaciones por ruido (<450°/s).
+        // Nota: FLEXION_PEAK debe ser < EXTENSION_VALLEY para estabilidad.
+        private const val FLEXION_PEAK_THRESHOLD     = 85.0
+        private const val EXTENSION_VALLEY_THRESHOLD = 100.0
 
 
-        // Umbrales de intento (attemptedRepCount) — umbral más bajo para
-        // detectar cualquier intento de flexión aunque no complete la rep.
-        private const val ATTEMPT_FLEXION_THRESHOLD   = 120.0
-        private const val ATTEMPT_EXTENSION_THRESHOLD = 125.0
+        // Umbrales de intento (attemptedRepCount) — detecta cualquier intento
+        // de flexión aunque no complete la rep. ATTEMPT_RESET_THRESHOLD rebaja
+        // a 110° para que reps continuas (extensión parcial ~110°) re-armen el
+        // contador en lugar de bloquearse después del primer intento.
+        private const val ATTEMPT_FLEXION_THRESHOLD   = 100.0
+        private const val ATTEMPT_EXTENSION_THRESHOLD = 105.0
 
-        private const val ATTEMPT_RESET_THRESHOLD     = 140.0
+        private const val ATTEMPT_RESET_THRESHOLD     = 110.0
+
+        // Si se pierde el tracking del brazo bloqueado más de este tiempo mientras
+        // inFlexion=true, se resetea la fase para evitar que el rep-counter quede
+        // atascado (1 segundo = 30 frames a 30 Hz).
+        private const val TRACKING_RESET_FRAMES = 30
 
         // Umbral de visibilidad MediaPipe: 0.65 rechaza landmarks inferidos/predichos
         // (que suelen rondar 0.5-0.6) y solo acepta landmarks con detección real.
         // Cada punto del brazo (hombro, codo, muñeca) debe superar este umbral
         // individualmente — el promedio no basta porque un solo punto predicho
         // puede contaminar el ángulo calculado.
-        private const val MIN_VISIBILITY = 0.65f
+        private const val MIN_VISIBILITY = 0.55f
 
-        // Número de frames para consolidar la decisión de brazo activo (~0.33 s @ 30 Hz)
-        private const val SIDE_LOCK_FRAMES = 10
+        // Selección de brazo por RANGO (max - min) del ángulo de codo.
+        // El rango es inmune al jitter de MediaPipe: un brazo en reposo tiene
+        // rango ~4-6° (ruido de profundidad); el brazo ejercitado supera 30° en
+        // la primera media-rep. SIDE_LOCK_MAX_FRAMES es el timeout de seguridad.
+        private const val MOTION_LOCK_DEG      = 30.0
+        private const val MOTION_MIN_FRAMES    = 5
+        private const val SIDE_LOCK_MAX_FRAMES = 60
     }
 
 
@@ -107,9 +120,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private var restVarianceBuffer = ArrayDeque<Double>(VARIANCE_WINDOW)
 
 
-    private var inAttemptFlexion    = false
-    private var attemptReadyForNext = true
-    private var attemptCount        = 0
+    private var inAttemptFlexion       = false
+    private var attemptReadyForNext    = true
+    private var attemptCount           = 0
+    private var partialRepCount        = 0
+    private var repCountedDuringAttempt = false
 
 
     private enum class ArmSide { NONE, LEFT, RIGHT }
@@ -118,12 +133,15 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     // evitar que el brazo inactivo (que puede cruzar la imagen o tener más
     // visibilidad puntual) "robe" el análisis. Solo se resetea en reset().
     private var sideDecisionMade: Boolean = false
-    // Acumulador de visibilidad por lado para tomar decisión robusta en los
-    // primeros SIDE_LOCK_FRAMES frames (no basarse en un único frame ruidoso).
-    private var visAccumR: Double = 0.0
-    private var visAccumL: Double = 0.0
+    // Rango angular (max - min) por brazo para la selección robusta al ruido.
+    private var minAngleR: Double = Double.MAX_VALUE
+    private var maxAngleR: Double = -Double.MAX_VALUE
+    private var minAngleL: Double = Double.MAX_VALUE
+    private var maxAngleL: Double = -Double.MAX_VALUE
     private var sideFrameCount: Int = 0
 
+
+    private var noDataFrames = 0
 
     private var lastSeenRepCount = 0
     private var snapLastRepConcVelDegS: Double? = null
@@ -135,7 +153,18 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     override fun process(landmarkFlatList: List<Double>): AlgorithmResult {
         if (landmarkFlatList.size < 132) return emptyResult()
 
-        val sample = selectArm(landmarkFlatList) ?: return emptyResult()
+        val sample = selectArm(landmarkFlatList) ?: run {
+            noDataFrames++
+            // Si inFlexion se atasca 1 s sin datos, resetear para no bloquear el
+            // contador en el siguiente ciclo (tracking perdido en brazo izquierdo).
+            if (inFlexion && noDataFrames >= TRACKING_RESET_FRAMES) {
+                inFlexion          = false
+                currentPeak        = Double.POSITIVE_INFINITY
+                currentRepMaxOmega = 0.0
+            }
+            return emptyResult()
+        }
+        noDataFrames = 0
 
 
         val angleDeg = computeElbowAngle(sample.shoulder, sample.elbow, sample.wrist)
@@ -233,6 +262,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             alert               = alert,
             repCount            = repPeakAngles.size,
             attemptedRepCount   = attemptCount,
+            partialRepCount     = partialRepCount,
             algorithmName       = "CurlBiomechanics",
 
             currentRepPeakFlexionDeg     = livePeak,
@@ -262,9 +292,11 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentValley      = Double.NEGATIVE_INFINITY
         currentRepMaxOmega = 0.0
         hasSeenExtension   = false
-        inAttemptFlexion    = false
-        attemptReadyForNext = true
-        attemptCount        = 0
+        inAttemptFlexion           = false
+        attemptReadyForNext        = true
+        attemptCount               = 0
+        partialRepCount            = 0
+        repCountedDuringAttempt    = false
         thetaRefPeak       = null
         thetaRefValley     = null
         deltaSigma         = null
@@ -273,14 +305,17 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         thetaShoulderRest  = null
         shoulderRestBuffer.clear()
         restVarianceBuffer.clear()
+        noDataFrames       = 0
         lastSeenRepCount   = 0
         snapLastRepConcVelDegS = null
         snapLastRepShoulderCompDeg = null
         snapLastRepFormQuality = null
         lockedSide = ArmSide.NONE
         sideDecisionMade = false
-        visAccumR = 0.0
-        visAccumL = 0.0
+        minAngleR = Double.MAX_VALUE
+        maxAngleR = -Double.MAX_VALUE
+        minAngleL = Double.MAX_VALUE
+        maxAngleL = -Double.MAX_VALUE
         sideFrameCount = 0
     }
 
@@ -317,14 +352,16 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         if (!inAttemptFlexion) {
             if (angleDeg >= ATTEMPT_RESET_THRESHOLD) attemptReadyForNext = true
             if (attemptReadyForNext && angleDeg < ATTEMPT_FLEXION_THRESHOLD) {
-                inAttemptFlexion    = true
-                attemptReadyForNext = false
+                inAttemptFlexion           = true
+                attemptReadyForNext        = false
+                repCountedDuringAttempt    = false
             }
         } else {
             if (angleDeg > ATTEMPT_EXTENSION_THRESHOLD) {
                 attemptCount++
-                inAttemptFlexion = false
-
+                if (!repCountedDuringAttempt) partialRepCount++
+                repCountedDuringAttempt = false
+                inAttemptFlexion        = false
             }
         }
 
@@ -342,14 +379,20 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             if (angleDeg < currentPeak) currentPeak = angleDeg
             if (angleDeg > EXTENSION_VALLEY_THRESHOLD) {
 
+                repCountedDuringAttempt = true
                 repPeakAngles.add(currentPeak)
-                if (currentValley.isFinite()) repValleyAngles.add(currentValley)
+                // For continuous reps, currentValley resets to EXTENSION_VALLEY_THRESHOLD
+                // after each rep. If user doesn't fully extend, valley gets truncated.
+                // Use thetaRefValley (best extension seen in calibration) as floor.
+                val valleyToRecord = if (thetaRefValley != null && currentValley < thetaRefValley!!)
+                    thetaRefValley!! else currentValley
+                if (valleyToRecord.isFinite()) repValleyAngles.add(valleyToRecord)
                 repPeakOmegas.add(currentRepMaxOmega)
 
 
                 if (repPeakAngles.size >= MIN_REPS_FOR_REF && thetaRefPeak == null) {
                     thetaRefPeak   = repPeakAngles.average()
-                    thetaRefValley = repValleyAngles.average().takeIf { it.isFinite() }
+                    thetaRefValley = repValleyAngles.maxOrNull()?.takeIf { it.isFinite() }
                     deltaSigma     = stddev(repPeakAngles).coerceAtLeast(
                         DELTA_MIN_DEG / DELTA_SIGMA_MILD)
                     omegaPeakRef   = repPeakOmegas.sorted()[repPeakOmegas.size / 2]
@@ -489,9 +532,7 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val rightOk = listOf(sR, eR, wR).all { it.visibility >= MIN_VISIBILITY }
         val leftOk  = listOf(sL, eL, wL).all { it.visibility >= MIN_VISIBILITY }
 
-        // Si ya se tomó la decisión de lado, usarla SIEMPRE (bloqueo permanente).
-        // Solo se cae a null si el lado bloqueado pierde visibilidad completamente
-        // para no congelar la UI con datos basura.
+        // Bloqueo permanente: una vez decidido, usar siempre el mismo brazo.
         if (sideDecisionMade) {
             return when (lockedSide) {
                 ArmSide.RIGHT -> if (rightOk) ArmSample(sR.vec, eR.vec, wR.vec) else null
@@ -500,48 +541,45 @@ class CurlBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             }
         }
 
-        // Fase de acumulación: esperar SIDE_LOCK_FRAMES frames con al menos
-        // un lado visible para tomar una decisión robusta.
-        // Solo acumulamos visibilidad del lado que pasa el umbral completo
-        // (todos sus landmarks > MIN_VISIBILITY). Esto evita que landmarks
-        // predichos por MediaPipe (~0.5-0.6) acumulen peso en la decisión.
-        val visR = listOf(sR, eR, wR).map { it.visibility.toDouble() }.average()
-        val visL = listOf(sL, eL, wL).map { it.visibility.toDouble() }.average()
-
-        // Si solo un lado supera el umbral, bloquear inmediatamente sin esperar
-        // SIDE_LOCK_FRAMES — el brazo activo está claro y no hay ambigüedad.
+        // Un solo brazo visible → bloquear de inmediato, sin ambigüedad.
         if (rightOk && !leftOk) {
-            lockedSide = ArmSide.RIGHT
-            sideDecisionMade = true
+            lockedSide = ArmSide.RIGHT; sideDecisionMade = true
             return ArmSample(sR.vec, eR.vec, wR.vec)
         }
         if (leftOk && !rightOk) {
-            lockedSide = ArmSide.LEFT
-            sideDecisionMade = true
+            lockedSide = ArmSide.LEFT; sideDecisionMade = true
             return ArmSample(sL.vec, eL.vec, wL.vec)
         }
+        if (!rightOk && !leftOk) return null
 
-        // Ambos lados visibles: acumular y decidir tras SIDE_LOCK_FRAMES
-        if (rightOk || leftOk) {
-            if (rightOk) visAccumR += visR
-            if (leftOk)  visAccumL += visL
-            sideFrameCount++
-        }
+        // Ambos visibles: trackear rango (max-min) del ángulo de codo por brazo.
+        // Rango es inmune al jitter de profundidad de MediaPipe: brazo en reposo
+        // tiene rango ~4-6°; brazo ejercitado supera 30° en la primera media-rep.
+        val angleR = computeElbowAngle(sR.vec, eR.vec, wR.vec)
+        val angleL = computeElbowAngle(sL.vec, eL.vec, wL.vec)
+        if (angleR < minAngleR) minAngleR = angleR
+        if (angleR > maxAngleR) maxAngleR = angleR
+        if (angleL < minAngleL) minAngleL = angleL
+        if (angleL > maxAngleL) maxAngleL = angleL
+        sideFrameCount++
 
-        if (sideFrameCount >= SIDE_LOCK_FRAMES) {
-            // Decisión final basada en visibilidad acumulada de los primeros frames
-            lockedSide = if (visAccumR >= visAccumL) ArmSide.RIGHT else ArmSide.LEFT
+        val rangeR = maxAngleR - minAngleR
+        val rangeL = maxAngleL - minAngleL
+        val rMoves = rangeR >= MOTION_LOCK_DEG
+        val lMoves = rangeL >= MOTION_LOCK_DEG
+        if (sideFrameCount >= MOTION_MIN_FRAMES && (rMoves || lMoves || sideFrameCount >= SIDE_LOCK_MAX_FRAMES)) {
+            lockedSide = if (rangeR >= rangeL) ArmSide.RIGHT else ArmSide.LEFT
             sideDecisionMade = true
             return when (lockedSide) {
-                ArmSide.RIGHT -> if (rightOk) ArmSample(sR.vec, eR.vec, wR.vec) else null
-                ArmSide.LEFT  -> if (leftOk)  ArmSample(sL.vec, eL.vec, wL.vec) else null
+                ArmSide.RIGHT -> ArmSample(sR.vec, eR.vec, wR.vec)
+                ArmSide.LEFT  -> ArmSample(sL.vec, eL.vec, wL.vec)
                 ArmSide.NONE  -> null
             }
         }
 
-        // Mientras acumulamos (ambos lados visibles), devolver el mejor lado este frame
-        return if (visR >= visL) ArmSample(sR.vec, eR.vec, wR.vec)
-               else              ArmSample(sL.vec, eL.vec, wL.vec)
+        // Todavía acumulando: devolver el brazo con mayor rango hasta ahora.
+        return if (rangeR >= rangeL) ArmSample(sR.vec, eR.vec, wR.vec)
+               else                  ArmSample(sL.vec, eL.vec, wL.vec)
     }
 
     private data class ArmSample(

@@ -182,6 +182,8 @@ data class AlgorithmResult(
     val lastRepDepthInsufficientBench: Boolean     = false,
     val lastRepExtensionIncomplete: Boolean        = false,
 
+    val partialRepCount: Int                       = 0,
+
     // Bench press calibration metadata. calibrationCommitted = true significa
     // que el algoritmo capturo el perfil del entorno y aplica umbrales
     // ajustados al banco / camara actuales. calibrationDebug solo se llena si

@@ -148,7 +148,8 @@ public class CameraActivity extends AppCompatActivity {
     private int curlShoulderClearFrames = 0; // histeresis del hombro — clear
     private boolean curlShoulderAlertActive = false; // estado mostrado en UI
     // Aviso por rep: se muestra al cerrar cada rep y dura REP_FEEDBACK_MS ms
-    private int lastFeedbackRepCount = 0;
+    private int lastFeedbackRepCount     = 0;
+    private int lastFeedbackPartialCount = 0;
     private static final long REP_FEEDBACK_MS = 2_500; // 2.5 s en pantalla
     private boolean repFeedbackActive = false;
     // Histéresis del color del ángulo (evita parpadeos por jitter del hombro)
@@ -432,6 +433,7 @@ public class CameraActivity extends AppCompatActivity {
             curlOverlayShowUntilMs      = 0;
             curlOverlayDismissedUntilMs = 0;
             lastFeedbackRepCount        = 0;
+            lastFeedbackPartialCount    = 0;
             repFeedbackActive           = false;
             curlAngleColorState         = 0;
             curlAngleColorFrames        = 0;
@@ -569,10 +571,10 @@ public class CameraActivity extends AppCompatActivity {
 
             // Calcular estado de color objetivo para este frame
             int targetColorState; // 0=verde, 1=amarillo, 2=rojo
-            if (shoulderShift == null || shoulderShift < 10.0) {
+            if (shoulderShift == null || shoulderShift < 12.0) {
                 targetColorState = 0; // verde — sin compensacion
-            } else if (shoulderShift < 18.0) {
-                targetColorState = 1; // amarillo — zona de aviso (ampliado de 8° a 10°)
+            } else if (shoulderShift < 17.0) {
+                targetColorState = 1; // amarillo — zona de aviso
             } else {
                 targetColorState = 2; // rojo — compensacion confirmada
             }
@@ -627,7 +629,7 @@ public class CameraActivity extends AppCompatActivity {
         // Antes de eso, mantener 100% para no asustar al usuario con 50% desde el inicio.
         double penaltyShoulder = 0.0;
         if (shoulderShift != null) {
-            penaltyShoulder = Math.min(100.0, (shoulderShift / 18.0) * 50.0);
+            penaltyShoulder = Math.min(100.0, (shoulderShift / 17.0) * 50.0);
         }
 
         // Penalizacion por fatiga (Sanchez-Medina 2011) — VL40% → 40 puntos.
@@ -676,7 +678,7 @@ public class CameraActivity extends AppCompatActivity {
             Double vl = result.getVelocityLossPercent();
             if (vl != null && vl >= 40.0 && result.getRepCount() >= 3) {
                 velColor = ContextCompat.getColor(this, R.color.risk_red);
-            } else if (vl != null && vl >= 20.0 && result.getRepCount() >= 3) {
+            } else if (vl != null && vl >= 30.0 && result.getRepCount() >= 3) {
                 velColor = ContextCompat.getColor(this, R.color.toasted_almond);
             } else {
                 velColor = ContextCompat.getColor(this, R.color.improvement_green);
@@ -704,8 +706,12 @@ public class CameraActivity extends AppCompatActivity {
         // justo en el frame de cierre de rep.
         int currentRepCount = result.getRepCount();
         if (currentRepCount > lastFeedbackRepCount && currentRepCount > 0) {
-            lastFeedbackRepCount = currentRepCount;
+            lastFeedbackRepCount     = currentRepCount;
+            lastFeedbackPartialCount = result.getPartialRepCount(); // sync so partial branch doesn't double-fire
             showRepFeedback(result, result.getLastRepRomDeg(), result.getLastRepShoulderCompensationDeg());
+        } else if (result.getPartialRepCount() > lastFeedbackPartialCount) {
+            lastFeedbackPartialCount = result.getPartialRepCount();
+            showPartialRepFeedback();
         }
 
         // ── Panel 5: banner de estado del curl ───────────────────────────────
@@ -728,12 +734,9 @@ public class CameraActivity extends AppCompatActivity {
             boolean wristTooHigh = wristAbove != null && wristAbove > 0.0;
             curlWristHighFrames = wristTooHigh ? curlWristHighFrames + 1 : 0;
 
-            boolean armNearlyFlat = curAngle > 155.0
-                    && result.getAttemptedRepCount() > 0
-                    && livePeak == null;
-            curlHighAngleFrames = armNearlyFlat ? curlHighAngleFrames + 1 : 0;
+            curlHighAngleFrames = 0;
 
-            boolean shoulderOverThreshold = shoulderShift != null && shoulderShift > 18.0;
+            boolean shoulderOverThreshold = shoulderShift != null && shoulderShift > 17.0;
             if (shoulderOverThreshold) {
                 curlShoulderAlertFrames++;
                 curlShoulderClearFrames = 0;
@@ -786,52 +789,55 @@ public class CameraActivity extends AppCompatActivity {
      * El overlay se muestra REP_FEEDBACK_MS ms y luego desaparece.
      */
     private void showRepFeedback(AlgorithmResult result, Double rom, Double shoulderComp) {
-        // Determinar calidad de la rep
-        boolean romOk     = rom != null && rom >= 110.0;
-        boolean romPartial = rom != null && rom >= 90.0;
-        boolean shoulderOk = shoulderComp == null || shoulderComp < 15.0;
-        boolean shoulderWarn = shoulderComp != null && shoulderComp < 20.0;
+        // Sin datos todavía — no mostrar nada para evitar "mal hecha" falso
+        if (rom == null && shoulderComp == null) return;
+
+        // null = sin dato = no penalizar ese criterio
+        boolean romOk      = rom == null || rom >= 85.0;
+        boolean romPartial = rom == null || rom >= 65.0;
+        boolean shoulderOk   = shoulderComp == null || shoulderComp < 12.0;
+        boolean shoulderWarn = shoulderComp != null  && shoulderComp < 17.0;
 
         String icon, title, message;
         if (romOk && shoulderOk) {
-            // BIEN: ROM completo y sin compensación
             icon    = "✅";
-            title   = "¡Rep bien hecha!";
-            message = String.format(Locale.US,
-                    "ROM %.0f° · Hombro estable",
-                    rom != null ? rom : 0.0);
+            title   = "¡Bien hecha!";
+            message = rom != null
+                    ? String.format(Locale.US, "%.0f° de recorrido · hombro estable", rom)
+                    : "Hombro estable";
         } else if ((romOk || romPartial) && (shoulderOk || shoulderWarn)) {
-            // MEDIA: ROM aceptable o compensación leve
             icon    = "⚡";
-            title   = "Rep aceptable";
-            if (!romOk) {
+            title   = "Casi bien";
+            if (!romOk && rom != null) {
                 message = String.format(Locale.US,
-                        "ROM %.0f° (obj. ≥110°)\nSube y baja más el brazo",
-                        rom != null ? rom : 0.0);
-            } else {
-                message = String.format(Locale.US,
-                        "Hombro %.0f° de compensación\nMantén el codo pegado",
-                        shoulderComp != null ? shoulderComp : 0.0);
-            }
-        } else {
-            // MAL: ROM insuficiente y/o compensación severa
-            icon    = "❌";
-            title   = "Rep incompleta";
-            if (rom != null && rom < 90.0) {
-                message = String.format(Locale.US,
-                        "ROM muy corto (%.0f°)\nCompleta todo el recorrido",
+                        "Sube el peso más y baja el brazo\ncompletamente (%.0f° de recorrido)",
                         rom);
             } else {
-                message = String.format(Locale.US,
-                        "Compensación de hombro %.0f°\nBaja el peso y controla el codo",
-                        shoulderComp != null ? shoulderComp : 0.0);
+                message = "El hombro se fue un poco\nMantén el codo quieto al costado";
+            }
+        } else {
+            icon    = "❌";
+            title   = "Mal hecha";
+            if (rom != null && !romPartial) {
+                message = "Sube y baja más el brazo\nNo llegaste al recorrido completo";
+            } else {
+                message = "El hombro se fue hacia adelante\nBaja el peso y pega el codo al costado";
             }
         }
 
         repFeedbackActive = true;
         showCurlLiveOverlay(icon, title, message, true);
 
-        // Ocultar tras REP_FEEDBACK_MS ms y reanudar overlays normales
+        alertHandler.postDelayed(() -> {
+            repFeedbackActive = false;
+            hideCurlLiveOverlay();
+        }, REP_FEEDBACK_MS);
+    }
+
+    private void showPartialRepFeedback() {
+        repFeedbackActive = true;
+        showCurlLiveOverlay("❌", "Mal hecha",
+                "Recorrido muy corto\nSube el brazo hasta el pecho", true);
         alertHandler.postDelayed(() -> {
             repFeedbackActive = false;
             hideCurlLiveOverlay();
@@ -878,17 +884,11 @@ public class CameraActivity extends AppCompatActivity {
         int textColor;
         int bgRes;
 
-        if (!hasPose) {
-            text      = getString(R.string.camera_curl_status_ready);
-            textColor = ContextCompat.getColor(this, R.color.silver_2);
-            bgRes     = R.drawable.bg_alert_banner_neutral;
+        if (!hasPose || repCount == 0) {
+            if (curlAlertBanner != null) curlAlertBanner.setVisibility(View.GONE);
+            return;
         } else if (repCount < 3) {
-            // Durante calibración mostrar conteo de reps pero en tono informativo
-            if (repCount == 0) {
-                text  = getString(R.string.camera_curl_status_ready);
-            } else {
-                text  = getString(R.string.camera_curl_calibrando, repCount);
-            }
+            text      = getString(R.string.camera_curl_calibrando, repCount);
             textColor = ContextCompat.getColor(this, R.color.silver_2);
             bgRes     = R.drawable.bg_alert_banner_neutral;
         } else if (curlShoulderAlertActive && shoulderShift != null) {
@@ -896,12 +896,12 @@ public class CameraActivity extends AppCompatActivity {
             text      = getString(R.string.camera_curl_alert_shoulder, shoulderShift);
             textColor = ContextCompat.getColor(this, R.color.risk_red);
             bgRes     = R.drawable.bg_alert_banner_red;
-        } else if (vl != null && vl >= 20.0) {
-            // Fatiga técnica (Sánchez-Medina 2011: VL≥20% = umbral significativo)
+        } else if (vl != null && vl >= 40.0) {
+            // Fatiga técnica (Sánchez-Medina 2011: VL≥40% = umbral zona 2, más conservador)
             text      = getString(R.string.camera_curl_alert_fatigue, vl);
             textColor = ContextCompat.getColor(this, R.color.risk_red);
             bgRes     = R.drawable.bg_alert_banner_red;
-        } else if (displayRom != null && displayRom < 110.0) {
+        } else if (displayRom != null && displayRom < 90.0) {
             // ROM parcial de la última rep cerrada
             text      = getString(R.string.camera_curl_alert_partial_rom, displayRom);
             textColor = ContextCompat.getColor(this, R.color.toasted_almond);
@@ -917,6 +917,9 @@ public class CameraActivity extends AppCompatActivity {
             bgRes     = R.drawable.bg_alert_banner_green;
         }
 
+        if (curlAlertBanner.getVisibility() != View.VISIBLE) {
+            curlAlertBanner.setVisibility(View.VISIBLE);
+        }
         curlAlertBanner.setText(text);
         curlAlertBanner.setTextColor(textColor);
         curlAlertBanner.setBackgroundResource(bgRes);
@@ -1632,9 +1635,12 @@ public class CameraActivity extends AppCompatActivity {
         curlOverlayIcon.setText(icon);
         curlOverlayTitle.setText(title);
         curlOverlayMessage.setText(message);
-        if (curlLiveOverlay.getVisibility() != View.VISIBLE) {
-            // Para avisos normales: mínimo 6 s. Para avisos por rep: caller controla la duración.
-            curlOverlayShowUntilMs = isRepFeedback ? 0L : (now + CURL_OVERLAY_MIN_SHOW_MS);
+        if (isRepFeedback) {
+            // Rep feedback: resetear el timer de duración mínima para que su propio
+            // callback pueda ocultar el overlay aunque hubiera una alerta previa activa.
+            curlOverlayShowUntilMs = 0L;
+        } else if (curlLiveOverlay.getVisibility() != View.VISIBLE) {
+            curlOverlayShowUntilMs = now + CURL_OVERLAY_MIN_SHOW_MS;
             curlLiveOverlay.setOnClickListener(v -> {
                 if (!repFeedbackActive) {
                     curlOverlayDismissedUntilMs = System.currentTimeMillis() + CURL_OVERLAY_COOLDOWN_MS;

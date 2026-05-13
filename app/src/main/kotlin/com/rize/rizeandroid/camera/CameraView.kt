@@ -146,9 +146,9 @@ class CameraView(
     }
 
     fun release() {
-        backgroundExecutor.shutdown()
-        poseLandmarkerHelper.clearPoseLandmarker()
-        cameraProvider?.unbindAll()
+        poseLandmarkerHelper.clearPoseLandmarker()  // isClosed=true before any pending task runs
+        cameraProvider?.unbindAll()                 // stop new frames from camera
+        backgroundExecutor.shutdown()               // drain remaining queued tasks
     }
 
     override fun onError(error: String, errorCode: Int) {

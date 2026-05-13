@@ -118,21 +118,20 @@ object PendingSessionBuilder {
         val rom = result.lastRepRomDeg
         val valley = if (peak != null && rom != null) peak + rom else null
 
-        // Clasificación de calidad de la rep usando los mismos criterios que el
-        // overlay en vivo (showRepFeedback): ROM (Morrey 1981 / Goto 2019) y
-        // compensación de hombro (Liu 2024).
-        //   BIEN  (NONE)     → ROM ≥ 110° Y hombro < 15°
-        //   MEDIA (MILD)     → ROM ≥ 90° O hombro < 20°   (pero no llega a "bien")
-        //   MAL   (MODERATE) → ROM < 90° Y/O hombro ≥ 20°
+        // Clasificación de calidad de la rep — mismos criterios que showRepFeedback.
+        //   BIEN  (NONE)     → ROM ≥ 100° Y hombro < 15°
+        //   MEDIA (MILD)     → ROM ≥ 60° O hombro < 20°   (pero no llega a "bien")
+        //   MAL   (MODERATE) → ROM < 60° Y/O hombro ≥ 20°
+        // null = sin dato = no penalizar ese criterio.
         val shoulderComp = result.lastRepShoulderCompensationDeg
-        val romOk      = rom != null && rom >= 110.0
-        val romPartial = rom != null && rom >= 90.0
-        val shoulderOk   = shoulderComp == null || shoulderComp < 15.0
-        val shoulderWarn = shoulderComp == null || shoulderComp < 20.0
+        val romOk      = rom == null || rom >= 85.0
+        val romPartial = rom == null || rom >= 65.0
+        val shoulderOk   = shoulderComp == null || shoulderComp < 12.0
+        val shoulderWarn = shoulderComp != null && shoulderComp < 17.0
         val curlFormQuality = when {
-            romOk && shoulderOk                          -> ErrorLevel.NONE
+            romOk && shoulderOk                                    -> ErrorLevel.NONE
             (romOk || romPartial) && (shoulderOk || shoulderWarn) -> ErrorLevel.MILD
-            else                                         -> ErrorLevel.MODERATE
+            else                                                   -> ErrorLevel.MODERATE
         }
 
         val rep = SessionRep(

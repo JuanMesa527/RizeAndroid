@@ -15,6 +15,7 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
 
 class PoseLandmarkerHelper(
     var minPoseDetectionConfidence: Float = DEFAULT_POSE_DETECTION_CONFIDENCE,
@@ -29,15 +30,24 @@ class PoseLandmarkerHelper(
     private var poseLandmarker: PoseLandmarker? = null
     private val isProcessing = AtomicBoolean(false)
     @Volatile private var isClosed = false
+    private val closeLock = ReentrantLock()
 
     init {
         setupPoseLandmarker()
     }
 
     fun clearPoseLandmarker() {
-        isClosed = true
-        poseLandmarker?.close()
-        poseLandmarker = null
+        closeLock.lock()
+        try {
+            isClosed = true
+            if (!isProcessing.get()) {
+                poseLandmarker?.close()
+                poseLandmarker = null
+            }
+            // If isProcessing=true, finishProcessing() closes after callback fires
+        } finally {
+            closeLock.unlock()
+        }
     }
 
     fun setupPoseLandmarker() {
@@ -143,7 +153,29 @@ class PoseLandmarkerHelper(
 
     @VisibleForTesting
     fun detectAsync(mpImage: MPImage, frameTime: Long) {
-        poseLandmarker?.detectAsync(mpImage, frameTime)
+        closeLock.lock()
+        try {
+            if (!isClosed) {
+                poseLandmarker?.detectAsync(mpImage, frameTime)
+            } else {
+                isProcessing.set(false)
+            }
+        } finally {
+            closeLock.unlock()
+        }
+    }
+
+    private fun finishProcessing() {
+        closeLock.lock()
+        try {
+            isProcessing.set(false)
+            if (isClosed) {
+                poseLandmarker?.close()
+                poseLandmarker = null
+            }
+        } finally {
+            closeLock.unlock()
+        }
     }
 
     fun detectVideoFrame(bitmap: Bitmap, frameTimestampMs: Long): ResultBundle? {
@@ -173,22 +205,26 @@ class PoseLandmarkerHelper(
         val finishTimeMs = SystemClock.uptimeMillis()
         val inferenceTime = finishTimeMs - result.timestampMs()
 
-        poseLandmarkerHelperListener?.onResults(
-            ResultBundle(
-                listOf(result),
-                inferenceTime,
-                input.height,
-                input.width
+        if (!isClosed) {
+            poseLandmarkerHelperListener?.onResults(
+                ResultBundle(
+                    listOf(result),
+                    inferenceTime,
+                    input.height,
+                    input.width
+                )
             )
-        )
-        isProcessing.set(false)
+        }
+        finishProcessing()
     }
 
     private fun returnLivestreamError(error: RuntimeException) {
-        isProcessing.set(false)
-        poseLandmarkerHelperListener?.onError(
-            error.message ?: "An unknown error has occurred"
-        )
+        if (!isClosed) {
+            poseLandmarkerHelperListener?.onError(
+                error.message ?: "An unknown error has occurred"
+            )
+        }
+        finishProcessing()
     }
 
     companion object {
