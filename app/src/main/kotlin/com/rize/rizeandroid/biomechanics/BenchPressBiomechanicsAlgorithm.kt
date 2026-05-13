@@ -1,5 +1,8 @@
 package com.rize.rizeandroid.biomechanics
 
+import com.rize.rizeandroid.biomechanics.calibration.BenchPressCalibratedThresholds
+import com.rize.rizeandroid.biomechanics.calibration.BenchPressCalibrator
+import com.rize.rizeandroid.biomechanics.calibration.BenchPressDebugSwitches
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.pow
@@ -56,7 +59,9 @@ import kotlin.math.sqrt
  *   d) Debounce de banderas (10 frames ~ 330 ms) para no parpadear.
  *   e) Umbrales operacionales por encima del suelo de ruido medido en campo.
  */
-class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
+class BenchPressBiomechanicsAlgorithm(
+    calibrationEnabled: Boolean = BenchPressDebugSwitches.calibrationEnabled
+) : BiomechanicsAlgorithm {
 
     companion object {
         // MediaPipe landmark indices
@@ -78,65 +83,42 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // Con 1€-Filter el ruido de velocidad cae a <10 deg/s en reposo; 15
         // deja margen sin perder sensibilidad a reps reales (~40-200 deg/s).
         private const val VELOCITY_HYSTERESIS = 15.0
-        private const val START_DESCENT_ANGLE = 155.0     // angulo codo para iniciar descenso
-        private const val TOP_POSITION_ANGLE = 160.0      // angulo codo para confirmar rep completa
+        // Los umbrales angulares sensibles al entorno (START_DESCENT_ANGLE,
+        // TOP_POSITION_ANGLE, FULL_EXTENSION_MIN_DEG, GRIP_PERSPECTIVE_CORRECTION,
+        // ABDUCTION_*, STICKING_VELOCITY_THRESHOLD, MIN/MAX_VALID_BOTTOM_ANGLE)
+        // viven ahora en BenchPressCalibratedThresholds y se acceden via `t.*`.
 
-        // ── Regla 1: Ancho de agarre ────────────────────────────────────────
+        // ── Regla 1: Ancho de agarre (constantes no sensibles al entorno) ──
         // El objetivo biomecanico es 1.5x el ancho biacromial:
         //   gripRatio = ancho horizontal entre munecas / ancho horizontal entre hombros.
-        // Usamos solo X porque el "ancho" del agarre no debe inflarse por diferencias
-        // verticales entre munecas durante el press.
         //  - [1.25, 1.75] -> optimo (verde, centrado en 1.5x)
-        //  - fuera de ese rango -> advertencia (ambar)
-        //  - > 1.8 -> excesivo, riesgo hombro (rojo / flag gripTooWide)
+        //  - > 2.0 -> excesivo, riesgo hombro (rojo / flag gripTooWide)
         private const val GRIP_WIDTH_RATIO_TARGET = 1.5
         private const val GRIP_WIDTH_RATIO_MIN = GRIP_WIDTH_RATIO_TARGET - 0.25
         private const val GRIP_WIDTH_RATIO_MAX = GRIP_WIDTH_RATIO_TARGET + 0.25
         private const val GRIP_WIDTH_RATIO_CRITICAL = 2.0
-        // Calibracion empirica para la perspectiva actual: las munecas suelen
-        // estar mas cerca de la camara que los hombros, inflando el ratio 2D.
-        // Medicion de referencia: 2.5x observado debe mapear a 1.5x real.
-        private const val GRIP_PERSPECTIVE_CORRECTION = 0.6
-
-        // ── Regla 2: Abduccion de hombro ────────────────────────────────────
-        private const val ABDUCTION_EVALUATION_ELBOW_DEG = 90.0
-        private const val ABDUCTION_MIN_OK_DEG = 45.0
-        private const val ABDUCTION_MAX_OK_DEG = 85.0
-        private const val ABDUCTION_DEEP_ELBOW_DEG = 80.0
-        private const val ABDUCTION_DEEP_MAX_OK_DEG = 55.0
-        private const val ABDUCTION_CRITICAL_DEG = 90.0
 
         // ── Regla 3: Simetria bilateral ─────────────────────────────────────
-        // En vista frontal el indicador mas estable es si ambas munecas estan
-        // a la misma altura. Usamos diferencia vertical normalizada por ancho
-        // biacromial horizontal:
-        //   symmetryPct = |wristL.y - wristR.y| / |shoulderL.x - shoulderR.x| * 100
-        //  - < 8%  -> simetria OK
-        //  - >= 8% -> advertencia visual
-        //  - >= 15% sostenido -> asimetria tecnica (flag)
+        // Diferencia vertical de munecas normalizada por ancho biacromial.
+        // Ya esta normalizada por proporciones del usuario, no depende del
+        // entorno -> no se calibra.
         private const val SYMMETRY_THRESHOLD_PERCENT = 8.0
         private const val SYMMETRY_ALERT_THRESHOLD_PERCENT = 15.0
-
-        // ── Regla 5: Extension completa ─────────────────────────────────────
-        private const val FULL_EXTENSION_MIN_DEG = TOP_POSITION_ANGLE
 
         // ── UI live: reset visual del check al cambiar 10° en direccion opuesta
         private const val LIVE_CHECK_RESET_DELTA_DEG = 10.0
 
-        // ── Regla 6: Periodo de estancamiento ───────────────────────────────
-        // 5 deg/s era el umbral teorico; con el ruido medido elevamos el
-        // umbral operacional a 10 deg/s. 870 ms se mantiene (literatura).
-        private const val STICKING_VELOCITY_THRESHOLD = 10.0
+        // ── Regla 6: Periodo de estancamiento (duracion, no velocidad) ──────
+        // 870 ms es valor de literatura, no depende del entorno.
+        // El umbral de velocidad si depende y vive en t.stickingVelocityThresholdDegS.
         private const val STICKING_DURATION_MS = 870L
 
-        // ── Regla 7: Perdida de velocidad ───────────────────────────────────
+        // ── Regla 7: Perdida de velocidad (relativa, no calibrada) ─────────
         private const val VL_WARNING_PERCENT = 25.0
         private const val VL_CRITICAL_PERCENT = 35.0
 
         // ── Validacion de rep ────────────────────────────────────────────────
         private const val MIN_VALID_ROM_DEG = 30.0
-        private const val MAX_VALID_BOTTOM_ANGLE_DEG = 85.0
-        private const val MIN_VALID_BOTTOM_ANGLE_DEG = 60.0
 
         // ── Suavizado de velocidad angular (EMA) ────────────────────────────
         // 0.4 = peso al valor nuevo. Latencia ~2-3 frames, suficiente para no
@@ -172,6 +154,12 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private enum class RepPhase { IDLE, DESCENT, ASCENT }
 
     private enum class ReadinessState { NOT_READY, STABILIZING, READY }
+
+    // ── Calibracion por sesion ───────────────────────────────────────────────
+    private val calibrator = BenchPressCalibrator(calibrationEnabled)
+    private val t: BenchPressCalibratedThresholds
+        get() = calibrator.thresholds
+    private var lastCalibrationCommittedReported = false
 
     // ── Estado por frame ─────────────────────────────────────────────────────
     private var prevElbowAngleDeg: Double? = null
@@ -300,6 +288,23 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // Actualizar readiness
         updateReadiness(primaryElbowAngle, leftVisible && rightVisible)
 
+        // Alimentar el calibrador en READY (captura perfil del entorno).
+        // El calibrador filtra internamente por lockout y por ventana estable;
+        // una vez COMMITTED, los umbrales se congelan para el resto de la sesion.
+        val wasCommitted = calibrator.state == BenchPressCalibrator.State.COMMITTED
+        when (readinessState) {
+            ReadinessState.READY -> calibrator.onReadyFrame(landmarkFlatList, primaryElbowAngle)
+            ReadinessState.NOT_READY -> calibrator.onReadinessLost()
+            ReadinessState.STABILIZING -> { /* no-op: aun no estamos estables */ }
+        }
+        // Si la calibracion acaba de commitear en este frame, limpiamos el
+        // timer de sticking que pudo acumularse durante el periodo de captura
+        // (el usuario estaba quieto con brazos extendidos).
+        if (!wasCommitted && calibrator.state == BenchPressCalibrator.State.COMMITTED) {
+            stickingStartMs = null
+            currentStickingPeriodDetected = false
+        }
+
         // ── Reglas por frame ─────────────────────────────────────────────────
 
         // Regla 1: Ancho de agarre — apertura horizontal (X) en vista frontal.
@@ -308,7 +313,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             val wristDist = horizontalDistance(leftArm.wrist.vec, rightArm.wrist.vec)
             val biacromialDist = horizontalDistance(leftArm.shoulder.vec, rightArm.shoulder.vec)
             if (biacromialDist > 1e-6) {
-                gripWidthRatio = (wristDist / biacromialDist) * GRIP_PERSPECTIVE_CORRECTION
+                gripWidthRatio = (wristDist / biacromialDist) * t.gripPerspectiveCorrection
                 lastGripWidthRatioMeasured = gripWidthRatio
                 // Solo marcamos "demasiado ancho" (riesgo real) cuando cruza el
                 // umbral critico. Las advertencias entre MAX y CRITICAL se
@@ -322,7 +327,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         // En vista frontal, el angulo torso-codo es interpretable cuando el
         // codo ya esta flexionado (<90°). En la parte alta se inflaba por
         // proyeccion y generaba falsos positivos.
-        val evaluateAbductionNow = primaryElbowAngle < ABDUCTION_EVALUATION_ELBOW_DEG
+        val evaluateAbductionNow = primaryElbowAngle < t.abductionEvaluationElbowDeg
         val abductionLeft = if (evaluateAbductionNow && leftVisible) {
             computeAngle2D(leftArm.hip.vec, leftArm.shoulder.vec, leftArm.elbow.vec)
         } else null
@@ -331,8 +336,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         } else null
         val abductionValues = listOfNotNull(abductionLeft, abductionRight)
         val worstAbduction = when {
-            abductionValues.any { it > ABDUCTION_MAX_OK_DEG } -> abductionValues.maxOrNull()
-            abductionValues.any { it < ABDUCTION_MIN_OK_DEG } -> abductionValues.minOrNull()
+            abductionValues.any { it > t.abductionMaxOkDeg } -> abductionValues.maxOrNull()
+            abductionValues.any { it < t.abductionMinOkDeg } -> abductionValues.minOrNull()
             else -> abductionValues.maxOrNull()
         }
         lastShoulderAbductionDeg = worstAbduction
@@ -345,7 +350,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             currentRepShoulderAbductionRisk =
                 currentRepShoulderAbductionRisk || isAbductionOutsideOkRange(worstAbduction, primaryElbowAngle)
             currentRepShoulderAbductionCritical =
-                currentRepShoulderAbductionCritical || worstAbduction > ABDUCTION_CRITICAL_DEG
+                currentRepShoulderAbductionCritical || worstAbduction > t.abductionCriticalDeg
         }
 
         // Regla 3: Simetria bilateral — diferencia vertical de munecas.
@@ -368,14 +373,20 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         updateLiveRuleIndicators(primaryElbowAngle)
 
-        // Regla 6: Sticking period (durante ascenso)
-        if (phase == RepPhase.ASCENT && angularVelocityDegS != null) {
-            if (abs(angularVelocityDegS) < STICKING_VELOCITY_THRESHOLD) {
+        // Regla 6: Sticking period (durante ascenso).
+        // Solo se evalua despues de que la calibracion ha commiteado. Antes:
+        //   a) el umbral de velocidad no esta calibrado para este entorno, y
+        //   b) el usuario necesita quedarse quieto en lockout para calibrar,
+        //      lo que dispararia un falso positivo de sticking.
+        val calibrationReady = calibrator.state == BenchPressCalibrator.State.COMMITTED ||
+                calibrator.state == BenchPressCalibrator.State.DISABLED
+        if (calibrationReady && phase == RepPhase.ASCENT && angularVelocityDegS != null) {
+            if (abs(angularVelocityDegS) < t.stickingVelocityThresholdDegS) {
                 if (stickingStartMs == null) {
                     stickingStartMs = System.currentTimeMillis()
                 } else {
                     val elapsed = System.currentTimeMillis() - stickingStartMs!!
-                    if (elapsed > STICKING_DURATION_MS) {
+                    if (elapsed > t.stickingDurationMs) {
                         currentStickingPeriodDetected = true
                     }
                 }
@@ -463,7 +474,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
             lastRepBilateralAsymmetry = snapLastRepBilateralAsymmetry,
             lastRepDepthInsufficientBench = snapLastRepDepthInsufficientBench,
             lastRepExtensionIncomplete = snapLastRepExtensionIncomplete,
-            lastRepFormQuality = snapLastRepFormQuality
+            lastRepFormQuality = snapLastRepFormQuality,
+            calibrationCommitted = calibrator.state == BenchPressCalibrator.State.COMMITTED,
+            calibrationDebug = if (BenchPressDebugSwitches.emitDebugMap &&
+                calibrator.state == BenchPressCalibrator.State.COMMITTED
+            ) t.toDebugMap() else null
         )
     }
 
@@ -472,6 +487,11 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     // ═══════════════════════════════════════════════════════════════════════════
 
     override fun reset() {
+        // Releemos el flag global de debug para que el toggle en el menu de
+        // desarrollador surta efecto al iniciar un nuevo ejercicio (Algorithms
+        // llama reset al cambiar de ejercicio).
+        calibrator.reset(enabled = BenchPressDebugSwitches.calibrationEnabled)
+        lastCalibrationCommittedReported = false
         prevElbowAngleDeg = null
         prevAngularVelocityDegS = null
         smoothedAngularVelocityDegS = null
@@ -621,7 +641,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
      */
     private fun updateAbductionRiskDebounced(worstAbduction: Double?, elbowAngleDeg: Double): Boolean {
         val angle = worstAbduction ?: 0.0
-        if (angle > ABDUCTION_CRITICAL_DEG) {
+        if (angle > t.abductionCriticalDeg) {
             abductionCriticalConsecutiveFrames += 1
             abductionWarningConsecutiveFrames += 1
         } else if (isAbductionOutsideOkRange(angle, elbowAngleDeg)) {
@@ -638,28 +658,28 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         abductionCriticalConsecutiveFrames >= POSTURAL_DEBOUNCE_FRAMES
 
     private fun isAbductionOutsideOkRange(angle: Double, elbowAngleDeg: Double): Boolean =
-        if (elbowAngleDeg < ABDUCTION_DEEP_ELBOW_DEG) {
-            angle > ABDUCTION_DEEP_MAX_OK_DEG
+        if (elbowAngleDeg < t.abductionDeepElbowDeg) {
+            angle > t.abductionDeepMaxOkDeg
         } else {
-            angle < ABDUCTION_MIN_OK_DEG || angle > ABDUCTION_MAX_OK_DEG
+            angle < t.abductionMinOkDeg || angle > t.abductionMaxOkDeg
         }
 
     private fun updateLiveRuleIndicators(elbowAngleDeg: Double) {
-        if (phase != RepPhase.IDLE && elbowAngleDeg <= MAX_VALID_BOTTOM_ANGLE_DEG) {
+        if (phase != RepPhase.IDLE && elbowAngleDeg <= t.maxValidBottomAngleDeg) {
             currentRepElbowWentBelowTorso = true
             currentDepthCheckVisible = true
         }
         if (currentDepthCheckVisible &&
-            elbowAngleDeg >= MAX_VALID_BOTTOM_ANGLE_DEG + LIVE_CHECK_RESET_DELTA_DEG
+            elbowAngleDeg >= t.maxValidBottomAngleDeg + LIVE_CHECK_RESET_DELTA_DEG
         ) {
             currentDepthCheckVisible = false
         }
 
-        if (phase != RepPhase.IDLE && elbowAngleDeg >= TOP_POSITION_ANGLE) {
+        if (phase != RepPhase.IDLE && elbowAngleDeg >= t.topPositionAngleDeg) {
             currentExtensionCheckVisible = true
         }
         if (currentExtensionCheckVisible &&
-            elbowAngleDeg <= TOP_POSITION_ANGLE - LIVE_CHECK_RESET_DELTA_DEG
+            elbowAngleDeg <= t.topPositionAngleDeg - LIVE_CHECK_RESET_DELTA_DEG
         ) {
             currentExtensionCheckVisible = false
         }
@@ -672,7 +692,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
     private fun updateRepState(elbowAngleDeg: Double, angularVelocityDegS: Double) {
         when (phase) {
             RepPhase.IDLE -> {
-                if (elbowAngleDeg < START_DESCENT_ANGLE && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
+                if (elbowAngleDeg < t.startDescentAngleDeg && angularVelocityDegS < -VELOCITY_HYSTERESIS) {
                     phase = RepPhase.DESCENT
                     attemptCount++
                     startNewRepTracking(elbowAngleDeg)
@@ -706,7 +726,7 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
                 // Rastrear el angulo maximo alcanzado en la cima (para Regla 5)
                 currentRepTopElbowAngleDeg = maxOf(currentRepTopElbowAngleDeg, elbowAngleDeg)
 
-                if (elbowAngleDeg >= TOP_POSITION_ANGLE && angularVelocityDegS > -VELOCITY_HYSTERESIS) {
+                if (elbowAngleDeg >= t.topPositionAngleDeg && angularVelocityDegS > -VELOCITY_HYSTERESIS) {
                     completeRep()
                     phase = RepPhase.IDLE
                 }
@@ -738,8 +758,8 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         val repRomDeg = currentRepStartElbowAngleDeg - currentMinElbowAngleDeg
         val isValidRep = repRomDeg >= MIN_VALID_ROM_DEG
-                && currentMinElbowAngleDeg <= MAX_VALID_BOTTOM_ANGLE_DEG
-                && currentMinElbowAngleDeg >= MIN_VALID_BOTTOM_ANGLE_DEG
+                && currentMinElbowAngleDeg <= t.maxValidBottomAngleDeg
+                && currentMinElbowAngleDeg >= t.minValidBottomAngleDeg
 
         if (!isValidRep) return
 
@@ -750,9 +770,9 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         lastDepthInsufficientBench = !currentRepElbowWentBelowTorso
 
         // Regla 5: Extension completa
-        lastExtensionIncomplete = currentRepTopElbowAngleDeg < FULL_EXTENSION_MIN_DEG
+        lastExtensionIncomplete = currentRepTopElbowAngleDeg < t.fullExtensionMinDeg
         lastExtensionIncompleteDeg = if (lastExtensionIncomplete) {
-            FULL_EXTENSION_MIN_DEG - currentRepTopElbowAngleDeg
+            t.fullExtensionMinDeg - currentRepTopElbowAngleDeg
         } else {
             null
         }
@@ -787,10 +807,10 @@ class BenchPressBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         val depthMagnitude = if (lastDepthInsufficientBench) 5.0 else 0.0
         val extensionMagnitude = lastExtensionIncompleteDeg ?: 0.0
         val abductionMagnitude = when {
-            abduction > ABDUCTION_MAX_OK_DEG -> abduction - ABDUCTION_MAX_OK_DEG
-            abduction < ABDUCTION_MIN_OK_DEG -> ABDUCTION_MIN_OK_DEG - abduction
-            currentRepShoulderAbductionRisk && abduction > ABDUCTION_DEEP_MAX_OK_DEG ->
-                abduction - ABDUCTION_DEEP_MAX_OK_DEG
+            abduction > t.abductionMaxOkDeg -> abduction - t.abductionMaxOkDeg
+            abduction < t.abductionMinOkDeg -> t.abductionMinOkDeg - abduction
+            currentRepShoulderAbductionRisk && abduction > t.abductionDeepMaxOkDeg ->
+                abduction - t.abductionDeepMaxOkDeg
             else -> 0.0
         }
         val asymmetryMagnitude = if (lastBilateralAsymmetry) (lastBilateralAsymmetryDeg ?: 0.0) - SYMMETRY_THRESHOLD_PERCENT else 0.0

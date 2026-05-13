@@ -176,6 +176,10 @@ public class CameraActivity extends AppCompatActivity {
     private int lastRepCountForInjury = 0;
     private boolean injuryAlertShown = false;
     private boolean benchStickingPopupShown = false;
+    // One-shot guard: solo logueamos cuando la calibracion pasa de no-committed
+    // a committed (no en cada frame). Sirve para inspeccionar los umbrales
+    // calibrados en logcat durante la verificacion en el gimnasio.
+    private boolean benchCalibrationCommitLogged = false;
 
     private static final long NO_POSE_THRESHOLD_MS  = 15_000;
     private static final long SEVERE_FORM_THRESHOLD_MS = 5_000;
@@ -1126,6 +1130,16 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onBenchPressResult(AlgorithmResult result) {
+        // Log puntual de la transicion a calibracion committed (solo una vez
+        // por sesion). El mapa de debug solo viene si BenchPressDebugSwitches
+        // .emitDebugMap esta activo.
+        if (!benchCalibrationCommitLogged && result.getCalibrationCommitted()) {
+            benchCalibrationCommitLogged = true;
+            java.util.Map<String, Double> dbg = result.getCalibrationDebug();
+            android.util.Log.i("BenchCalib",
+                    "Calibration committed. Thresholds: " + (dbg != null ? dbg.toString() : "(debug map disabled)"));
+        }
+
         // Header: reps + angulo de codo actual + readiness
         benchRepCount.setText(String.valueOf(result.getRepCount()));
 

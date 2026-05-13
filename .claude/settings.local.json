@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew.bat compileDebugKotlin compileDebugJavaWithJavac --quiet --console=plain)",
+      "Bash(./gradlew.bat testDebugUnitTest --tests \"com.rize.rizeandroid.biomechanics.calibration.*\" --console=plain)",
+      "Bash(./gradlew.bat testDebugUnitTest --tests \"com.rize.rizeandroid.biomechanics.calibration.*\" --rerun-tasks --console=plain)"
+    ]
+  }
+}
