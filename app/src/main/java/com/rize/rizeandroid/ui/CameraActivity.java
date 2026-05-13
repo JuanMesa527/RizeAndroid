@@ -168,6 +168,7 @@ public class CameraActivity extends AppCompatActivity {
     private static final long CURL_OVERLAY_COOLDOWN_MS  = 8_000;  // 8 s de cooldown post-tap
     private final Handler alertHandler = new Handler(Looper.getMainLooper());
     private Runnable alertDismissTask;
+    private AlertVoiceManager voiceManager;
 
     private long lastValidPoseMs = 0;
     private boolean noPoseAlertActive = false;
@@ -245,6 +246,7 @@ public class CameraActivity extends AppCompatActivity {
         setupBackNavigation();
         setupAlgorithms(exerciseName);
         checkCameraPermission();
+        voiceManager = new AlertVoiceManager(this);
     }
 
     // ── Algoritmos ────────────────────────────────────────────────────────────
@@ -923,6 +925,8 @@ public class CameraActivity extends AppCompatActivity {
         curlAlertBanner.setText(text);
         curlAlertBanner.setTextColor(textColor);
         curlAlertBanner.setBackgroundResource(bgRes);
+        if (voiceManager != null)
+            voiceManager.onBannerUpdate(AlertVoiceManager.SLOT_CURL, text, bgToSeverity(bgRes));
     }
 
     private void onSquatResult(AlgorithmResult result) {
@@ -1087,6 +1091,8 @@ public class CameraActivity extends AppCompatActivity {
         squatAlertBanner.setText(messageRes);
         squatAlertBanner.setTextColor(color);
         squatAlertBanner.setBackgroundResource(bgRes);
+        if (voiceManager != null)
+            voiceManager.onBannerUpdate(AlertVoiceManager.SLOT_SQUAT, getString(messageRes), bgToSeverity(bgRes));
         if (squatAlertText != null) {
             squatAlertText.setVisibility(View.GONE);
         }
@@ -1336,6 +1342,8 @@ public class CameraActivity extends AppCompatActivity {
         benchAlertBanner.setText(messageRes);
         benchAlertBanner.setTextColor(color);
         benchAlertBanner.setBackgroundResource(bgRes);
+        if (voiceManager != null)
+            voiceManager.onBannerUpdate(AlertVoiceManager.SLOT_BENCH, getString(messageRes), bgToSeverity(bgRes));
     }
 
     private boolean isBenchAbductionWarning(double abductionDeg, Double elbowAngleDeg) {
@@ -1668,6 +1676,7 @@ public class CameraActivity extends AppCompatActivity {
         extremeAlertOverlay.setVisibility(View.VISIBLE);
         alertDismissTask = this::dismissExtremeAlert;
         alertHandler.postDelayed(alertDismissTask, ALERT_AUTO_DISMISS_MS);
+        if (voiceManager != null) voiceManager.onExtremeAlert(title, message);
     }
 
     private void dismissExtremeAlert() {
@@ -1679,7 +1688,20 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (voiceManager != null) voiceManager.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (voiceManager != null) voiceManager.onResume();
+    }
+
+    @Override
     protected void onDestroy() {
+        if (voiceManager != null) { voiceManager.destroy(); voiceManager = null; }
         super.onDestroy();
         alertHandler.removeCallbacksAndMessages(null);
         stopTimer();
@@ -1692,5 +1714,11 @@ public class CameraActivity extends AppCompatActivity {
         if (cameraViewManager != null) {
             cameraViewManager.release();
         }
+    }
+
+    private AlertVoiceManager.Severity bgToSeverity(int bgRes) {
+        if (bgRes == R.drawable.bg_alert_banner_red)   return AlertVoiceManager.Severity.RED;
+        if (bgRes == R.drawable.bg_alert_banner_amber) return AlertVoiceManager.Severity.AMBER;
+        return AlertVoiceManager.Severity.NONE;
     }
 }
