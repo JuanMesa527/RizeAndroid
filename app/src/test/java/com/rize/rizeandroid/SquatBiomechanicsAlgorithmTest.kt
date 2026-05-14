@@ -20,15 +20,15 @@ class SquatBiomechanicsAlgorithmTest {
         val algorithm = SquatBiomechanicsAlgorithm()
         var lastResult = AlgorithmResult()
 
-        // Rep 1: subida rapida (referencia de velocidad)
-        buildRepSequence(bottomKneeAngle = 50.0, bottomHipAngle = 85.0, downFrames = 20, upFrames = 20)
-            .forEach { frame -> lastResult = algorithm.process(frame) }
+        repeat(3) {
+            buildRepSequence(bottomKneeAngle = 50.0, bottomHipAngle = 85.0, downFrames = 20, upFrames = 20)
+                .forEach { frame -> lastResult = algorithm.process(frame) }
+        }
 
-        // Rep 2: subida mas lenta -> perdida de velocidad > 20%
         buildRepSequence(bottomKneeAngle = 50.0, bottomHipAngle = 85.0, downFrames = 20, upFrames = 45)
             .forEach { frame -> lastResult = algorithm.process(frame) }
 
-        assertTrue("repCount=${lastResult.repCount}, cvt=${lastResult.cvtPercent}, velocityLoss=${lastResult.velocityLossPercent}", lastResult.repCount >= 2)
+        assertTrue("repCount=${lastResult.repCount}, cvt=${lastResult.cvtPercent}, velocityLoss=${lastResult.velocityLossPercent}", lastResult.repCount >= 4)
         assertNotNull("velocityLoss=${lastResult.velocityLossPercent}", lastResult.velocityLossPercent)
         assertTrue("velocityLoss=${lastResult.velocityLossPercent}", (lastResult.velocityLossPercent ?: 0.0) > 20.0)
         assertTrue("fatigueDetected=${lastResult.fatigueDetected}, velocityLoss=${lastResult.velocityLossPercent}", lastResult.fatigueDetected)
@@ -74,8 +74,9 @@ class SquatBiomechanicsAlgorithmTest {
 
     @Test
     fun marksModerateAndSevereCvtThresholds() {
+        // CVT normalizado por ROM promedio; requiere >=4 reps validas para publicar.
         val moderate = runReps(
-            listOf(30.0, 32.0, 34.0),
+            listOf(30.0, 37.0, 44.0, 51.0),
             bottomHipAngle = 95.0
         )
         assertNotNull(moderate.cvtPercent)
@@ -84,7 +85,7 @@ class SquatBiomechanicsAlgorithmTest {
         assertEquals(ErrorLevel.MODERATE, moderate.technicalError)
 
         val severe = runReps(
-            listOf(30.0, 35.0, 40.0),
+            listOf(30.0, 42.0, 55.0, 70.0),
             bottomHipAngle = 95.0
         )
         assertNotNull(severe.cvtPercent)
@@ -139,12 +140,14 @@ class SquatBiomechanicsAlgorithmTest {
     private fun runVelocityScenario(referenceUpFrames: Int, secondUpFrames: Int): AlgorithmResult {
         val algorithm = SquatBiomechanicsAlgorithm()
         var result = AlgorithmResult()
-        result = runSingleRep(
-            algorithm = algorithm,
-            bottomKneeAngle = 45.0,
-            bottomHipAngle = 95.0,
-            upFrames = referenceUpFrames
-        )
+        repeat(3) {
+            result = runSingleRep(
+                algorithm = algorithm,
+                bottomKneeAngle = 45.0,
+                bottomHipAngle = 95.0,
+                upFrames = referenceUpFrames
+            )
+        }
         result = runSingleRep(
             algorithm = algorithm,
             bottomKneeAngle = 45.0,

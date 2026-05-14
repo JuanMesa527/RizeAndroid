@@ -40,12 +40,14 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         private const val CONCENTRIC_FATIGUE_THRESHOLD = 20.0
         private const val VELOCITY_STABLE_THRESHOLD = 10.0
+        private const val MIN_REPS_FOR_VEL_REF = 3
         private const val MIN_VALID_ROM_DEG = 18.0
         private const val MAX_VALID_BOTTOM_ANGLE_DEG = 130.0
         private const val MIN_VALID_BOTTOM_ANGLE_DEG = 25.0
         private const val CVT_MODERATE_THRESHOLD = 5.0
         private const val CVT_INSTABILITY_THRESHOLD = 10.0
         private const val CVT_WINDOW_REPS = 6
+        private const val CVT_MIN_REPS = 4
 
         private const val MAX_X_VARIANCE_LATERAL = 0.15
         private const val MIN_X_VARIANCE_FRONTAL = 0.30
@@ -85,9 +87,10 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
     private val concentricVelocityByRep = mutableListOf<Double>()
     private val validBottomKneeAnglesByRep = mutableListOf<Double>()
+    private val romByRep = mutableListOf<Double>()
+    private var concentricVelocityReference: Double? = null
 
     private var visiblePoseFrames = 0
-    /** NanoTime del último frame procesado: deriva ω con Δt real (la cámara no es 30 Hz fijos). */
     private var lastProcessMonoNs: Long = 0L
 
     private var snapLastRepMinKnee: Double? = null
@@ -216,7 +219,9 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         repCount = 0
         attemptCount = 0
         concentricVelocityByRep.clear()
+        concentricVelocityReference = null
         validBottomKneeAnglesByRep.clear()
+        romByRep.clear()
         lastProcessMonoNs = 0L
 
         snapLastRepMinKnee = null
@@ -243,11 +248,6 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         currentRepHipAnglesDeg.clear()
     }
 
-    /**
-     * Intervalo efectivo entre frames: en vivo el landmarker no garantiza 30 Hz;
-     * usar Δt real evita ω artificial y phase/reps/CVT desalineados.
-     * En tests muchos frames llegan en ráfaga (<5 ms): se usa [DT] nominal para no romper escenarios sintéticos.
-     */
     private fun resolveFrameDtSec(): Double {
         val now = System.nanoTime()
         val dtSec = if (lastProcessMonoNs != 0L) {
@@ -349,18 +349,27 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
 
         repCount += 1
         validBottomKneeAnglesByRep.add(currentMinKneeAngleDeg)
+        romByRep.add(repRomDeg)
 
         if (currentPeakConcentricVelocityDegS > 0.0) {
             concentricVelocityByRep.add(currentPeakConcentricVelocityDegS)
-            val vRef = concentricVelocityByRep.firstOrNull() ?: currentPeakConcentricVelocityDegS
-            if (vRef > 0.0) {
+
+            if (concentricVelocityReference == null
+                && concentricVelocityByRep.size >= MIN_REPS_FOR_VEL_REF) {
+                val calibrationSample = concentricVelocityByRep.take(MIN_REPS_FOR_VEL_REF).sorted()
+                concentricVelocityReference = calibrationSample[calibrationSample.size / 2]
+            }
+
+            val vRef = concentricVelocityReference
+            if (vRef != null && vRef > 0.0) {
                 val rawLoss = ((vRef - currentPeakConcentricVelocityDegS) / vRef) * 100.0
                 lastVelocityLossPercent = maxOf(0.0, rawLoss)
             }
         }
 
-        val cvtSample = validBottomKneeAnglesByRep.takeLast(CVT_WINDOW_REPS)
-        lastCvtPercent = computeCvt(cvtSample)
+        val cvtBottomSample = validBottomKneeAnglesByRep.takeLast(CVT_WINDOW_REPS)
+        val cvtRomSample = romByRep.takeLast(CVT_WINDOW_REPS)
+        lastCvtPercent = computeCvt(cvtBottomSample, cvtRomSample)
 
         val bottomHipAngleDeg = minOf(currentMinRawHipAngleDeg, currentMinHipAngleDeg)
         lastDepthInsufficient = currentMinKneeAngleDeg > DEPTH_ERROR_THRESHOLD
@@ -429,13 +438,14 @@ class SquatBiomechanicsAlgorithm : BiomechanicsAlgorithm {
         }
     }
 
-    private fun computeCvt(values: List<Double>): Double? {
-        if (values.size < 2) return null
-        val mean = values.average()
-        if (mean == 0.0) return null
-        val variance = values.map { (it - mean).pow(2) }.average()
+    private fun computeCvt(bottomAngles: List<Double>, roms: List<Double>): Double? {
+        if (bottomAngles.size < CVT_MIN_REPS) return null
+        val romMean = roms.average()
+        if (romMean <= 0.0) return null
+        val mean = bottomAngles.average()
+        val variance = bottomAngles.map { (it - mean).pow(2) }.average()
         val sigma = sqrt(variance)
-        return (sigma / mean) * 100.0
+        return (sigma / romMean) * 100.0
     }
 
     private fun selectLeg(flat: List<Double>): LegLandmarks? {
