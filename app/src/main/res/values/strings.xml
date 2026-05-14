@@ -15,6 +15,7 @@
     <string name="stats_empty">Aún no hay sesiones guardadas. Entrena y guarda tu primera sesión para verla aquí.</string>
     <string name="stats_empty_filtered">No hay sesiones guardadas de %1$s. Cambia de pestaña o entrena ese ejercicio.</string>
     <string name="stats_session_rep_quality_line">Bien hechas %1$d%% · Mal hechas %2$d%%</string>
+    <string name="stats_session_rep_quality_line_curl">Bien %1$d%% · Casi bien %2$d%% · Mal %3$d%%</string>
     <string name="stats_metrics_unavailable">Métricas por ejercicio no disponibles</string>
     <string name="stats_item_metrics_title">Indicadores específicos</string>
     <string name="stats_squat_metrics_format">Reps con profundidad insuficiente: %1$d\nReps con riesgo de tronco inclinado: %2$d</string>

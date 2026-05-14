@@ -282,6 +282,16 @@ public class StatsHistoryActivity extends AppCompatActivity {
 
     /** Misma lógica que el resumen: % reps válidas vs intentos con mala técnica. */
     private String buildRepQualityLine(SessionRepository repository, WorkoutSession session) {
+        if (WorkoutSession.TYPE_CURL.equals(session.getExerciseType())) {
+            SessionRepository.CurlRepQualityCounts counts =
+                    repository.getCurlRepQualityCountsBlocking(session.getId());
+            int attempted = counts.getGood() + counts.getAlmost() + counts.getBad();
+            if (attempted == 0) return getString(R.string.stats_session_rep_quality_line_curl, 0, 0, 0);
+            int goodPct   = Math.round(counts.getGood()   * 100f / attempted);
+            int almostPct = Math.round(counts.getAlmost() * 100f / attempted);
+            int badPct    = Math.round(counts.getBad()    * 100f / attempted);
+            return getString(R.string.stats_session_rep_quality_line_curl, goodPct, almostPct, badPct);
+        }
         int qualityReps = Math.max(0, session.getTotalReps());
         int attempted = repository.getAttemptedRepCountBlocking(session);
         if (attempted < qualityReps) {

@@ -177,6 +177,24 @@ class SessionRepository(private val database: RizeDatabase) {
 
     // ── Estadísticas Agregadas ───────────────────────────────────────────────────
 
+    data class CurlRepQualityCounts(val good: Int, val almost: Int, val bad: Int)
+
+    fun getCurlRepQualityCountsBlocking(sessionId: Long): CurlRepQualityCounts {
+        val reps = repDao.getRepsForSession(sessionId)
+        var good = 0
+        var almost = 0
+        for (rep in reps) {
+            when (rep.formQuality) {
+                "NONE" -> good++
+                "MILD" -> almost++
+            }
+        }
+        val curl = sessionDao.getCurlDetailsBySessionId(sessionId)
+        val attempted = if (curl != null && curl.attemptedRepCount > 0) curl.attemptedRepCount else reps.size
+        val bad = maxOf(0, attempted - good - almost)
+        return CurlRepQualityCounts(good, almost, bad)
+    }
+
     data class ExerciseStats(
         val type: String,
         val displayName: String,

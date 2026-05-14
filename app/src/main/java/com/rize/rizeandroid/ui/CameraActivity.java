@@ -472,7 +472,9 @@ public class CameraActivity extends AppCompatActivity {
             onBenchPressResult(result);
             return;
         }
-        onCurlResult(result);
+        if (isCurlExercise) {
+            onCurlResult(result);
+        }
     }
 
     /**
