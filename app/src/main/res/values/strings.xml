@@ -71,6 +71,12 @@
     <string name="select_title_highlight">Ejercicio</string>
     <string name="select_subtitle">Selecciona un movimiento para comenzar tu sesión y rastrear tu progreso.</string>
     <string name="select_search_hint">Buscar ejercicios…</string>
+    <string name="select_position_guide_btn">Guía de posición</string>
+    <string name="position_guide_title">Guía de posición</string>
+    <string name="position_guide_subtitle">Coloca el teléfono según estas referencias para obtener el mejor análisis de tu técnica.</string>
+    <string name="position_guide_image_1">Referencia de posición 1</string>
+    <string name="position_guide_image_2">Referencia de posición 2</string>
+    <string name="position_guide_image_3">Referencia de posición 3</string>
     <string name="select_start_sets">Iniciar Series</string>
     <string name="select_cat_strength">FUERZA</string>
     <string name="select_cat_compound">COMPUESTO</string>

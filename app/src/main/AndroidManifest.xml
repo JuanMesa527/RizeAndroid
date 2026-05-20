@@ -27,6 +27,7 @@
         </activity>
 
         <activity android:name=".ui.SelectActivity" />
+        <activity android:name=".ui.PositionGuideActivity" />
         <activity android:name=".ui.CameraActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".ui.SummaryActivity" />

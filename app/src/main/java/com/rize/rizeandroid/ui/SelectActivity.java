@@ -2,9 +2,6 @@ package com.rize.rizeandroid.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -35,7 +32,7 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         setupAutoSaveToggle();
         setupCameraSelector();
         setupExerciseList();
-        setupSearch();
+        setupPositionGuideButton();
         setupBottomNav();
     }
 
@@ -103,38 +100,9 @@ public class SelectActivity extends AppCompatActivity implements ExerciseAdapter
         recyclerView.setAdapter(adapter);
     }
 
-    private void setupSearch() {
-        EditText searchInput = findViewById(R.id.search_input);
-        searchInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterExercises(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-    }
-
-    private void filterExercises(String query) {
-        if (query.isEmpty()) {
-            adapter.updateList(new ArrayList<>(allExercises));
-            return;
-        }
-
-        String lowerQuery = query.toLowerCase();
-        List<ExerciseAdapter.Exercise> filtered = new ArrayList<>();
-        for (ExerciseAdapter.Exercise ex : allExercises) {
-            if (ex.name.toLowerCase().contains(lowerQuery)
-                    || ex.muscles.toLowerCase().contains(lowerQuery)
-                    || ex.category.toLowerCase().contains(lowerQuery)) {
-                filtered.add(ex);
-            }
-        }
-        adapter.updateList(filtered);
+    private void setupPositionGuideButton() {
+        findViewById(R.id.btn_position_guide).setOnClickListener(v ->
+                startActivity(new Intent(this, PositionGuideActivity.class)));
     }
 
     private void setupBottomNav() {

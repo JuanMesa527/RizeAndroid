@@ -189,37 +189,36 @@
 
         </LinearLayout>
 
-        <!-- Search Bar -->
+        <!-- Guía de posición -->
         <LinearLayout
+            android:id="@+id/btn_position_guide"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/bg_search_bar"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingVertical="14dp"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_search"
-                app:tint="@color/silver_2"
-                android:contentDescription="Search" />
+                android:src="@drawable/ic_lightbulb"
+                app:tint="@color/toasted_almond"
+                android:contentDescription="@string/select_position_guide_btn" />
 
-            <EditText
-                android:id="@+id/search_input"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:background="@null"
-                android:hint="@string/select_search_hint"
-                android:textColorHint="@color/silver_2"
+                android:text="@string/select_position_guide_btn"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                android:inputType="text"
-                android:maxLines="1" />
+                android:textStyle="bold" />
         </LinearLayout>
 
         <!-- Exercise List -->
