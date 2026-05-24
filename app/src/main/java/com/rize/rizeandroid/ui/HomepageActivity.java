@@ -1,0 +1,66 @@
+package com.rize.rizeandroid.ui;
+
+import android.content.Intent;
+import android.graphics.PorterDuff;
+import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+import com.rize.rizeandroid.R;
+
+/**
+ * Actividad principal de la aplicación.
+ */
+public class HomepageActivity extends AppCompatActivity {
+
+    /**
+     * Inicializa la actividad y configura la navegación.
+     * 
+     * @param savedInstanceState
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_homepage);
+
+        setupNavigation();
+        setupBottomNav();
+    }
+
+    /**
+     * Configura la navegación en la actividad.
+     */
+    private void setupNavigation() {
+        TextView btnGetStarted = findViewById(R.id.btn_get_started);
+        TextView btnAbout = findViewById(R.id.btn_about);
+
+        btnGetStarted.setOnClickListener(v -> navigateToSelect());
+        btnAbout.setOnClickListener(v -> startActivity(new Intent(this, AboutActivity.class)));
+    }
+
+    /**
+     * Configura la navegación inferior en la actividad.
+     */
+    private void setupBottomNav() {
+        ImageView homeIcon = findViewById(R.id.nav_home_icon);
+        TextView homeLabel = findViewById(R.id.nav_home_label);
+        homeIcon.setColorFilter(ContextCompat.getColor(this, R.color.toasted_almond), PorterDuff.Mode.SRC_IN);
+        homeLabel.setTextColor(ContextCompat.getColor(this, R.color.toasted_almond));
+
+        findViewById(R.id.nav_home).setOnClickListener(v -> { /* Already on home */ });
+        findViewById(R.id.nav_fab).setOnClickListener(v -> navigateToSelect());
+        findViewById(R.id.nav_stats).setOnClickListener(v -> {
+            startActivity(new Intent(this, StatsHistoryActivity.class));
+        });
+    }
+
+    /**
+     * Navega a la actividad de selección.
+     */
+    private void navigateToSelect() {
+        startActivity(new Intent(this, SelectActivity.class));
+    }
+}

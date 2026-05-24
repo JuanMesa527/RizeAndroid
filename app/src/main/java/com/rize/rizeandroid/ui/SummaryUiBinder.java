@@ -1,0 +1,294 @@
+package com.rize.rizeandroid.ui;
+
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.rize.rizeandroid.R;
+import com.rize.rizeandroid.data.PendingRep;
+import com.rize.rizeandroid.data.PendingSessionData;
+import com.rize.rizeandroid.data.entity.BenchSessionDetails;
+import com.rize.rizeandroid.data.entity.CurlSessionDetails;
+import com.rize.rizeandroid.data.entity.SquatSessionDetails;
+import com.rize.rizeandroid.data.entity.WorkoutSession;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Clase utilitaria para bindear los datos de resumen de sesión al layout summary_content.xml.
+ * Separamos esta lógica en una clase aparte para mantener el SummaryActivity más limpio.
+ */
+public final class SummaryUiBinder {
+
+    private SummaryUiBinder() {}
+
+    /**
+     * Popula las vistas del resumen de sesión con los datos calculados a partir de PendingSessionData.
+     * 
+     * @param activity
+     * @param data
+     */
+    public static void bindSummaryContent(AppCompatActivity activity, PendingSessionData data) {
+        WorkoutSession s = data.getSession();
+        boolean isCurl = WorkoutSession.TYPE_CURL.equals(s.getExerciseType());
+
+        int goodReps;
+        int almostReps = 0;
+        int qualityReps; // bien + casi bien (para el banner de rendimiento)
+        if (isCurl) {
+            goodReps = 0;
+            for (PendingRep r : data.getReps()) {
+                String q = r.getRep().getFormQuality();
+                if ("NONE".equals(q))      goodReps++;
+                else if ("MILD".equals(q)) almostReps++;
+            }
+            qualityReps = goodReps + almostReps;
+        } else {
+            goodReps    = s.getTotalReps();
+            qualityReps = goodReps;
+        }
+
+        int attempted = data.getAttemptedRepCount();
+        if (attempted < s.getTotalReps()) {
+            attempted = s.getTotalReps();
+        }
+        int badReps = Math.max(0, attempted - qualityReps);
+        int goodPct   = attempted > 0 ? Math.round(goodReps   * 100f / attempted) : 100;
+        int almostPct = attempted > 0 ? Math.round(almostReps * 100f / attempted) : 0;
+        int badPct    = attempted > 0 ? Math.round(badReps    * 100f / attempted) : 0;
+
+        ((TextView) activity.findViewById(R.id.tv_good_reps_pct)).setText(goodPct + "%");
+        ((TextView) activity.findViewById(R.id.tv_bad_reps_pct)).setText(badPct + "%");
+
+        View layoutAlmost = activity.findViewById(R.id.layout_almost_reps);
+        if (isCurl) {
+            layoutAlmost.setVisibility(View.VISIBLE);
+            ((TextView) activity.findViewById(R.id.tv_almost_reps_pct)).setText(almostPct + "%");
+        } else {
+            layoutAlmost.setVisibility(View.GONE);
+        }
+
+        ((TextView) activity.findViewById(R.id.tv_attempts_summary)).setText(
+                activity.getString(R.string.summary_attempts_format, qualityReps, attempted));
+
+        int qualityPct = attempted > 0 ? Math.round(qualityReps * 100f / attempted) : 100;
+
+        ImageView bannerImage = activity.findViewById(R.id.summary_banner_image);
+        TextView tvTitle = activity.findViewById(R.id.tv_performance_title);
+        TextView tvSubtitle = activity.findViewById(R.id.tv_performance_subtitle);
+        if (qualityPct >= 75) {
+            bannerImage.setImageResource(R.drawable.sigue_asi);
+            tvTitle.setText(R.string.summary_performance_title_high);
+            tvSubtitle.setText(R.string.summary_performance_subtitle_high);
+        } else if (qualityPct >= 50) {
+            bannerImage.setImageResource(R.drawable.por_buen_camino);
+            tvTitle.setText(R.string.summary_performance_title_mid);
+            tvSubtitle.setText(R.string.summary_performance_subtitle_mid);
+        } else {
+            bannerImage.setImageResource(R.drawable.a_mejorar);
+            tvTitle.setText(R.string.summary_performance_title_low);
+            tvSubtitle.setText(R.string.summary_performance_subtitle_low);
+        }
+
+        ((TextView) activity.findViewById(R.id.tv_rep_count_value)).setText(String.valueOf(qualityReps));
+
+        double velSum = 0;
+        int velCount = 0;
+        for (PendingRep r : data.getReps()) {
+            Double v = r.getRep().getPeakVelocityDegS();
+            if (v != null) {
+                velSum += v;
+                velCount++;
+            }
+        }
+        TextView tvAvgVel = activity.findViewById(R.id.tv_avg_velocity_value);
+        tvAvgVel.setText(velCount > 0
+                ? String.format(Locale.getDefault(), "%.0f", velSum / velCount)
+                : "—");
+
+        populateCorrections(activity, data, s);
+        populateRisk(activity, data);
+    }
+
+    /**
+     * Genera las correcciones o insights para mejorar la técnica basándose en los datos de la sesión.
+     * 
+     * @param activity
+     * @param data
+     * @param s
+     */
+    private static void populateCorrections(
+            AppCompatActivity activity,
+            PendingSessionData data,
+            WorkoutSession s
+    ) {
+        String exerciseType = s.getExerciseType();
+        int qualityReps;
+        if (WorkoutSession.TYPE_CURL.equals(exerciseType)) {
+            qualityReps = 0;
+            for (PendingRep r : data.getReps()) {
+                String q = r.getRep().getFormQuality();
+                if ("NONE".equals(q) || "MILD".equals(q)) qualityReps++;
+            }
+        } else {
+            qualityReps = s.getTotalReps();
+        }
+        int attempted = data.getAttemptedRepCount();
+        if (attempted < s.getTotalReps()) {
+            attempted = s.getTotalReps();
+        }
+        int badPct = attempted > 0 ? Math.round((attempted - qualityReps) * 100f / attempted) : 0;
+
+        List<String> corrections = new ArrayList<>();
+
+        if (WorkoutSession.TYPE_SQUAT.equals(exerciseType)) {
+            SquatSessionDetails squat = data.getSquatDetails();
+            if (squat != null) {
+                if (squat.getDepthInsufficientCount() > 0) {
+                    corrections.add(activity.getString(R.string.summary_corr_squat_depth, squat.getDepthInsufficientCount()));
+                }
+                if (squat.getTrunkLeanRiskCount() > 0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_squat_trunk, squat.getTrunkLeanRiskCount()));
+                }
+            }
+            Double loss = s.getVelocityLossPercent();
+            if (loss != null && loss >= 20.0 && corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_squat_fatigue,
+                        String.format(Locale.getDefault(), "%.0f%%", loss)));
+            }
+            if (corrections.isEmpty()) {
+                corrections.add(activity.getString(R.string.summary_corr_squat_ok));
+            }
+            if (corrections.size() < 2) {
+                SquatSessionDetails squatForTip = data.getSquatDetails();
+                boolean trunkIssue = squatForTip != null && squatForTip.getTrunkLeanRiskCount() > 0;
+                corrections.add(trunkIssue
+                        ? activity.getString(R.string.summary_corr_squat_mobility)
+                        : activity.getString(R.string.summary_corr_squat_knees));
+            }
+
+        } else if (WorkoutSession.TYPE_CURL.equals(exerciseType)) {
+            int partialReps = Math.max(0, attempted - s.getTotalReps());
+            if (partialReps > 0 && corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_curl_partial, partialReps));
+            }
+            CurlSessionDetails curl = data.getCurlDetails();
+            if (curl != null) {
+                Double shoulderComp = curl.getMaxShoulderCompensationDeg();
+                if (shoulderComp != null && shoulderComp > 12.0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_curl_shoulder,
+                            shoulderComp));
+                }
+                Double avgRom = curl.getAvgRomDeg();
+                if (avgRom != null && avgRom < 90.0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_curl_rom,
+                            (int) avgRom.doubleValue()));
+                }
+            }
+            if (badPct > 25 && corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_curl_quality, badPct));
+            }
+            if (corrections.isEmpty()) {
+                corrections.add(activity.getString(R.string.summary_corr_curl_ok));
+            }
+            if (corrections.size() < 2) {
+                boolean hasFormIssue = !corrections.isEmpty() &&
+                        (corrections.get(0).contains("ombro") || corrections.get(0).contains("ecorrido")
+                                || corrections.get(0).contains("ncompletas"));
+                corrections.add(hasFormIssue
+                        ? activity.getString(R.string.summary_corr_curl_breathing)
+                        : activity.getString(R.string.summary_corr_curl_eccentric));
+            }
+
+        } else if (WorkoutSession.TYPE_BENCH.equals(exerciseType)) {
+            BenchSessionDetails bench = data.getBenchDetails();
+            if (bench != null) {
+                if (bench.getDepthInsufficientCount() > 0) {
+                    corrections.add(activity.getString(R.string.summary_corr_bench_depth, bench.getDepthInsufficientCount()));
+                }
+                if (bench.getBilateralAsymmetryCount() > 0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_bench_asymmetry, bench.getBilateralAsymmetryCount()));
+                }
+                if (bench.getExtensionIncompleteCount() > 0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_bench_extension, bench.getExtensionIncompleteCount()));
+                }
+                if (bench.getGripTooWideCount() > 0 && corrections.size() < 2) {
+                    corrections.add(activity.getString(R.string.summary_corr_bench_grip, bench.getGripTooWideCount()));
+                }
+            }
+            if (corrections.isEmpty()) {
+                corrections.add(activity.getString(R.string.summary_corr_bench_ok));
+            }
+            if (corrections.size() < 2) {
+                corrections.add(activity.getString(R.string.summary_corr_bench_lat));
+            }
+
+        } else {
+            corrections.add(activity.getString(R.string.summary_corr_nodata));
+            corrections.add(activity.getString(R.string.summary_corr_nodata));
+        }
+
+        ((TextView) activity.findViewById(R.id.tv_insight_efficiency_desc)).setText(corrections.get(0));
+        ((TextView) activity.findViewById(R.id.tv_insight_tempo_desc)).setText(
+                corrections.size() > 1 ? corrections.get(1) : activity.getString(R.string.summary_corr_nodata));
+    }
+
+    /**
+     * Genera las correcciones o insights para mejorar la técnica basándose en los datos de la sesión.
+     * 
+     * @param activity
+     * @param data
+     */
+    private static void populateRisk(AppCompatActivity activity, PendingSessionData data) {
+        WorkoutSession s = data.getSession();
+        View sectionRisk = activity.findViewById(R.id.section_risk);
+        String level = s.getTechnicalErrorLevel();
+        if (!"MODERATE".equals(level) && !"SEVERE".equals(level)) {
+            sectionRisk.setVisibility(View.GONE);
+            return;
+        }
+        sectionRisk.setVisibility(View.VISIBLE);
+        boolean severe = "SEVERE".equals(level);
+        ((TextView) activity.findViewById(R.id.tv_risk_title)).setText(
+                severe ? R.string.summary_risk_severe_title : R.string.summary_risk_moderate_title);
+
+        StringBuilder desc = new StringBuilder();
+        if (WorkoutSession.TYPE_CURL.equals(s.getExerciseType())) {
+            CurlSessionDetails curl = data.getCurlDetails();
+            if (curl != null) {
+                Double shoulder = curl.getMaxShoulderCompensationDeg();
+                if (shoulder != null && shoulder > 12.0) {
+                    desc.append(String.format(Locale.getDefault(),
+                            "• Compensación de hombro máxima: %.0f° (límite: 12°)\n", shoulder));
+                }
+                Double avgRom = curl.getAvgRomDeg();
+                if (avgRom != null && avgRom < 85.0) {
+                    desc.append(String.format(Locale.getDefault(),
+                            "• Recorrido promedio: %.0f° (objetivo ≥ 85°)\n", avgRom));
+                }
+            }
+            Double vl = s.getVelocityLossPercent();
+            if (vl != null && vl >= 40.0) {
+                desc.append(String.format(Locale.getDefault(),
+                        "• Pérdida de velocidad: %.0f%% — fatiga muscular alta\n", vl));
+            }
+            int partialReps = Math.max(0,
+                    data.getAttemptedRepCount() - s.getTotalReps());
+            if (partialReps > 0) {
+                desc.append(String.format(Locale.getDefault(),
+                        "• %d rep(s) con recorrido incompleto\n", partialReps));
+            }
+        }
+
+        if (desc.length() == 0) {
+            desc.append(severe
+                    ? activity.getString(R.string.summary_risk_severe_desc)
+                    : activity.getString(R.string.summary_risk_moderate_desc));
+        }
+        ((TextView) activity.findViewById(R.id.tv_risk_desc)).setText(desc.toString().trim());
+    }
+}

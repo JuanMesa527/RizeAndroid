@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.RizeAndroid" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/toasted_almond</item>
+        <item name="colorPrimaryVariant">@color/toasted_almond_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/toasted_almond</item>
+        <item name="colorSecondaryVariant">@color/toasted_almond_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:windowBackground">@color/shadow_grey</item>
+        <item name="android:statusBarColor">@color/shadow_grey</item>
+        <item name="android:navigationBarColor">@color/shadow_grey</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/silver_2</item>
+        <item name="colorSurface">@color/card_background</item>
+        <item name="colorOnSurface">@color/white</item>
+    </style>
+</resources>
