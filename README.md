@@ -1,4 +1,4 @@
-![Logo RIZE](app\src\main\res\drawable\main_page.png)
+![Logo RIZE](app/src/main/res/drawable/main_page.png)
 
 Desarrollo e Implementación de un Sistema de Retroalimentación
 
@@ -28,55 +28,33 @@ Bogotá, D.C., 2026
 | --- | --- | --- | --- |
 | 1.0 | Mayo 2026 | Versión inicial del Manual de Usuario | Michael Bohorquez Mahecha: michael-bohorquez1@upc.edu.co  Simon Sanmiguel Ordoñez: simon-sanmiguel@upc.edu.co  Juan Camilo Mesa Calderon: juan-mesa2@upc.edu.co |
 
-Contenido
+## Contenido
 
-[1. Objetivo del Manual](#_Toc230171462)
-
-[2. Alcance](#_Toc230171463)
-
-[3. Términos y Definiciones](#_Toc230171464)
-
-[4. Introducción al Sistema RIZE](#_Toc230171465)
-
-[5. Objetivo del Sistema RIZE](#_Toc230171466)
-
-[5.1 Introducción](#_Toc230171467)
-
-[5.2 Alcance Funcional y Organizacional](#_Toc230171468)
-
-[5.2.1 Alcance Funcional](#_Toc230171469)
-
-[5.2.2 Alcance](#_Toc230171470)
-
-[6. Funciones y Utilización del Sistema](#_Toc230171471)
-
-[6.1 Prerrequisitos para el Uso del Sistema](#_Toc230171472)
-
-[6.1.1 Requisitos de Hardware](#_Toc230171473)
-
-[6.1.2 Requisitos de Software](#_Toc230171474)
-
-[6.1.3 Condiciones de Uso Recomendadas](#_Toc230171475)
-
-[6.2 Configuración del Sistema](#_Toc230171476)
-
-[6.3 Funcionalidades y Servicios Ofrecidos](#_Toc230171477)
-
-[6.4 Paso a Paso de Cada Opción del Sistema](#_Toc230171478)
-
-[6.4.1 Pantalla de Inicio y Selección de Ejercicio](#_Toc230171479)
-
-[6.4.2 Posicionamiento de la Cámara por Ejercicio](#_Toc230171480)
-
-[6.4.4 Sistema de Alertas e Interpretación](#_Toc230171481)
-
-[6.4.5 Revisión del Histórico de Sesión](#_Toc230171482)
-
-[6.5 Preguntas Frecuentes](#_Toc230171483)
-
-[6.6 Solución de Problemas](#_Toc230171484)
-
-[6.7 Datos de Contacto](#_Toc230171485)
+- [1. Objetivo del Manual](#1-objetivo-del-manual)
+- [2. Alcance](#2-alcance)
+- [3. Términos y Definiciones](#3-términos-y-definiciones)
+- [4. Introducción al Sistema RIZE](#4-introducción-al-sistema-rize)
+- [5. Objetivo del Sistema RIZE](#5-objetivo-del-sistema-rize)
+  - [5.1 Introducción](#51-introducción)
+  - [5.2 Alcance Funcional y Organizacional](#52-alcance-funcional-y-organizacional)
+    - [5.2.1 Alcance Funcional](#521-alcance-funcional)
+    - [5.2.2 Alcance](#522-alcance)
+- [6. Funciones y Utilización del Sistema](#6-funciones-y-utilización-del-sistema)
+  - [6.1 Prerrequisitos para el Uso del Sistema](#61-prerrequisitos-para-el-uso-del-sistema)
+    - [6.1.1 Requisitos de Hardware](#611-requisitos-de-hardware)
+    - [6.1.2 Requisitos de Software](#612-requisitos-de-software)
+    - [6.1.3 Condiciones de Uso Recomendadas](#613-condiciones-de-uso-recomendadas)
+  - [6.2 Configuración del Sistema](#62-configuración-del-sistema)
+  - [6.3 Funcionalidades y Servicios Ofrecidos](#63-funcionalidades-y-servicios-ofrecidos)
+  - [6.4 Paso a Paso de Cada Opción del Sistema](#64-paso-a-paso-de-cada-opción-del-sistema)
+    - [6.4.1 Pantalla de Inicio y Selección de Ejercicio](#641-pantalla-de-inicio-y-selección-de-ejercicio)
+    - [6.4.2 Posicionamiento de la Cámara por Ejercicio](#642-posicionamiento-de-la-cámara-por-ejercicio)
+    - [6.4.3 Pantalla de Análisis en Tiempo Real](#643-pantalla-de-análisis-en-tiempo-real)
+    - [6.4.4 Sistema de Alertas e Interpretación](#644-sistema-de-alertas-e-interpretación)
+    - [6.4.5 Revisión del Histórico de Sesión](#645-revisión-del-histórico-de-sesión)
+  - [6.5 Preguntas Frecuentes](#65-preguntas-frecuentes)
+  - [6.6 Solución de Problemas](#66-solución-de-problemas)
+  - [6.7 Datos de Contacto](#67-datos-de-contacto)
 
 # 1. Objetivo del Manual
 
@@ -226,19 +204,19 @@ Al abrir RIZE, se presenta la pantalla principal con la lista de ejercicios disp
 
 El posicionamiento correcto de la cámara es determinante para la precisión del análisis. Las siguientes infografías explican de manera visual estas indicaciones.
 
-![Infografía de posicionamiento de cámara — Press de banca](app\src\main\res\drawable\position_guide_1.png)
+![Infografía de posicionamiento de cámara — Press de banca](app/src/main/res/drawable/position_guide_1.png)
 
 *Figura 1. Infografía explicativa press de banca.*
 
-![Infografía de posicionamiento de cámara — Sentadilla](app\src\main\res\drawable\position_guide_2.png)
+![Infografía de posicionamiento de cámara — Sentadilla](app/src/main/res/drawable/position_guide_2.png)
 
 *Figura 2. Infografía explicativa sentadilla.*
 
-![Infografía de posicionamiento de cámara — Curl de bíceps](app\src\main\res\drawable\position_guide_3.png)
+![Infografía de posicionamiento de cámara — Curl de bíceps](app/src/main/res/drawable/position_guide_3.png)
 
 *Figura 3. Infografía explicativa curl de bíceps.*
 
-**6.4.3 Pantalla de Análisis en Tiempo Real**
+### 6.4.3 Pantalla de Análisis en Tiempo Real
 
 Durante el análisis, la pantalla muestra los siguientes elementos superpuestos sobre el video en vivo de la cámara:
 
@@ -288,7 +266,7 @@ Ante una alerta crítica, se debe detener la serie de forma inmediata y revisar 
 
 ## 6.6 Solución de Problemas
 
-La tabla 7 describe los inconvenientes más frecuentes que puede enfrentar el usuario, sus posibles causas y las soluciones recomendadas.
+La tabla 3 describe los inconvenientes más frecuentes que puede enfrentar el usuario, sus posibles causas y las soluciones recomendadas.
 
 | **Problema** | **Posible causa** | **Solución recomendada** |
 | --- | --- | --- |
@@ -296,7 +274,7 @@ La tabla 7 describe los inconvenientes más frecuentes que puede enfrentar el us
 | El esqueleto no aparece o se muestra inestable | Iluminación insuficiente, ropa holgada o más de una persona en el encuadre | Mejorar la iluminación, usar ropa ajustada y asegurarse de ser la única persona visible en la cámara. |
 | La aplicación presenta lag o fotogramas lentos | Recursos del dispositivo insuficientes (RAM o GPU) | Cerrar otras aplicaciones en segundo plano. En dispositivos de gama baja, el modelo opera en CPU con menor velocidad de fotogramas. |
 | Las repeticiones no se cuentan correctamente | Movimiento parcial, velocidad muy baja o encuadre incompleto | Completar el ROM completo en cada repetición. |
-| Se emiten alertas posturales sin error aparente | Encuadre incorrecto o cámara no perpendicular al plano del ejercicio | Reposicionar la cámara según las indicaciones de la tabla 3. |
+| Se emiten alertas posturales sin error aparente | Encuadre incorrecto o cámara no perpendicular al plano del ejercicio | Reposicionar la cámara según las indicaciones de la sección 6.4.2. |
 | La aplicación no se instala desde el APK | Instalación de fuentes desconocidas no habilitada | Habilitar la instalación de fuentes desconocidas en Ajustes > Seguridad del dispositivo. |
 
 Tabla 3. Problemas frecuentes y soluciones recomendadas
